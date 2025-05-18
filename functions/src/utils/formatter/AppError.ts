@@ -7,11 +7,7 @@ class AppError extends Error {
   reasons?: string[];
   translationOptions?: TOptions; // Optional translation parameters
 
-  constructor(
-    code: string,
-    reasons?: string[],
-    translationOptions?: TOptions,
-  ) {
+  constructor(code: string, reasons?: string[], translationOptions?: TOptions) {
     super(code);
     this.name = "AppError";
     this.code = code;

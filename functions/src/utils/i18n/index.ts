@@ -1,6 +1,6 @@
 // functions/src/utils/i18n.ts
-import i18next from "i18next";
-import en from "../locales/en.json";
+import i18next, { TOptions } from "i18next";
+import en from "./en/translation.json";
 
 i18next.init({
   lng: "en", // Default language
@@ -13,7 +13,7 @@ i18next.init({
   },
 });
 
-export const t = (key: string, options?: i18next.TOptions): string => {
+export const t = (key: string, options?: TOptions): string => {
   return i18next.t(key, options);
 };
 

@@ -1,5 +1,7 @@
 {
   "errors": {
-
+    "REQ_METHOD_NOT_ALLOWED": "Request method is not allowed",
+    "REQ_MISSING_TOKEN": "Authorization token is missing",
+    "REQ_INVALID_TOKEN": "Authorization token is invalid"
   }
 }

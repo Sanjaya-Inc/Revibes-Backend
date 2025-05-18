@@ -1,6 +1,6 @@
 import i18next, {TOptions} from "i18next";
 import AppError from "./AppError";
-import {Response} from 'express';
+import {Response} from "express";
 import {t} from "../i18n";
 
 export type TAppResponseConstructor<T> = {
@@ -8,7 +8,7 @@ export type TAppResponseConstructor<T> = {
   status?: "success" | "failed";
   message?: string;
   data?: T;
-  errorObj?: AppError;
+  err?: AppError;
   error?: string;
   reasons?: string[];
   translationKey?: string; // Optional key for top-level message translation
@@ -20,15 +20,21 @@ class AppResponse<T> {
 
   constructor(value: TAppResponseConstructor<T>) {
     this.value = value;
+    if (value.err) {
+      this.value.status = "failed";
+    } else {
+      this.value.status = "success";
+    }
   }
 
   asJsonResponse(res: Response) {
     const val = {...this.value};
-    const {code, errorObj} = val;
+    const {code, err} = val;
 
-    if (errorObj) {
-      const translatedError = errorObj.translate(res.req.query.locale as string); // Assuming locale is passed in the query
-      val.errorObj = translatedError;
+    if (err) {
+      const translatedError = err.translate(res.req.query.locale as string); // Assuming locale is passed in the query
+      val.err = translatedError;
+      val.error = err.message;
       delete val.message; // Don't send the original message if there's a translated error
     } else if (val.translationKey) {
       val.message = t(val.translationKey, {
@@ -52,8 +58,8 @@ class AppResponse<T> {
       this.value.message = t(this.value.message, options);
     }
 
-    if (this.value.error) {
-      this.value.error.translate(locale);
+    if (this.value.err) {
+      this.value.err.translate(locale);
     }
 
     if (locale) {
