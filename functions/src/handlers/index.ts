@@ -1,2 +1,7 @@
-export * from "./events";
-export * from "./functions";
+import * as events from "./events";
+import {v1} from "./requests";
+
+export {
+  events,
+  v1,
+}

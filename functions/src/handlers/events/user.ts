@@ -1,16 +1,15 @@
-import * as functions from "firebase-functions/v1";
+// import region from "../../utils/region";
 
-import { User } from "../../controllers/User";
+// import { User } from "../../controllers/User";
 
-export const createUser = functions.auth.user().onCreate(async (user) => {
-  console.log("triggered =========", user);
+// export const createUser = region.auth.user().onCreate(async (user) => {
   
-  const { uid, email, displayName, phoneNumber } = user;
+//   const { uid } = user;
   
-  try {
-    await User.createUser(uid, email, displayName, phoneNumber);  
-    return null;
-  } catch (error) {
-    return null;
-  }
-});
+//   try {
+//     await User.createUser({uid});  
+//     return null;
+//   } catch (error) {
+//     return null;
+//   }
+// });

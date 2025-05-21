@@ -1,15 +1,15 @@
-// error file
 import i18next, {TOptions} from "i18next";
 import {t} from "../i18n";
 
 class AppError extends Error {
+  httpStatus: number;
   code: string;
   reasons?: string[];
   translationOptions?: TOptions; // Optional translation parameters
 
-  constructor(code: string, reasons?: string[], translationOptions?: TOptions) {
+  constructor(httpStatus: number, code: string, reasons?: string[], translationOptions?: TOptions) {
     super(code);
-    this.name = "AppError";
+    this.httpStatus = httpStatus;
     this.code = code;
     this.reasons = reasons;
     this.translationOptions = translationOptions;
@@ -21,18 +21,32 @@ class AppError extends Error {
       i18next.changeLanguage(locale);
     }
 
-    this.message = t("errors/" + this.message, this.translationOptions);
+    let translated = t("errors." + this.message, this.translationOptions);
+    if (translated === "errors." + this.message) {
+      translated = this.message;
+    }
+    this.message = translated;
 
     if (this.reasons) {
-      this.reasons = this.reasons.map((reason) =>
-        t("errors/" + reason, this.translationOptions),
-      );
+      this.reasons = this.reasons.map((reason) => {
+        let translated = t("errors." + reason, this.translationOptions);
+        if (translated === "errors." + reason) {
+          translated = reason;
+        }
+
+        return translated; 
+      });
     }
 
     if (locale) {
       i18next.changeLanguage(originalLocale);
     }
-    return this; // Allow chaining
+    return this;
+  }
+
+  errFromZode(error: any) {
+    this.reasons = error.errors.map((e: { message: string }) => e.message);
+    return this;
   }
 }
 

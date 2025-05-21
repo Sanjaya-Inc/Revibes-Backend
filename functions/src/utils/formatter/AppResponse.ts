@@ -4,7 +4,7 @@ import {Response} from "express";
 import {t} from "../i18n";
 
 export type TAppResponseConstructor<T> = {
-  code: number;
+  code?: number;
   status?: "success" | "failed";
   message?: string;
   data?: T;
@@ -29,15 +29,17 @@ class AppResponse<T> {
 
   asJsonResponse(res: Response) {
     const val = {...this.value};
-    const {code, err} = val;
+    let {code, err} = val;
 
     if (err) {
       const translatedError = err.translate(res.req.query.locale as string); // Assuming locale is passed in the query
-      val.err = translatedError;
-      val.error = err.message;
-      delete val.message; // Don't send the original message if there's a translated error
-    } else if (val.translationKey) {
-      val.message = t(val.translationKey, {
+      code = err.httpStatus;
+      val.error = translatedError.message;
+      val.reasons = translatedError.reasons;
+      delete val.message;
+      delete val.err;
+    } else if (val.message) {
+      val.message = t("messages."+ val.message, {
         ...val.translationOptions,
         lng: res.req.query.locale as string,
       });
