@@ -1,30 +1,45 @@
-import { Timestamp } from 'firebase-admin/firestore';
-import { generateAccessToken, generateRefreshToken, TJwtPayload } from './../utils/jwt';
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  TJwtPayload,
+} from "./../utils/jwt";
 import BaseModel from "./BaseModel";
 import bcrypt from "bcrypt";
 
-export interface IUserData {
-  uid?: string;
-  displayName?: string;
-  email?: string;
-  phoneNumber?: string;
-  password?: string;
-  points?: number;
-  lastClaimedDate?: Date | null;
+export type TUserData = Partial<User>;
 
-  accessToken?: string;
-  refreshToken?: string;
-  accessTokenExpiresAt?: Date;
-  refreshTokenExpiresAt?: Date;
+export enum UserRole {
+  ADMIN = "admin",
+  USER = "user",
 }
 
+export const publicFields: (keyof User)[] = [
+  "role",
+  "displayName",
+  "points",
+  "lastClaimedDate",
+];
+
+export const profileFields: (keyof User)[] = [
+  "role",
+  "createdAt",
+  "displayName",
+  "email",
+  "phoneNumber",
+  "points",
+  "lastClaimedDate",
+];
+
 export class User extends BaseModel {
-  uid?: string;
-  displayName?: string;
-  email?: string;
+  id!: string;
+  role!: UserRole;
+  createdAt!: Date;
+  updatedAt!: Date;
+  displayName!: string;
+  email!: string;
   phoneNumber?: string;
   password?: string;
-  points?: number;
+  points!: number;
   lastClaimedDate?: Date | null;
 
   accessToken?: string;
@@ -32,38 +47,42 @@ export class User extends BaseModel {
   accessTokenExpiresAt?: Date;
   refreshTokenExpiresAt?: Date;
 
-  constructor(data: IUserData) {
-    super();
-    let {accessTokenExpiresAt, refreshTokenExpiresAt, ...newData} = data;
-    if (accessTokenExpiresAt && accessTokenExpiresAt instanceof Timestamp) {
-      accessTokenExpiresAt = accessTokenExpiresAt.toDate();
-    }
+  verifyToken?: string;
 
-    if (refreshTokenExpiresAt && refreshTokenExpiresAt instanceof Timestamp) {
-      refreshTokenExpiresAt = refreshTokenExpiresAt.toDate();
-    }
+  constructor(data: TUserData) {
+    super(data);
+    Object.assign(this, { ...data });
 
-    Object.assign(this, {...newData, accessTokenExpiresAt, refreshTokenExpiresAt});
+    this.setDate("accessTokenExpiresAt", data);
+    this.setDate("refreshTokenExpiresAt", data);
   }
 
   hasAccess(): boolean {
-    return !!this.accessToken && !!this.accessTokenExpiresAt &&
-      this.accessTokenExpiresAt > new Date();
+    return (
+      !!this.accessToken &&
+      !!this.accessTokenExpiresAt &&
+      this.accessTokenExpiresAt > new Date()
+    );
   }
 
   hasRefresh(): boolean {
-    return !!this.refreshToken && !!this.refreshTokenExpiresAt &&
-      this.refreshTokenExpiresAt > new Date();
+    return (
+      !!this.refreshToken &&
+      !!this.refreshTokenExpiresAt &&
+      this.refreshTokenExpiresAt > new Date()
+    );
   }
 
   generateTokens() {
     const jwtPayload: TJwtPayload = {
-      uid: this.uid ?? "",
+      id: this.id ?? "",
       email: this.email ?? "",
       displayName: this.displayName ?? "",
     };
-    [this.accessToken, this.accessTokenExpiresAt] = generateAccessToken(jwtPayload);
-    [this.refreshToken, this.refreshTokenExpiresAt] = generateRefreshToken(jwtPayload);
+    [this.accessToken, this.accessTokenExpiresAt] =
+      generateAccessToken(jwtPayload);
+    [this.refreshToken, this.refreshTokenExpiresAt] =
+      generateRefreshToken(jwtPayload);
 
     return {
       accessToken: this.accessToken,
@@ -83,6 +102,14 @@ export class User extends BaseModel {
   static async hashPassword(password: string): Promise<string> {
     const salt = await bcrypt.genSalt(10);
     return await bcrypt.hash(password, salt);
+  }
+
+  getPublicFields(keys = publicFields) {
+    return super.pickFields(keys);
+  }
+
+  getProfileFields(keys = profileFields) {
+    return super.pickFields(keys);
   }
 }
 

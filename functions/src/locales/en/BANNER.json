@@ -1,0 +1,13 @@
+{
+  "errors": {
+    "ID_REQUIRED": "Banner id is required",
+    "NAME_REQUIRED": "Banner name is required",
+    "UPLOAD_FAILED": "Faile to upload image",
+    "FILE_REQUIRED": "Image file is required",
+    "INVALID_FILE": "Image file is invalid"
+ },
+  "messages": {
+    "FETCH_SUCCESS": "Fetch banner successfully",
+    "UPLOAD_SUCCESS": "Upload banner successfully"
+ }
+}

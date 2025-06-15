@@ -1,7 +1,7 @@
-import i18next, {TOptions} from "i18next";
+import { TOptions } from "i18next";
 import AppError from "./AppError";
-import {Response} from "express";
-import {t} from "../i18n";
+import { Response } from "express";
+import i18n from "../../i18n";
 
 export type TAppResponseConstructor<T> = {
   code?: number;
@@ -28,44 +28,48 @@ class AppResponse<T> {
   }
 
   asJsonResponse(res: Response) {
-    const val = {...this.value};
-    let {code, err} = val;
+    const val = { ...this.value };
+    const { err } = val;
+    let { code } = val;
 
     if (err) {
-      const translatedError = err.translate(res.req.query.locale as string); // Assuming locale is passed in the query
       code = err.httpStatus;
-      val.error = translatedError.message;
-      val.reasons = translatedError.reasons;
+      val.code = code;
+      val.error = err.message;
+      val.reasons = err.reasons;
       delete val.message;
       delete val.err;
     } else if (val.message) {
-      val.message = t("messages."+ val.message, {
-        ...val.translationOptions,
-        lng: res.req.query.locale as string,
-      });
+      const parts = val.message.split(".");
+      if (parts.length === 2) {
+        const [ns, code] = parts;
+        val.message = i18n.t("messages." + code, {
+          ns,
+          ...val.translationOptions,
+          lng: (res.req.query.locale as string) || "en",
+        });
+      }
     }
 
     res.status(code ?? 200).json(val);
   }
 
   translate(locale?: string, options?: TOptions): this {
-    const originalLocale = i18next.language;
+    const originalLocale = i18n.language;
     if (locale) {
-      i18next.changeLanguage(locale);
+      i18n.changeLanguage(locale);
     }
 
     if (this.value.translationKey) {
-      this.value.message = t(this.value.translationKey, options);
+      const [ns, code] = this.value.translationKey.split(".");
+      this.value.message = i18n.t(code, { ns, ...options });
     } else if (this.value.message) {
-      this.value.message = t(this.value.message, options);
-    }
-
-    if (this.value.err) {
-      this.value.err.translate(locale);
+      const [ns, code] = this.value.message.split(".");
+      this.value.message = i18n.t(code, { ns, ...options });
     }
 
     if (locale) {
-      i18next.changeLanguage(originalLocale);
+      i18n.changeLanguage(originalLocale);
     }
     return this; // Allow chaining
   }

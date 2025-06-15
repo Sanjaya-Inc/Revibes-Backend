@@ -1,7 +1,7 @@
 {
   "name": "functions",
   "scripts": {
-    "lint": "eslint --fix ./src/*.{js,ts}",
+    "lint": "npx eslint \"./src/**/*.{js,ts}\" --fix",
     "build": "tsc",
     "build:watch": "tsc --watch",
     "serve": "npm run build && firebase emulators:start",
@@ -23,10 +23,12 @@
     "firebase-functions": "^6.0.1",
     "i18next": "^21.9.1",
     "i18next-fs-backend": "^2.6.0",
+    "i18next-http-backend": "^3.0.2",
     "zod": "^3.24.4"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/multer": "^1.4.12",
     "@typescript-eslint/eslint-plugin": "^5.12.0",
     "@typescript-eslint/parser": "^5.12.0",
     "eslint": "^8.9.0",

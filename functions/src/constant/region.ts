@@ -1,1 +1,1 @@
-export const REGION = process.env.REGION || 'asia-southeast2';
+export const REGION = process.env.REGION || "asia-southeast2";

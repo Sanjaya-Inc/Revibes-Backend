@@ -1,0 +1,8 @@
+{
+  "errors": {
+    "ID_REQUIRED": "Store id is required",
+    "STORE_BRANCH_NOT_FOUND": "Store branch not found"
+ },
+  "messages": {
+ }
+}

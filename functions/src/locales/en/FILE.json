@@ -1,0 +1,11 @@
+{
+  "errors": {
+    "IMG_INVALID_ALLOWED_TYPE": "Invalid image file type",
+    "IMG_INVALID_ALLOWED_SIZE": "Invalid image file size",
+
+    "VIDEO_INVALID_ALLOWED_TYPE": "Invalid video file type",
+    "VIDEO_INVALID_ALLOWED_SIZE": "Invalid video file size"
+ },
+  "messages": {
+ }
+}

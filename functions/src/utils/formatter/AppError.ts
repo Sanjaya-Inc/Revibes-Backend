@@ -1,5 +1,5 @@
-import i18next, {TOptions} from "i18next";
-import {t} from "../i18n";
+import { TOptions } from "i18next";
+import i18n from "../../i18n";
 
 class AppError extends Error {
   httpStatus: number;
@@ -7,7 +7,12 @@ class AppError extends Error {
   reasons?: string[];
   translationOptions?: TOptions; // Optional translation parameters
 
-  constructor(httpStatus: number, code: string, reasons?: string[], translationOptions?: TOptions) {
+  constructor(
+    httpStatus: number,
+    code: string,
+    reasons?: string[],
+    translationOptions?: TOptions,
+  ) {
     super(code);
     this.httpStatus = httpStatus;
     this.code = code;
@@ -16,30 +21,36 @@ class AppError extends Error {
   }
 
   translate(locale?: string): this {
-    const originalLocale = i18next.language;
+    const originalLocale = i18n.language;
     if (locale) {
-      i18next.changeLanguage(locale);
+      i18n.changeLanguage(locale);
     }
 
-    let translated = t("errors." + this.message, this.translationOptions);
-    if (translated === "errors." + this.message) {
+    const [ns, code] = this.code.split(".");
+    const fullCodeName = ".errors." + code;
+
+    let translated = i18n.t(fullCodeName, { ns, ...this.translationOptions });
+    if (translated === fullCodeName) {
       translated = this.message;
     }
     this.message = translated;
 
     if (this.reasons) {
       this.reasons = this.reasons.map((reason) => {
-        let translated = t("errors." + reason, this.translationOptions);
-        if (translated === "errors." + reason) {
+        const [ns, code] = reason.split(".");
+        const fullCodeName = ".errors." + code;
+
+        let translated = i18n.t(fullCodeName, { ns, ...this.translationOptions });
+        if (translated === fullCodeName) {
           translated = reason;
         }
 
-        return translated; 
+        return translated;
       });
     }
 
     if (locale) {
-      i18next.changeLanguage(originalLocale);
+      i18n.changeLanguage(originalLocale);
     }
     return this;
   }

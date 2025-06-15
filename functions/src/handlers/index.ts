@@ -1,7 +1,4 @@
 import * as events from "./events";
-import {v1} from "./requests";
+import { v1 } from "./requests";
 
-export {
-  events,
-  v1,
-}
+export { events, v1 };

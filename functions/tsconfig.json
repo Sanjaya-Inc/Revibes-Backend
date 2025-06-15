@@ -10,6 +10,9 @@
     "strict": true,
     "target": "es2017",
     "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false
   },
   "compileOnSave": true,
   "include": [

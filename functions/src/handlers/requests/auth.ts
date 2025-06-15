@@ -1,75 +1,144 @@
-import Auth from "../../controllers/AuthController";
-import { SignupSchema, SignupWithGoogleSchema, LoginSchema, LoginWithGoogleSchema, TSignup, TSignupWithGoogle, TLogin, TLoginWithGoogle, RefreshSchema, TRefresh, TTokenPairRes, TSignupRes } from "../../dto/auth";
-import {Request, Response} from "express";
+import AuthController from "../../controllers/AuthController";
+import {
+  SignupSchema,
+  SignupWithGoogleSchema,
+  LoginSchema,
+  LoginWithGoogleSchema,
+  TSignup,
+  TSignupWithGoogle,
+  TLogin,
+  TLoginWithGoogle,
+  RefreshSchema,
+  TRefresh,
+  TTokenPairRes,
+  TSignupRes,
+  TLoginRes,
+  TLoginWithGoogleRes,
+} from "../../dto/auth";
+import { Request, Response } from "express";
 import AppError from "../../utils/formatter/AppError";
 import AppResponse from "../../utils/formatter/AppResponse";
+import Routes from "./route";
+import { authenticate } from "../../middlewares/auth";
+import { registerRoute } from "../../utils/decorator/registerRoute";
 
-export const signup = async(req: Request, res: Response) => {
-  const data: TSignup = req.body;
+export const authRoutes = new Routes("auth");
 
-  try {
-    SignupSchema.parse(data);
-  } catch(err: any) {
-    throw new AppError(400, "BAD_REQUEST").errFromZode(err);
+export class AuthHandlers {
+  @registerRoute(authRoutes, "post", "signup/email")
+  static async signup(req: Request, res: Response) {
+    const data: TSignup = req.body;
+
+    try {
+      SignupSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await AuthController.signup(data);
+    new AppResponse<TSignupRes>({
+      code: 201,
+      message: "AUTH.SIGNUP_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
   }
 
-  const response = await Auth.signup(data);
-  new AppResponse<TSignupRes>({code: 201, message: "AUTH_SIGNUP_SUCCESS", data: response}).asJsonResponse(res);
-};
+  @registerRoute(authRoutes, "post", "signup/google")
+  static async signupWithGoogle(req: Request, res: Response) {
+    const data: TSignupWithGoogle = req.body;
 
-export const signupWithGoogle = async(req: Request, res: Response) => {
-  const data: TSignupWithGoogle = req.body;
+    try {
+      SignupWithGoogleSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
 
-  try {
-    SignupWithGoogleSchema.parse(data);
-  } catch(err: any) {
-    throw new AppError(400, "BAD_REQUEST").errFromZode(err);
+    const response = await AuthController.signupWithGoogle(data);
+    new AppResponse<TTokenPairRes>({
+      code: 201,
+      message: "AUTH.SIGNUP_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
   }
 
-  const response = await Auth.signupWithGoogle(data);
-  new AppResponse<TTokenPairRes>({code: 201, message: "AUTH_SIGNUP_SUCCESS", data: response}).asJsonResponse(res);
-};
+  @registerRoute(authRoutes, "post", "login/email")
+  static async login(req: Request, res: Response) {
+    const data: TLogin = req.body;
 
-export const login = async(req: Request, res: Response) => {
-  const data: TLogin = req.body;
+    try {
+      LoginSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
 
-  try {
-    LoginSchema.parse(data);
-  } catch(err: any) {
-    throw new AppError(400, "BAD_REQUEST").errFromZode(err);
+    const response = await AuthController.login(data);
+    new AppResponse<TLoginRes>({
+      code: 200,
+      message: "AUTH.LOGIN_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
   }
 
-  const response = await Auth.login(data);
-  new AppResponse<TTokenPairRes>({code: 200, message: "AUTH_LOGIN_SUCCESS", data: response}).asJsonResponse(res);
-};
+  @registerRoute(authRoutes, "post", "login/google")
+  static async loginWithGoogle(req: Request, res: Response) {
+    const data: TLoginWithGoogle = req.body;
 
-export const loginWithGoogle = async(req: Request, res: Response) => {
-  const data: TLoginWithGoogle = req.body;
+    try {
+      LoginWithGoogleSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
 
-  try {
-    LoginWithGoogleSchema.parse(data);
-  } catch(err: any) {
-    throw new AppError(400, "BAD_REQUEST").errFromZode(err);
+    const response = await AuthController.loginWithGoogle(data);
+    new AppResponse<TLoginWithGoogleRes>({
+      code: 200,
+      message: "AUTH.LOGIN_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
   }
 
-  const response = await Auth.loginWithGoogle(data);
-  new AppResponse<TTokenPairRes>({code: 200, message: "AUTH_LOGIN_SUCCESS", data: response}).asJsonResponse(res);
-};
+  @registerRoute(authRoutes, "post", "logout", authenticate)
+  static async logout(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
 
-export const logout = async(req: Request, res: Response) => {
-  await Auth.logout(req.user!);
-  new AppResponse({code: 200, message: "AUTH_LOGOUT_SUCCESS"}).asJsonResponse(res);
-};
-
-export const refresh = async(req: Request, res: Response) => {
-  const data: TRefresh = req.body;
-
-  try {
-    RefreshSchema.parse(data);
-  } catch(err: any) {
-    throw new AppError(400, "BAD_REQUEST").errFromZode(err);
+    await AuthController.logout(req.user);
+    new AppResponse({
+      code: 200,
+      message: "AUTH.LOGOUT_SUCCESS",
+    }).asJsonResponse(res);
   }
 
-  const response = await Auth.refresh(data);
-  new AppResponse<TTokenPairRes>({code: 200, message: "AUTH_REFRESH_SUCCESS", data: response}).asJsonResponse(res);
-};
+  @registerRoute(authRoutes, "post", "refresh")
+  static async refresh(req: Request, res: Response) {
+    const data: TRefresh = req.body;
+
+    try {
+      RefreshSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await AuthController.refresh(data);
+    new AppResponse<TTokenPairRes>({
+      code: 200,
+      message: "AUTH.REFRESH_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(authRoutes, "get", "verify-token", authenticate)
+  static async getVerifyToken(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const response = await AuthController.getVerifyToken(req.user);
+    new AppResponse<string>({
+      code: 200,
+      message: "AUTH.REFRESH_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+}

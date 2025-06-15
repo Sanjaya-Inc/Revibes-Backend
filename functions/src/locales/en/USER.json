@@ -1,0 +1,8 @@
+{
+  "errors": {
+    "USER_NOT_FOUND": "User not found"
+ },
+  "messages": {
+    "FETCH_SUCCESS": "Fetch user info successfully"
+ }
+}

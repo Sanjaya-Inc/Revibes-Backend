@@ -1,0 +1,17 @@
+{
+  "errors": {
+    "CODE_REQUIRED": "Country code is required",
+    "NAME_REQUIRED": "Country name is required",
+    "DIAL_CODE_REQUIRED": "Country dial code is required",
+    "NOT_FOUND": "Country not found",
+    "CODE_EXIST": "Country code already exist",
+
+    "CODE_MIN_2": "Country code must be at least 2 characters",
+    "NAME_MIN_2": "Country name must be at least 2 characters",
+    "DIAL_CODE_MIN_3": "Country dial code must be at least 3 characters"
+  },
+  "messages": {
+    "FETCH_SUCCESS": "Fetch countries successfully",
+    "ADDED_SUCCESS": "Country added successfully"
+  }
+}
