@@ -30,9 +30,10 @@ export class BannerController {
   }
 
   @wrapError
-  public static async uploadBanner({ name, image }: TUploadBanner): Promise<Banner> {
-
-    console.log("check u 1 =======")
+  public static async uploadBanner({
+    name,
+    image,
+  }: TUploadBanner): Promise<Banner> {
     const docRef = db.collection(COLLECTION_MAP.BANNER).doc();
     const [uri] = await getFileStorageInstance().uploadFile(
       image,
@@ -40,7 +41,6 @@ export class BannerController {
       BasePath.BANNER,
       docRef.id,
     );
-    console.log("check u 2 =======")
 
     const data: TBannerData = {
       id: docRef.id,
@@ -48,7 +48,6 @@ export class BannerController {
       uri,
       visible: true,
     };
-    console.log("check u 3 =======")
     await docRef.set(data);
 
     return new Banner(data);

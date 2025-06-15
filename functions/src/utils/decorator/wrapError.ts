@@ -25,7 +25,7 @@ export function wrapError(
       const result = await originalMethod.apply(this, args);
       return result;
     } catch (error: any) {
-      console.log("error: ", error)
+      console.log("error: ", error);
       // Check if the error is already an instance of AppError
       if (error instanceof AppError) {
         throw error; // Re-throw the AppError as is

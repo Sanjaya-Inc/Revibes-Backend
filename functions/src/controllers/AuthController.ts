@@ -33,7 +33,7 @@ export class AuthController {
 
     const userRecord = await UserController.getUserByEmail(email);
     if (userRecord) {
-      throw new AppError(400, "AUTH.EMAIL_USED")
+      throw new AppError(400, "AUTH.EMAIL_USED");
     }
 
     const userAuth = await admin.auth().createUser({

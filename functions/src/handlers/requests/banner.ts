@@ -29,9 +29,6 @@ export class BannerHandlers {
       files: (req as any).files || undefined,
     };
 
-    console.log("check requ =======", req.body, (req as any).files);
-
-    console.log("check 4 =======");
     try {
       // Validate form data using Zod
       UploadedBannerSchema.parse(data);
@@ -39,7 +36,6 @@ export class BannerHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    console.log("check 5 =======");
     const response = await BannerController.uploadBanner(data);
     new AppResponse({
       code: 201,

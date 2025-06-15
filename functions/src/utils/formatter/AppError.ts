@@ -40,7 +40,10 @@ class AppError extends Error {
         const [ns, code] = reason.split(".");
         const fullCodeName = ".errors." + code;
 
-        let translated = i18n.t(fullCodeName, { ns, ...this.translationOptions });
+        let translated = i18n.t(fullCodeName, {
+          ns,
+          ...this.translationOptions,
+        });
         if (translated === fullCodeName) {
           translated = reason;
         }

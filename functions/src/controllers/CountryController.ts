@@ -8,7 +8,10 @@ import AppError from "../utils/formatter/AppError";
 export class CountryController {
   @wrapError
   public static async getCountries(): Promise<Country[]> {
-    const snapshot = await db.collection(COLLECTION_MAP.COUNTRY).where("visible", "==", true).get();
+    const snapshot = await db
+      .collection(COLLECTION_MAP.COUNTRY)
+      .where("visible", "==", true)
+      .get();
     const countries: Country[] = [];
     snapshot.forEach((doc) => {
       countries.push(new Country({ ...doc.data() }));
@@ -35,7 +38,7 @@ export class CountryController {
   public static async addCountry(data: TAddCountry): Promise<Country> {
     const countryRecord = await this.getCountry(data.code);
     if (countryRecord) {
-      throw new AppError(400, "COUNTRY.CODE_EXIST")
+      throw new AppError(400, "COUNTRY.CODE_EXIST");
     }
 
     await db.collection(COLLECTION_MAP.COUNTRY).doc(data.code).set(data);

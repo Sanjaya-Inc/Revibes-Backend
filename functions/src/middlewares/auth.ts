@@ -31,10 +31,10 @@ export const requireApiKey = async (
   next: () => void,
 ) => {
   const secretKey = process.env.API_KEY;
-  const apiKeyHeader = req.headers['x-api-key'] || req.headers['X-API-KEY'];
+  const apiKeyHeader = req.headers["x-api-key"] || req.headers["X-API-KEY"];
   if (!apiKeyHeader || apiKeyHeader !== secretKey) {
     throw new AppError(401, "AUTH.INVALID_API_KEY");
   }
-  
+
   next(); // Proceed to the next handler
 };

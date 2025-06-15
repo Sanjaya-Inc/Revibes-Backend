@@ -30,7 +30,7 @@ export class CountryHandlers {
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
-    
+
     const response = await CountryController.addCountry(data);
     new AppResponse<Country>({
       code: 201,
