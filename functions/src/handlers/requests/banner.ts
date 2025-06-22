@@ -1,33 +1,34 @@
 import { Request, Response } from "express";
 import AppResponse from "../../utils/formatter/AppResponse";
-import Banner from "../../models/Banner";
 import { BannerController } from "../../controllers/BannerController";
-import { UploadedBannerSchema } from "../../dto/banner";
+import {
+  DeleteBannerSchema,
+  TDeleteBanner,
+  TUploadBanner,
+  UploadedBannerSchema,
+} from "../../dto/banner";
 import Routes from "./route";
 import { registerRoute } from "../../utils/decorator/registerRoute";
-import { requireApiKey } from "../../middlewares/auth";
+import { adminOnly, authenticate } from "../../middlewares/auth";
 import AppError from "../../utils/formatter/AppError";
+import { parseFormData } from "../../utils/formatter/formData";
 
 export const bannerRoutes = new Routes("banners");
 
 export class BannerHandlers {
-  @registerRoute(bannerRoutes, "get")
+  @registerRoute(bannerRoutes, "get", "", authenticate)
   static async getBanners(req: Request, res: Response) {
     const response = await BannerController.getBanners();
-    new AppResponse<Banner[]>({
+    new AppResponse({
       code: 200,
       message: "BANNER.FETCH_SUCCESS",
       data: response,
     }).asJsonResponse(res);
   }
 
-  @registerRoute(bannerRoutes, "post", "", requireApiKey)
+  @registerRoute(bannerRoutes, "post", "", authenticate, adminOnly)
   static async uploadBanner(req: Request, res: Response) {
-    // Combine req.body and req.files if available, otherwise just use req.body
-    const data = {
-      ...req.body,
-      files: (req as any).files || undefined,
-    };
+    const data = parseFormData<TUploadBanner>(req);
 
     try {
       // Validate form data using Zod
@@ -40,6 +41,26 @@ export class BannerHandlers {
     new AppResponse({
       code: 201,
       message: "BANNER.UPLOAD_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(bannerRoutes, "delete", ":id", authenticate, adminOnly)
+  static async deleteBanner(req: Request, res: Response) {
+    const id = req.params.id;
+    const data: TDeleteBanner = { id };
+
+    try {
+      // Validate form data using Zod
+      DeleteBannerSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await BannerController.deleteBanner(data);
+    new AppResponse({
+      code: 201,
+      message: "BANNER.DELETE_SUCCESS",
       data: response,
     }).asJsonResponse(res);
   }

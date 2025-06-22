@@ -40,15 +40,15 @@ class AppResponse<T> {
       delete val.message;
       delete val.err;
     } else if (val.message) {
-      const parts = val.message.split(".");
-      if (parts.length === 2) {
-        const [ns, code] = parts;
-        val.message = i18n.t("messages." + code, {
-          ns,
-          ...val.translationOptions,
-          lng: (res.req.query.locale as string) || "en",
-        });
-      }
+      // const parts = val.message.split(".");
+      // if (parts.length === 2) {
+      //   const [ns, code] = parts;
+      //   val.message = i18n.t(ns + ".messages." + code, {
+      //     ns,
+      //     ...val.translationOptions,
+      //     lng: (res.req.query.locale as string) || "en",
+      //   });
+      // }
     }
 
     res.status(code ?? 200).json(val);

@@ -1,7 +1,15 @@
 {
   "errors": {
     "ID_REQUIRED": "Store id is required",
-    "STORE_BRANCH_NOT_FOUND": "Store branch not found"
+    "STORE_BRANCH_NOT_FOUND": "Store branch not found",
+    "NAME_REQUIRED": "Store branch name is required",
+    "COUNTRY_CODE_REQUIRED": "Store branch country code is required",
+    "ADDRESS_REQUIRED": "Store branch address is required",
+    "POSTAL_CODE_REQUIRED": "Store branch postal code is required",
+    "POSITION_REQUIRED": "Store branch position code is required",
+
+    "NOT_FOUND": "Country not found",
+    "CODE_EXIST": "Country code already exist"
  },
   "messages": {
  }

@@ -6,6 +6,12 @@ export const logisticItemTypes = ["organic", "non-organic", "b3"] as const;
 
 export type LogisticItemType = (typeof logisticItemTypes)[number];
 
+export type TMedia = {
+  uploadUrl: string;
+  downloadUri: string;
+  expiredAt: number;
+};
+
 export class LogisticItem extends BaseModel {
   id!: string;
   createdAt!: Date;
@@ -13,7 +19,7 @@ export class LogisticItem extends BaseModel {
   name!: string;
   type!: LogisticItemType;
   weight!: number;
-  media?: string[];
+  media?: TMedia[];
 
   constructor(data: TLogisticItemData) {
     super();

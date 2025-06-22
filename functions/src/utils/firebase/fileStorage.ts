@@ -1,9 +1,10 @@
 import { Bucket, File } from "@google-cloud/storage";
 import admin from "firebase-admin";
-import { TUploadFile } from "./dto/file";
+import { TUploadFile } from "../../dto/file";
 
 export enum BasePath {
   BANNER = "banners/",
+  LOGISTIC = "logistics/",
 }
 
 export type UploadOptions = {
@@ -13,6 +14,7 @@ export type UploadOptions = {
 export class FileStorage {
   private readonly storage: admin.storage.Storage;
   private readonly bucket: Bucket;
+  private readonly signedUrlExpTime: number = 15 * 60 * 1000; // URL expires in 15 minutes
 
   private static readonly _storageUrl = "https://storage.googleapis.com";
 
@@ -22,7 +24,8 @@ export class FileStorage {
   }
 
   public generateUri(baseName: BasePath, ...paths: string[]) {
-    return [baseName, ...paths].join("/");
+    const clean = (str: string) => str.replace(/^\/+|\/+$/g, "");
+    return [baseName, ...paths].map(clean).join("/");
   }
 
   public getFullUrl(uri: string) {
@@ -53,9 +56,38 @@ export class FileStorage {
     return [filePath, uploadedFile];
   }
 
+  public async getSignedUrl(
+    contentType: string,
+    baseName: BasePath,
+    ...paths: string[]
+  ): Promise<[string, string, number]> {
+    const downloadUri = this.generateUri(baseName, ...paths);
+    const file = this.bucket.file(downloadUri);
+    const exp = Date.now() + this.signedUrlExpTime;
+
+    const [uploadUrl] = await file.getSignedUrl({
+      version: "v4",
+      action: "write",
+      expires: exp,
+      contentType: contentType,
+    });
+    return [uploadUrl, downloadUri, exp];
+  }
+
   public async removeFile(uri: string) {
     const file = this.bucket.file(uri);
     return file.delete();
+  }
+
+  public async removeFolder(
+    baseName: BasePath,
+    ...paths: string[]
+  ): Promise<void> {
+    const prefix = this.generateUri(baseName, ...paths);
+
+    const [files] = await this.bucket.getFiles({ prefix });
+    if (files.length === 0) return;
+    await Promise.all(files.map((file) => file.delete()));
   }
 }
 

@@ -4,10 +4,12 @@
     "NAME_REQUIRED": "Banner name is required",
     "UPLOAD_FAILED": "Faile to upload image",
     "FILE_REQUIRED": "Image file is required",
-    "INVALID_FILE": "Image file is invalid"
+    "INVALID_FILE": "Image file is invalid",
+    "NOT_FOUND": "Banner not found"
  },
   "messages": {
     "FETCH_SUCCESS": "Fetch banner successfully",
-    "UPLOAD_SUCCESS": "Upload banner successfully"
+    "UPLOAD_SUCCESS": "Upload banner successfully",
+    "DELETE_SUCCESS": "Remove banner successfully"
  }
 }

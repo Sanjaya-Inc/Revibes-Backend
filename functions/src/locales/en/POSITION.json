@@ -1,0 +1,9 @@
+{
+  "errors": {
+    "LATITUDE_REQUIRED": "Latitute in position is required",
+    "LATITUDE_MIN": "Latitute in position at least -90",
+    "LATITUDE_MAX": "Latitute in position maximum is 90",
+  },
+  "messages": {
+  }
+}

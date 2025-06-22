@@ -1,13 +1,17 @@
 import COLLECTION_MAP from "../constant/db";
-import { TRemoveBanner, TUploadBanner } from "../dto/banner";
-import { BasePath, getFileStorageInstance } from "../fileStorage";
+import { TDeleteBanner, TGetBanner, TUploadBanner } from "../dto/banner";
+import {
+  BasePath,
+  getFileStorageInstance,
+} from "../utils/firebase/fileStorage";
 import Banner, { TBannerData } from "../models/Banner";
-import db from "../utils/db";
+import { db } from "../utils/firebase";
 import { wrapError } from "../utils/decorator/wrapError";
+import AppError from "../utils/formatter/AppError";
 
 export class BannerController {
   @wrapError
-  public static async getBanner(id: string): Promise<Banner | null> {
+  public static async getBanner({ id }: TGetBanner): Promise<Banner | null> {
     const bannerSnapshot = await db
       .collection(COLLECTION_MAP.BANNER)
       .doc(id)
@@ -26,6 +30,11 @@ export class BannerController {
     snapshot.forEach((doc) => {
       banners.push(new Banner({ ...doc.data() }));
     });
+
+    banners.forEach((banner) => {
+      banner.uri = getFileStorageInstance().getFullUrl(banner.uri);
+    });
+
     return banners;
   }
 
@@ -34,6 +43,10 @@ export class BannerController {
     name,
     image,
   }: TUploadBanner): Promise<Banner> {
+    if (!image) {
+      throw new AppError(400, "BANNER.IMAGE_REQUIRED");
+    }
+
     const docRef = db.collection(COLLECTION_MAP.BANNER).doc();
     const [uri] = await getFileStorageInstance().uploadFile(
       image,
@@ -54,13 +67,15 @@ export class BannerController {
   }
 
   @wrapError
-  public static async removeBanner({ id }: TRemoveBanner): Promise<void> {
+  public static async deleteBanner({ id }: TDeleteBanner): Promise<void> {
     // Remove file from Firebase Storage
-    const banner = await this.getBanner(id);
-    if (banner) {
-      await getFileStorageInstance().removeFile(banner.uri);
+    const banner = await this.getBanner({ id });
+
+    if (!banner) {
+      throw new AppError(404, "BANNER.NOT_FOUND");
     }
 
+    await getFileStorageInstance().removeFile(banner.uri);
     await db.collection(COLLECTION_MAP.BANNER).doc(id).delete();
   }
 }

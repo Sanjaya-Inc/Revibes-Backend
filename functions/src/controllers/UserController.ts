@@ -1,20 +1,35 @@
 import admin from "firebase-admin";
 import COLLECTION_MAP from "../constant/db";
-import { TCreateUser } from "../dto/user";
-import db from "../utils/db";
-import User, { TUserData } from "../models/User";
+import {
+  TChangeUserPassword,
+  TChangeUserStatus,
+  TCreateUser,
+  TGetUser,
+} from "../dto/user";
+import { db, generateId } from "../utils/firebase";
+import User, { TUserData, UserRole, UserStatus } from "../models/User";
 import { wrapError } from "../utils/decorator/wrapError";
+import { TPagination } from "../dto/pagination";
+import { createPage, TPaginatedPage } from "../utils/pagination";
+import AppError from "../utils/formatter/AppError";
+
+export type TCreateUserOpt = {
+  skipCheck?: boolean;
+};
 
 export class UserController {
   @wrapError
-  public static async createUser({
-    id,
-    email,
-    displayName,
-    phoneNumber,
-    password,
-    role,
-  }: TCreateUser): Promise<User> {
+  public static async createUser(
+    {
+      id = generateId(),
+      email,
+      displayName,
+      phoneNumber = "",
+      password,
+      role,
+    }: TCreateUser,
+    { skipCheck }: TCreateUserOpt = {},
+  ): Promise<User> {
     const hashedPassword = password
       ? await User.hashPassword(password)
       : undefined;
@@ -27,7 +42,15 @@ export class UserController {
       points: 0,
       lastClaimedDate: null,
       role,
+      status: UserStatus.ACTIVE,
     };
+
+    if (!skipCheck) {
+      const userRecord = await this.getUserByEmail(email);
+      if (userRecord) {
+        throw new AppError(400, "USER.EMAIL_USED");
+      }
+    }
 
     await db.collection(COLLECTION_MAP.USER).doc(id).set(data);
 
@@ -35,7 +58,23 @@ export class UserController {
   }
 
   @wrapError
-  public static async getUser(id: string): Promise<User | null> {
+  public static async getUsers(
+    filters: TPagination,
+  ): Promise<TPaginatedPage<User>> {
+    const { items, pagination } = await createPage<User>(
+      COLLECTION_MAP.USER,
+      filters,
+    );
+    items.forEach((item) => item.getPublicFields());
+
+    return {
+      items,
+      pagination,
+    };
+  }
+
+  @wrapError
+  public static async getUser({ id }: TGetUser): Promise<User | null> {
     const userSnapshot = await db.collection(COLLECTION_MAP.USER).doc(id).get();
     const userDoc = userSnapshot.data();
     if (!userDoc) {
@@ -105,7 +144,60 @@ export class UserController {
   }
 
   @wrapError
+  public static async changeUserStatus({
+    id,
+    status,
+  }: TChangeUserStatus): Promise<void> {
+    const user = await UserController.getUser({ id });
+    if (!user) {
+      throw new AppError(404, "USER.NOT_FOUND");
+    }
+
+    if (user.role === UserRole.ADMIN) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    await db.collection(COLLECTION_MAP.USER).doc(id).update({
+      status: status,
+    });
+  }
+
+  @wrapError
+  public static async initAdminRoot(): Promise<User | null> {
+    const adminMail = process.env.ADMIN_ROOT_MAIL || "";
+    const user = await UserController.getUserByEmail(adminMail);
+    if (user) {
+      return null;
+    }
+
+    return UserController.createUser({
+      displayName: "Admin Root",
+      email: adminMail,
+      password: process.env.ADMIN_ROOT_PASS,
+      phoneNumber: "",
+      role: UserRole.ADMIN,
+    });
+  }
+
+  @wrapError
   public static async getSelfProfile(user: User): Promise<User> {
-    return user.getProfileFields();
+    return user.getDetailFields();
+  }
+
+  @wrapError
+  public static async changeSelfPassword(
+    user: User,
+    { oldPassword, newPassword }: TChangeUserPassword,
+  ): Promise<void> {
+    const passMatch = await user.comparePassword(oldPassword);
+    if (!passMatch) {
+      throw new AppError(400, "USER.OLD_PASS_INVALID");
+    }
+
+    const hashedPassword = User.hashPassword(newPassword);
+
+    await db.collection(COLLECTION_MAP.USER).doc(user.id).update({
+      password: hashedPassword,
+    });
   }
 }

@@ -1,8 +1,24 @@
 {
   "errors": {
-    "USER_NOT_FOUND": "User not found"
+    "EMAIL_INVALID": "Email format is invalid",
+    "EMAIL_USED": "Email already exist",
+    "DISPLAY_NAME_REQUIRED": "Display name is required",
+    "PHONE_NUMBER_FORMAT": "Phone number must be in international format (e.g., +628123456789, 08123456789)",
+    "PASS_MIN_6": "Password must be at least 6 characters",
+    "PASS_SHOULD_HAVE_UPPERCASE": "Password must contain at least one uppercase letter",
+    "PASS_SHOULD_HAVE_LOWERCASE": "Password must contain at least one lowercase letter",
+    "PASS_SHOULD_HAVE_NUMBER": "Password must contain at least one number",
+    "PASS_SHOULD_HAVE_SPECIAL_CHAR": "Password must contain at least one special character",
+    "PASS_SHOULD_NOT_HAVE_SPACE": "Password must not contain spaces",
+    "OLD_PASS_REQUIRED": "Old password is required",
+    "OLD_PASS_INVALID": "Old password is invalid",
+    "NEW_PASS_REQUIRED": "New password is required",
+    "STATUS_INVALID": "Status is not valid",
+    
+    "NOT_FOUND": "User not found"
  },
   "messages": {
-    "FETCH_SUCCESS": "Fetch user info successfully"
+    "FETCH_SUCCESS": "Fetch user info successfully",
+    "PATCH_STATUS_SUCCESS": "Patch user status successfully"
  }
 }

@@ -10,10 +10,6 @@ import {
   TLoginWithGoogle,
   RefreshSchema,
   TRefresh,
-  TTokenPairRes,
-  TSignupRes,
-  TLoginRes,
-  TLoginWithGoogleRes,
 } from "../../dto/auth";
 import { Request, Response } from "express";
 import AppError from "../../utils/formatter/AppError";
@@ -36,7 +32,7 @@ export class AuthHandlers {
     }
 
     const response = await AuthController.signup(data);
-    new AppResponse<TSignupRes>({
+    new AppResponse({
       code: 201,
       message: "AUTH.SIGNUP_SUCCESS",
       data: response,
@@ -54,7 +50,7 @@ export class AuthHandlers {
     }
 
     const response = await AuthController.signupWithGoogle(data);
-    new AppResponse<TTokenPairRes>({
+    new AppResponse({
       code: 201,
       message: "AUTH.SIGNUP_SUCCESS",
       data: response,
@@ -72,7 +68,7 @@ export class AuthHandlers {
     }
 
     const response = await AuthController.login(data);
-    new AppResponse<TLoginRes>({
+    new AppResponse({
       code: 200,
       message: "AUTH.LOGIN_SUCCESS",
       data: response,
@@ -90,7 +86,7 @@ export class AuthHandlers {
     }
 
     const response = await AuthController.loginWithGoogle(data);
-    new AppResponse<TLoginWithGoogleRes>({
+    new AppResponse({
       code: 200,
       message: "AUTH.LOGIN_SUCCESS",
       data: response,
@@ -121,7 +117,7 @@ export class AuthHandlers {
     }
 
     const response = await AuthController.refresh(data);
-    new AppResponse<TTokenPairRes>({
+    new AppResponse({
       code: 200,
       message: "AUTH.REFRESH_SUCCESS",
       data: response,
@@ -135,7 +131,7 @@ export class AuthHandlers {
     }
 
     const response = await AuthController.getVerifyToken(req.user);
-    new AppResponse<string>({
+    new AppResponse({
       code: 200,
       message: "AUTH.REFRESH_SUCCESS",
       data: response,

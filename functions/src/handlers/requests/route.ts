@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 
-export type method = "get" | "post" | "put" | "delete";
+export type method = "get" | "post" | "put" | "patch" | "delete";
 
 export type RouteDefinition = [
   method: method,

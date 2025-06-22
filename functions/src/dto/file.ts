@@ -19,11 +19,10 @@ import {
 
 // This schema represents the file object as parsed by Busboy
 const UploadedFileSchema = z.object({
-  fieldname: z.string(), // The name of the form field (e.g., 'itemFile')
-  originalname: z.string(), // The original name of the file
-  encoding: z.string(),
-  mimetype: z.string(), // The MIME type (e.g., 'image/jpeg', 'video/mp4')
   buffer: z.instanceof(Buffer), // The file content as a Node.js Buffer
+  filename: z.string(), // The original name of the file
+  encoding: z.string(), // File encoding
+  mimetype: z.string(), // The MIME type (e.g., 'image/jpeg', 'video/mp4')
   size: z.number().int().positive(),
 });
 
@@ -37,7 +36,6 @@ export const ImageSchema = UploadedFileSchema.refine(
   (file) => file.size <= MAX_IMAGE_SIZE,
   "FILE.IMG_INVALID_ALLOWED_SIZE",
 );
-// You could add dimension validation here if needed (async)
 
 // Specific schema for a video file
 export const VideoSchema = UploadedFileSchema.refine(

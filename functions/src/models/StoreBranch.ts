@@ -1,16 +1,26 @@
+import { TPosition } from "../dto/position";
 import BaseModel from "./BaseModel";
 
 export type TStoreBranchData = Partial<StoreBranch>;
 
+export enum BranchStoreStatus {
+  ACTIVE = "active",
+  TEMPORARILY_CLOSED = "temporarily-closed",
+  PERMANENTLY_CLOSED = "permanently-closed",
+  UNDER_MAINTENANCE = "under-maintenance",
+  COMING_SOON = "coming-soon",
+}
+
 export class StoreBranch extends BaseModel {
-  id!: number;
+  id!: string;
   createdAt!: Date;
   updatedAt!: Date;
   name!: string;
   country!: string;
   address!: string;
   postalCode!: string;
-  status!: string;
+  position?: TPosition;
+  status!: BranchStoreStatus;
 
   constructor(data: TStoreBranchData) {
     super();

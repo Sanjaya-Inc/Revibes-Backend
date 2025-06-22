@@ -58,8 +58,9 @@ class AppError extends Error {
     return this;
   }
 
-  errFromZode(error: any) {
-    this.reasons = error.errors.map((e: { message: string }) => e.message);
+  errFromZode(err: any) {
+    console.log(err);
+    this.reasons = err.errors.map((e: { message: string }) => e.message);
     return this;
   }
 }

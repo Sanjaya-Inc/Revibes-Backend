@@ -9,7 +9,7 @@ import {
   TLoginRes,
   TLoginWithGoogleRes,
 } from "../dto/auth";
-import db from "../utils/db";
+import { db } from "../utils/firebase";
 import COLLECTION_MAP from "../constant/db";
 import AppError from "../utils/formatter/AppError";
 import User, { UserRole } from "../models/User";
@@ -43,14 +43,17 @@ export class AuthController {
       password,
     });
 
-    const user = await UserController.createUser({
-      id: userAuth.uid,
-      email,
-      displayName,
-      phoneNumber,
-      password,
-      role: UserRole.USER,
-    });
+    const user = await UserController.createUser(
+      {
+        id: userAuth.uid,
+        email,
+        displayName,
+        phoneNumber,
+        password,
+        role: UserRole.USER,
+      },
+      { skipCheck: true },
+    );
 
     const tokens = user.generateTokens();
     await db.collection(COLLECTION_MAP.USER).doc(user.id).update({
@@ -121,7 +124,7 @@ export class AuthController {
     const decodedToken = await admin.auth().verifyIdToken(token);
 
     const id = decodedToken.uid;
-    const user = await UserController.getUser(id);
+    const user = await UserController.getUser({ id });
     if (!user) {
       throw new AppError(401, "AUTH.USER_OR_PASS_INVALID");
     }

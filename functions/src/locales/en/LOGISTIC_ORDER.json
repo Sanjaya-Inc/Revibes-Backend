@@ -1,0 +1,18 @@
+{
+  "errors": {
+    "NAME_REQUIRED": "Order name is required",
+    "NAME_MIN_3": "Order name must be at least 3 characters",
+    "COUNTRY_REQUIRED": "Order country is required",
+    "ADDRESS_REQUIRED": "Order address is required",
+    "POSTAL_CODE_REQUIRED": "Order postal code is required",
+
+    "ITEM_INVALID_TYPE": "Item file must be a valid image or video",
+    "ITEM_NAME_REQUIRED": "Item name is required",
+    "ITEM_NAME_MIN_3": "Item name must be at least 3 characters",
+    "ITEM_WEIGHT_REQUIRED": "Item weight is required",
+    "ITEM_WEIGHT_MIN_1": "Item weight minimum is 1 kg",
+    "ITEM_COUNT_MAX_3": "Cannot upload more than 3 file for each item"
+ },
+  "messages": {
+ }
+}

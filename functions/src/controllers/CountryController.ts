@@ -1,7 +1,12 @@
 import COLLECTION_MAP from "../constant/db";
-import db from "../utils/db";
+import { db } from "../utils/firebase";
 import Country from "../models/Country";
-import { TAddCountry } from "../dto/country";
+import {
+  TAddCountry,
+  TDeleteCountry,
+  TEditCountry,
+  TGetCountry,
+} from "../dto/country";
 import { wrapError } from "../utils/decorator/wrapError";
 import AppError from "../utils/formatter/AppError";
 
@@ -20,7 +25,9 @@ export class CountryController {
   }
 
   @wrapError
-  public static async getCountry(code: string): Promise<Country | null> {
+  public static async getCountry({
+    code,
+  }: TGetCountry): Promise<Country | null> {
     const querySnapshot = await db
       .collection(COLLECTION_MAP.COUNTRY)
       .where("code", "==", code)
@@ -36,7 +43,7 @@ export class CountryController {
 
   @wrapError
   public static async addCountry(data: TAddCountry): Promise<Country> {
-    const countryRecord = await this.getCountry(data.code);
+    const countryRecord = await this.getCountry({ code: data.code });
     if (countryRecord) {
       throw new AppError(400, "COUNTRY.CODE_EXIST");
     }
@@ -44,5 +51,27 @@ export class CountryController {
     await db.collection(COLLECTION_MAP.COUNTRY).doc(data.code).set(data);
 
     return new Country(data);
+  }
+
+  @wrapError
+  public static async editCountry(data: TEditCountry): Promise<void> {
+    const countryRecord = await this.getCountry({ code: data.code });
+    if (!countryRecord) {
+      throw new AppError(404, "COUNTRY.NOT_FOUND");
+    }
+
+    await db.collection(COLLECTION_MAP.COUNTRY).doc(data.code).update(data);
+  }
+
+  @wrapError
+  public static async deleteCountry({ code }: TDeleteCountry): Promise<void> {
+    // Remove file from Firebase Storage
+    const country = await this.getCountry({ code });
+
+    if (!country) {
+      throw new AppError(404, "COUNTRY.NOT_FOUND");
+    }
+
+    await db.collection(COLLECTION_MAP.COUNTRY).doc(code).delete();
   }
 }

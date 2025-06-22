@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TUserMetadata } from "./user";
+import { TUserMetadata } from "../models/User";
 
 export type TTokenPairRes = {
   accessToken: string;
@@ -9,8 +9,16 @@ export type TTokenPairRes = {
 };
 
 export const SignupSchema = z.object({
-  email: z.string().email("AUTH.EMAIL_INVALID"),
-  displayName: z.string().min(3, "AUTH.DISPLAY_NAME_REQUIRED"),
+  email: z
+    .string({
+      required_error: "AUTH.EMAIL_INVALID",
+    })
+    .email("AUTH.EMAIL_INVALID"),
+  displayName: z
+    .string({
+      required_error: "AUTH.DISPLAY_NAME_REQUIRED",
+    })
+    .min(3, "AUTH.DISPLAY_NAME_REQUIRED"),
   phoneNumber: z
     .string()
     .regex(/^(\+62|0)8[1-9][0-9]{7,10}$/, {
@@ -18,7 +26,9 @@ export const SignupSchema = z.object({
     })
     .optional(),
   password: z
-    .string()
+    .string({
+      required_error: "AUTH.PASS_REQUIRED",
+    })
     .min(6, "AUTH.PASS_MIN_6")
     .refine((val) => /[A-Z]/.test(val), {
       message: "AUTH.PASS_SHOULD_HAVE_UPPERCASE",
@@ -45,14 +55,22 @@ export type TSignupRes = {
 };
 
 export const SignupWithGoogleSchema = z.object({
-  token: z.string().min(3, "AUTH.TOKEN_REQUIRED"),
+  token: z
+    .string({
+      required_error: "AUTH.TOKEN_REQUIRED",
+    })
+    .min(3, "AUTH.TOKEN_REQUIRED"),
 });
 
 export type TSignupWithGoogle = z.infer<typeof SignupWithGoogleSchema>;
 
 export const LoginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6, "AUTH.PASS_REQUIRED"),
+  email: z.string(),
+  password: z
+    .string({
+      required_error: "AUTH.PASS_REQUIRED",
+    })
+    .min(6, "AUTH.PASS_REQUIRED"),
 });
 
 export type TLogin = z.infer<typeof LoginSchema>;
@@ -63,7 +81,11 @@ export type TLoginRes = {
 };
 
 export const LoginWithGoogleSchema = z.object({
-  token: z.string().min(3, "AUTH.TOKEN_REQUIRED"),
+  token: z
+    .string({
+      required_error: "AUTH.TOKEN_REQUIRED",
+    })
+    .min(3, "AUTH.TOKEN_REQUIRED"),
 });
 
 export type TLoginWithGoogle = z.infer<typeof LoginWithGoogleSchema>;
@@ -74,7 +96,11 @@ export type TLoginWithGoogleRes = {
 };
 
 export const RefreshSchema = z.object({
-  token: z.string().min(3, "AUTH.TOKEN_REQUIRED"),
+  token: z
+    .string({
+      required_error: "AUTH.TOKEN_REQUIRED",
+    })
+    .min(3, "AUTH.TOKEN_REQUIRED"),
 });
 
 export type TRefresh = z.infer<typeof RefreshSchema>;

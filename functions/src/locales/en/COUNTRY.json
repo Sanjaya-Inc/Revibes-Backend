@@ -8,10 +8,12 @@
 
     "CODE_MIN_2": "Country code must be at least 2 characters",
     "NAME_MIN_2": "Country name must be at least 2 characters",
-    "DIAL_CODE_MIN_3": "Country dial code must be at least 3 characters"
+    "DIAL_CODE_MIN_2": "Country dial code must be at least 2 characters",
+    "DIAL_CODE_MAX_4": "Country dial code must be at most 4 characters"
   },
   "messages": {
     "FETCH_SUCCESS": "Fetch countries successfully",
-    "ADDED_SUCCESS": "Country added successfully"
+    "ADDED_SUCCESS": "Country added successfully",
+    "DELETE_SUCCESS": "Country deleted successfully"
   }
 }

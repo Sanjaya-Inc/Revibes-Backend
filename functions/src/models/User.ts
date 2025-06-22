@@ -16,11 +16,11 @@ export enum UserRole {
 export const publicFields: (keyof User)[] = [
   "role",
   "displayName",
-  "points",
-  "lastClaimedDate",
+  "createdAt",
+  "updatedAt",
 ];
 
-export const profileFields: (keyof User)[] = [
+export const detailFields: (keyof User)[] = [
   "role",
   "createdAt",
   "displayName",
@@ -29,6 +29,16 @@ export const profileFields: (keyof User)[] = [
   "points",
   "lastClaimedDate",
 ];
+
+export type TUserMetadata = {
+  role?: UserRole;
+  displayName?: string;
+};
+
+export enum UserStatus {
+  ACTIVE = "active",
+  SUSPENDED = "suspended",
+}
 
 export class User extends BaseModel {
   id!: string;
@@ -48,6 +58,7 @@ export class User extends BaseModel {
   refreshTokenExpiresAt?: Date;
 
   verifyToken?: string;
+  status!: UserStatus;
 
   constructor(data: TUserData) {
     super(data);
@@ -108,7 +119,7 @@ export class User extends BaseModel {
     return super.pickFields(keys);
   }
 
-  getProfileFields(keys = profileFields) {
+  getDetailFields(keys = detailFields) {
     return super.pickFields(keys);
   }
 }

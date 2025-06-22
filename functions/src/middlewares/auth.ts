@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import AppError from "../utils/formatter/AppError";
 import { UserController } from "../controllers/UserController";
+import { UserRole } from "../models/User";
 
 export const authenticate = async (
   req: Request,
@@ -25,15 +26,13 @@ export const authenticate = async (
   }
 };
 
-export const requireApiKey = async (
+export const adminOnly = async (
   req: Request,
   res: Response,
   next: () => void,
 ) => {
-  const secretKey = process.env.API_KEY;
-  const apiKeyHeader = req.headers["x-api-key"] || req.headers["X-API-KEY"];
-  if (!apiKeyHeader || apiKeyHeader !== secretKey) {
-    throw new AppError(401, "AUTH.INVALID_API_KEY");
+  if (req.user?.role !== UserRole.ADMIN) {
+    throw new AppError(403, "COMMON.FORBIDDEN");
   }
 
   next(); // Proceed to the next handler

@@ -3,14 +3,18 @@ import { authRoutes } from "./auth";
 import { bannerRoutes } from "./banner";
 import { countryRoutes } from "./country";
 import { userRoutes } from "./user";
+import { storeRoutes } from "./store";
 
 import { errorHandler } from "../../middlewares/error";
+import { bodyParser } from "../../middlewares/parser";
+import { UserController } from "../../controllers/UserController";
 
 const ROUTES = [
   ...authRoutes.getApis(),
   ...bannerRoutes.getApis(),
   ...countryRoutes.getApis(),
   ...userRoutes.getApis(),
+  ...storeRoutes.getApis(),
 ];
 
 export const app = express();
@@ -23,12 +27,15 @@ const asyncHandler = (
   };
 };
 
-app.use(express.json());
+app.use(bodyParser);
 
+// Install api routes
 for (const [method, path, ...handlers] of ROUTES) {
   app[method](path, ...handlers.map((h) => asyncHandler(h)));
 }
 
 app.use(errorHandler);
+
+UserController.initAdminRoot();
 
 export default app;
