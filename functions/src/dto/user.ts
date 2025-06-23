@@ -34,7 +34,11 @@ export const CreateUserSchema = z.object({
       message: "USER.PASS_SHOULD_NOT_HAVE_SPACE",
     })
     .optional(),
-  role: z.nativeEnum(UserRole).optional(),
+  role: z
+    .nativeEnum(UserRole, {
+      errorMap: () => ({ message: "USER.ROLE_INVALID" }),
+    })
+    .optional(),
 });
 
 export type TCreateUser = z.infer<typeof CreateUserSchema>;

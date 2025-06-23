@@ -7,4 +7,14 @@ declare global {
       user?: User;
     }
   }
+
+  // Add global env definition
+  namespace NodeJS {
+    interface ProcessEnv {
+      REGION: string;
+      JWT_SECRET: string;
+      ADMIN_ROOT_MAIL: string;
+      ADMIN_ROOT_PASS: string;
+    }
+  }
 }

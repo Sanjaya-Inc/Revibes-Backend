@@ -82,7 +82,10 @@ export class LogisticOrderController {
       maker: user.id,
       status: LogisticOrderStatus.DRAFT,
     };
-    await docRef.set(data);
+
+    const logisticOrder = new LogisticOrder(data);
+
+    await docRef.set(logisticOrder.toObject());
 
     return docRef.id;
   }
@@ -110,7 +113,7 @@ export class LogisticOrderController {
     await db
       .collection(COLLECTION_MAP.LOGISTIC_ORDER)
       .doc(data.id)
-      .update(order.getDetailFields());
+      .update(order.toObject());
   }
 
   @wrapError
@@ -159,7 +162,10 @@ export class LogisticOrderController {
     const data: TLogisticItemData = {
       id: docRef.id,
     };
-    await docRef.set(data);
+
+    const orderItem = new LogisticItem(data);
+
+    await docRef.set(orderItem.toObject());
 
     return docRef.id;
   }

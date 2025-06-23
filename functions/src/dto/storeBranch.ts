@@ -40,7 +40,11 @@ export const EditStoreBranchSchema = z.object({
   id: z.string({
     required_error: "STORE.ID_REQUIRED",
   }),
-  status: z.nativeEnum(BranchStoreStatus).optional(),
+  status: z
+    .nativeEnum(BranchStoreStatus, {
+      errorMap: () => ({ message: "STORE.STATUS_INVALID" }),
+    })
+    .optional(),
   ...AddStoreBranchSchema.shape,
 });
 

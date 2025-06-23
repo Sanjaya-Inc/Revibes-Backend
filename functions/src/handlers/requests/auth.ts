@@ -118,7 +118,7 @@ export class AuthHandlers {
 
     const response = await AuthController.refresh(data);
     new AppResponse({
-      code: 200,
+      code: 201,
       message: "AUTH.REFRESH_SUCCESS",
       data: response,
     }).asJsonResponse(res);

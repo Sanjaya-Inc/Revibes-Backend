@@ -61,9 +61,12 @@ export class BannerController {
       uri,
       visible: true,
     };
-    await docRef.set(data);
 
-    return new Banner(data);
+    const banner = new Banner(data);
+
+    await docRef.set(banner.toObject());
+
+    return banner;
   }
 
   @wrapError

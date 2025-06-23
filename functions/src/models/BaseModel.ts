@@ -8,24 +8,30 @@ export class BaseModel {
 
   setDate(key: string, input: any) {
     // If createdAt is a property of the child and not already set, assign it
-    if (key in this && input[key] === undefined) {
-      (this as any)[key] = new Date();
-    } else if (input[key] instanceof Timestamp) {
+    if (input[key] instanceof Timestamp) {
       (this as any)[key] = input[key].toDate();
     } else {
-      (this as any)[key] = input[key];
+      (this as any)[key] = input[key] === undefined ? new Date() : input[key];
     }
   }
 
   toObject(): Record<string, any> {
-    // Return all enumerable own properties
-    return { ...this };
+    // Return all enumerable own properties except those with undefined values
+    return Object.fromEntries(
+      Object.entries(this).filter(([, v]) => v !== undefined),
+    );
   }
 
-  pickFields<K extends keyof this>(keys: K[]): Pick<this, K> {
+  pickFields<K extends keyof this>(keys?: K[]): Pick<this, K> {
+    const allKeys = keys ?? (Object.keys(this) as K[]);
     const result = {} as Pick<this, K>;
-    for (const key of keys) {
+    for (const key of allKeys) {
       result[key] = this[key];
+      if (this[key] instanceof Timestamp) {
+        result[key] = this[key].toDate() as any;
+      } else {
+        result[key] = this[key];
+      }
     }
     return result;
   }

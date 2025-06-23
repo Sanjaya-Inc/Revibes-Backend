@@ -62,9 +62,12 @@ export class StoreBranchController {
       position,
       status: BranchStoreStatus.ACTIVE,
     };
-    await docRef.set(data);
 
-    return new StoreBranch(data);
+    const store = new StoreBranch(data);
+
+    await docRef.set(store.toObject());
+
+    return store;
   }
 
   @wrapError
@@ -82,7 +85,7 @@ export class StoreBranchController {
       throw new AppError(404, "STORE.NOT_FOUND");
     }
 
-    await db.collection(COLLECTION_MAP.COUNTRY).doc(id).update({
+    await db.collection(COLLECTION_MAP.STORE_BRANCH).doc(id).update({
       name,
       country,
       address,

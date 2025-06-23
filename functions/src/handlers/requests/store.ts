@@ -17,12 +17,12 @@ export const storeRoutes = new Routes("stores");
 
 export class StoreHandlers {
   @registerRoute(storeRoutes, "get", "", authenticate)
-  static async getCountries(req: Request, res: Response) {
+  static async getStoreBranchs(req: Request, res: Response) {
     const response = await StoreBranchController.getStoreBranches();
     new AppResponse({
       code: 200,
       message: "STORE.FETCH_SUCCESS",
-      data: response,
+      data: response.map((r) => r.pickFields()),
     }).asJsonResponse(res);
   }
 
@@ -39,8 +39,8 @@ export class StoreHandlers {
     const response = await StoreBranchController.addStoreBranch(data);
     new AppResponse({
       code: 201,
-      message: "STORE.ADDED_SUCCESS",
-      data: response,
+      message: "STORE.ADD_SUCCESS",
+      data: response.pickFields(),
     }).asJsonResponse(res);
   }
 
@@ -77,7 +77,7 @@ export class StoreHandlers {
 
     const response = await StoreBranchController.deleteStoreBranch(data);
     new AppResponse({
-      code: 201,
+      code: 200,
       message: "STORE.DELETE_SUCCESS",
       data: response,
     }).asJsonResponse(res);

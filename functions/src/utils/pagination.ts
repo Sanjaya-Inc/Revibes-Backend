@@ -1,6 +1,5 @@
 import { COLLECTION_MAP } from "./../constant/db";
 import { DocumentSnapshot } from "firebase-admin/firestore";
-
 import { db } from "./firebase";
 import AppError from "./formatter/AppError";
 import { TPagination } from "../dto/pagination";
@@ -25,13 +24,13 @@ export type TPaginatedPage<T> = {
   };
 };
 
-function getDocSnapshot(collection: string, docId?: string) {
+function getDocSnapshot(collection: COLLECTION_MAP, docId?: string) {
   if (!docId) return null;
   return db.collection(collection).doc(docId).get();
 }
 
 async function checkHasMorePrev(
-  collection: string,
+  collection: COLLECTION_MAP,
   sortBy: string,
   sortOrder: "asc" | "desc",
   addQuery: TPaginateConstruct["addQuery"],
@@ -48,7 +47,7 @@ async function checkHasMorePrev(
 }
 
 async function checkHasMorePrevInitial(
-  collection: string,
+  collection: COLLECTION_MAP,
   sortBy: string,
   sortOrder: "asc" | "desc",
   docId: string,
@@ -59,7 +58,7 @@ async function checkHasMorePrevInitial(
     .get();
   const checkStartQuery = db
     .collection(collection)
-    .orderBy(sortBy, sortOrder)
+    // .orderBy(sortBy, sortOrder)
     .endBefore(checkFirstDocSnapshot)
     .limit(1);
   const checkStartSnapshot = await checkStartQuery.get();
@@ -80,6 +79,7 @@ export const createPage = async <T extends { id: string } = { id: string }>(
 ): Promise<TPaginatedPage<T>> => {
   let firestoreQuery: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> =
     db.collection(collection);
+
   if (addQuery) {
     firestoreQuery = addQuery(firestoreQuery);
   }

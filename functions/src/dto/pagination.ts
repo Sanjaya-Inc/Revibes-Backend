@@ -7,12 +7,27 @@ export const paginationDirectionTypes = ["next", "prev"] as const;
 export type PaginationDirectionType = (typeof paginationDirectionTypes)[number];
 
 export const PaginationSchema = z.object({
-  limit: z.coerce.number().int().min(1).default(10).optional(),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1, "PAGINATION.LIMIT_MIN_1")
+    .default(10)
+    .optional(),
   sortBy: z.string().default("createdAt").optional(),
-  sortOrder: z.enum(paginationSortTypes).default("asc").optional(),
+  sortOrder: z
+    .enum(paginationSortTypes, {
+      errorMap: () => ({ message: "PAGINATION.SORT_ORDER_INVALID" }),
+    })
+    .default("asc")
+    .optional(),
   lastDocId: z.string().optional(),
   firstDocId: z.string().optional(),
-  direction: z.enum(paginationDirectionTypes).default("next").optional(),
+  direction: z
+    .enum(paginationDirectionTypes, {
+      errorMap: () => ({ message: "PAGINATION.DIRECTION_INVALID" }),
+    })
+    .default("next")
+    .optional(),
 });
 
 // Infer the TypeScript type from the schema for strong typing

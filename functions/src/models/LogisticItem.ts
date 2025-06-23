@@ -14,8 +14,6 @@ export type TMedia = {
 
 export class LogisticItem extends BaseModel {
   id!: string;
-  createdAt!: Date;
-  updatedAt!: Date;
   name!: string;
   type!: LogisticItemType;
   weight!: number;

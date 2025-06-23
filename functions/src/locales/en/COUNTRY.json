@@ -13,7 +13,7 @@
   },
   "messages": {
     "FETCH_SUCCESS": "Fetch countries successfully",
-    "ADDED_SUCCESS": "Country added successfully",
+    "ADD_SUCCESS": "Country added successfully",
     "DELETE_SUCCESS": "Country deleted successfully"
   }
 }

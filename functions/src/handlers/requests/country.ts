@@ -23,7 +23,7 @@ export class CountryHandlers {
     new AppResponse({
       code: 200,
       message: "COUNTRY.FETCH_SUCCESS",
-      data: response,
+      data: response.map((r) => r.pickFields()),
     }).asJsonResponse(res);
   }
 
@@ -40,14 +40,15 @@ export class CountryHandlers {
     const response = await CountryController.addCountry(data);
     new AppResponse({
       code: 201,
-      message: "COUNTRY.ADDED_SUCCESS",
-      data: response,
+      message: "COUNTRY.ADD_SUCCESS",
+      data: response.pickFields(),
     }).asJsonResponse(res);
   }
 
-  @registerRoute(countryRoutes, "put", "", authenticate, adminOnly)
+  @registerRoute(countryRoutes, "put", ":code", authenticate, adminOnly)
   static async editCountries(req: Request, res: Response) {
-    const data: TEditCountry = req.body;
+    const code = req.params.code;
+    const data: TEditCountry = { ...req.body, code };
 
     try {
       EditCountrySchema.parse(data);
@@ -77,7 +78,7 @@ export class CountryHandlers {
 
     const response = await CountryController.deleteCountry(data);
     new AppResponse({
-      code: 201,
+      code: 200,
       message: "COUNTRY.DELETE_SUCCESS",
       data: response,
     }).asJsonResponse(res);

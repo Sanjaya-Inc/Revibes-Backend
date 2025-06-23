@@ -22,7 +22,7 @@ export class BannerHandlers {
     new AppResponse({
       code: 200,
       message: "BANNER.FETCH_SUCCESS",
-      data: response,
+      data: response.map((r) => r.pickFields()),
     }).asJsonResponse(res);
   }
 
@@ -41,7 +41,7 @@ export class BannerHandlers {
     new AppResponse({
       code: 201,
       message: "BANNER.UPLOAD_SUCCESS",
-      data: response,
+      data: response.pickFields(),
     }).asJsonResponse(res);
   }
 
@@ -59,7 +59,7 @@ export class BannerHandlers {
 
     const response = await BannerController.deleteBanner(data);
     new AppResponse({
-      code: 201,
+      code: 200,
       message: "BANNER.DELETE_SUCCESS",
       data: response,
     }).asJsonResponse(res);

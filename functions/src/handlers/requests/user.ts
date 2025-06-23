@@ -20,6 +20,41 @@ import { PaginationSchema, TPagination } from "../../dto/pagination";
 export const userRoutes = new Routes("users");
 
 export class UserHandlers {
+  @registerRoute(userRoutes, "get", "me", authenticate)
+  static async getSelfProfile(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const response = await UserController.getSelfProfile(req.user);
+    new AppResponse({
+      code: 200,
+      message: "USER.FETCH_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(userRoutes, "patch", "me/password", authenticate)
+  static async changeSelfPassword(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const data: TChangeUserPassword = req.body;
+    try {
+      ChangeUserPasswordSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    await UserController.changeSelfPassword(req.user, data);
+
+    new AppResponse({
+      code: 200,
+      message: "USER.PATCH_PASS_SUCCESS",
+    }).asJsonResponse(res);
+  }
+
   @registerRoute(userRoutes, "get", "", authenticate, adminOnly)
   static async getUsers(req: Request, res: Response) {
     if (!req.user) {
@@ -63,7 +98,7 @@ export class UserHandlers {
     new AppResponse({
       code: 200,
       message: "USER.FETCH_SUCCESS",
-      data: response,
+      data: response.getDetailFields(),
     }).asJsonResponse(res);
   }
 
@@ -84,9 +119,9 @@ export class UserHandlers {
     response.getDetailFields();
 
     new AppResponse({
-      code: 200,
-      message: "USER.FETCH_SUCCESS",
-      data: response,
+      code: 201,
+      message: "USER.CREATE_SUCCESS",
+      data: response.getDetailFields(),
     }).asJsonResponse(res);
   }
 
@@ -105,41 +140,6 @@ export class UserHandlers {
     }
 
     await UserController.changeUserStatus(data);
-
-    new AppResponse({
-      code: 200,
-      message: "USER.PATCH_STATUS_SUCCESS",
-    }).asJsonResponse(res);
-  }
-
-  @registerRoute(userRoutes, "get", "me", authenticate)
-  static async getSelfProfile(req: Request, res: Response) {
-    if (!req.user) {
-      throw new AppError(403, "COMMON.FORBIDDEN");
-    }
-
-    const response = await UserController.getSelfProfile(req.user);
-    new AppResponse({
-      code: 200,
-      message: "USER.FETCH_SUCCESS",
-      data: response,
-    }).asJsonResponse(res);
-  }
-
-  @registerRoute(userRoutes, "patch", "me/password", authenticate)
-  static async changeSelfPassword(req: Request, res: Response) {
-    if (!req.user) {
-      throw new AppError(403, "COMMON.FORBIDDEN");
-    }
-
-    const data: TChangeUserPassword = req.body;
-    try {
-      ChangeUserPasswordSchema.parse(data);
-    } catch (err: any) {
-      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
-    }
-
-    await UserController.changeSelfPassword(req.user, data);
 
     new AppResponse({
       code: 200,

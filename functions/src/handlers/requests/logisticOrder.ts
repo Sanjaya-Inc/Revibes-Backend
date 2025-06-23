@@ -59,7 +59,7 @@ export class LogisticOrderHandlers {
     new AppResponse({
       code: 200,
       message: "LOGISTIC_ORDER.FETCH_SUCCESS",
-      data: response,
+      data: response.logisticOrder.pickFields(),
     }).asJsonResponse(res);
   }
 
@@ -155,7 +155,7 @@ export class LogisticOrderHandlers {
     new AppResponse({
       code: 200,
       message: "LOGISTIC_ORDER.GET_ITEMS_SUCCESS",
-      data: response,
+      data: response.map((r) => r.pickFields()),
     }).asJsonResponse(res);
   }
 

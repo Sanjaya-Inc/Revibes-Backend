@@ -19,7 +19,7 @@ export class CountryController {
       .get();
     const countries: Country[] = [];
     snapshot.forEach((doc) => {
-      countries.push(new Country({ ...doc.data() }));
+      countries.push(new Country(doc.data()));
     });
     return countries;
   }
@@ -48,9 +48,14 @@ export class CountryController {
       throw new AppError(400, "COUNTRY.CODE_EXIST");
     }
 
-    await db.collection(COLLECTION_MAP.COUNTRY).doc(data.code).set(data);
+    const country = new Country(data);
 
-    return new Country(data);
+    await db
+      .collection(COLLECTION_MAP.COUNTRY)
+      .doc(data.code)
+      .set(country.toObject());
+
+    return country;
   }
 
   @wrapError

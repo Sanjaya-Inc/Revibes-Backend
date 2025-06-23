@@ -54,8 +54,8 @@ export class User extends BaseModel {
 
   accessToken?: string;
   refreshToken?: string;
-  accessTokenExpiresAt?: Date;
-  refreshTokenExpiresAt?: Date;
+  accessTokenExpiresAt?: Date | null;
+  refreshTokenExpiresAt?: Date | null;
 
   verifyToken?: string;
   status!: UserStatus;

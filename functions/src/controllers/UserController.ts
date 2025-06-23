@@ -43,6 +43,8 @@ export class UserController {
       lastClaimedDate: null,
       role,
       status: UserStatus.ACTIVE,
+      accessTokenExpiresAt: null,
+      refreshTokenExpiresAt: null,
     };
 
     if (!skipCheck) {
@@ -52,9 +54,11 @@ export class UserController {
       }
     }
 
-    await db.collection(COLLECTION_MAP.USER).doc(id).set(data);
+    const user = new User(data);
 
-    return new User(data);
+    await db.collection(COLLECTION_MAP.USER).doc(id).set(user.toObject());
+
+    return user;
   }
 
   @wrapError
@@ -65,10 +69,12 @@ export class UserController {
       COLLECTION_MAP.USER,
       filters,
     );
-    items.forEach((item) => item.getPublicFields());
 
+    const users = items.map((item) => new User(item).getPublicFields());
+
+    console.log("check for user list ======", users);
     return {
-      items,
+      items: users,
       pagination,
     };
   }
@@ -153,7 +159,7 @@ export class UserController {
       throw new AppError(404, "USER.NOT_FOUND");
     }
 
-    if (user.role === UserRole.ADMIN) {
+    if (user.email === process.env.ADMIN_ROOT_MAIL) {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
@@ -194,7 +200,12 @@ export class UserController {
       throw new AppError(400, "USER.OLD_PASS_INVALID");
     }
 
-    const hashedPassword = User.hashPassword(newPassword);
+    const samePass = await user.comparePassword(newPassword);
+    if (samePass) {
+      throw new AppError(400, "USER.NEW_PASS_SAME");
+    }
+
+    const hashedPassword = await User.hashPassword(newPassword);
 
     await db.collection(COLLECTION_MAP.USER).doc(user.id).update({
       password: hashedPassword,
