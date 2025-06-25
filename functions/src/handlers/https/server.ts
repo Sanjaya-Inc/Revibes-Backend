@@ -8,7 +8,6 @@ import { logisticOrderRoutes } from "./logisticOrder";
 
 import { errorHandler } from "../../middlewares/error";
 import { bodyParser } from "../../middlewares/parser";
-import { UserController } from "../../controllers/UserController";
 
 const ROUTES = [
   ...authRoutes.getApis(),
@@ -37,7 +36,5 @@ for (const [method, path, ...handlers] of ROUTES) {
 }
 
 app.use(errorHandler);
-
-UserController.initAdminRoot();
 
 export default app;

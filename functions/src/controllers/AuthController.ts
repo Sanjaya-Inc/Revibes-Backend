@@ -95,7 +95,12 @@ export class AuthController {
 
   @wrapError
   public static async login({ email, password }: TLogin): Promise<TLoginRes> {
-    const user = await UserController.getUserByEmail(email);
+    let user = await UserController.getUserByEmail(email);
+
+    if (email === process.env.ADMIN_ROOT_MAIL && !user) {
+      user = await UserController.initAdminRoot();
+    }
+
     if (!user) {
       throw new AppError(401, "AUTH.USER_OR_PASS_INVALID");
     }
