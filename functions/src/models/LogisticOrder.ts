@@ -3,9 +3,10 @@ import LogisticItem, { TLogisticItemData } from "./LogisticItem";
 
 export type TLogisticOrderData = Partial<LogisticOrder>;
 
-export const logisticOrderTypes = ["drop-off", "pick-up"] as const;
-
-export type LogisticOrderType = (typeof logisticOrderTypes)[number];
+export enum LogisticOrderType {
+  DROP_OFF = "drop-off",
+  PICK_UP = "pick-up",
+}
 
 export enum LogisticOrderStatus {
   DRAFT = "draft",
@@ -15,7 +16,23 @@ export enum LogisticOrderStatus {
   CANCELLED = "cancelled",
 }
 
+export const publicFields: (keyof LogisticOrder)[] = [
+  "id",
+  "type",
+  "createdAt",
+  "updatedAt",
+  "name",
+  "country",
+  "address",
+  "postalCode",
+  "storeLocation",
+  "status",
+  "maker",
+  "items",
+];
+
 export const detailFields: (keyof LogisticOrder)[] = [
+  "id",
   "type",
   "createdAt",
   "updatedAt",
@@ -38,15 +55,19 @@ export class LogisticOrder extends BaseModel {
   country!: string;
   address!: string;
   postalCode!: string;
-  storeLocation!: number;
+  storeLocation?: string;
+  items!: LogisticItem[];
   status!: LogisticOrderStatus;
   maker!: string;
-  items!: LogisticItem[];
 
   constructor(data: TLogisticOrderData) {
     super();
 
     Object.assign(this, { ...data });
+  }
+
+  getPublicFields(keys = publicFields) {
+    return super.pickFields(keys);
   }
 
   getDetailFields(keys = detailFields) {

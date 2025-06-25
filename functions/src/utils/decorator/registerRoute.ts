@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import Routes, { method } from "../../handlers/requests/route";
+import Routes, { method } from "../../handlers/https/route";
 
 /**
  * A method decorator that wraps an asynchronous function with a try-catch block

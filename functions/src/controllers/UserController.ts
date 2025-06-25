@@ -9,8 +9,11 @@ import {
 import { db, generateId } from "../utils/firebase";
 import User, { TUserData, UserRole, UserStatus } from "../models/User";
 import { wrapError } from "../utils/decorator/wrapError";
-import { TPagination } from "../dto/pagination";
-import { createPage, TPaginatedPage } from "../utils/pagination";
+import {
+  createPage,
+  TPaginateConstruct,
+  TPaginatedPage,
+} from "../utils/pagination";
 import AppError from "../utils/formatter/AppError";
 
 export type TCreateUserOpt = {
@@ -63,7 +66,7 @@ export class UserController {
 
   @wrapError
   public static async getUsers(
-    filters: TPagination,
+    filters: TPaginateConstruct,
   ): Promise<TPaginatedPage<User>> {
     const { items, pagination } = await createPage<User>(
       COLLECTION_MAP.USER,
@@ -72,7 +75,6 @@ export class UserController {
 
     const users = items.map((item) => new User(item).getPublicFields());
 
-    console.log("check for user list ======", users);
     return {
       items: users,
       pagination,

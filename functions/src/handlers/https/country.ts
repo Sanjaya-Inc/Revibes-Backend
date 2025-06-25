@@ -29,10 +29,10 @@ export class CountryHandlers {
 
   @registerRoute(countryRoutes, "post", "", authenticate, adminOnly)
   static async addCountries(req: Request, res: Response) {
-    const data: TAddCountry = req.body;
+    let data: TAddCountry = req.body;
 
     try {
-      AddCountrySchema.parse(data);
+      data = AddCountrySchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
@@ -48,10 +48,10 @@ export class CountryHandlers {
   @registerRoute(countryRoutes, "put", ":code", authenticate, adminOnly)
   static async editCountries(req: Request, res: Response) {
     const code = req.params.code;
-    const data: TEditCountry = { ...req.body, code };
+    let data: TEditCountry = { ...req.body, code };
 
     try {
-      EditCountrySchema.parse(data);
+      data = EditCountrySchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
@@ -67,11 +67,11 @@ export class CountryHandlers {
   @registerRoute(countryRoutes, "delete", ":code", authenticate, adminOnly)
   static async deleteCountry(req: Request, res: Response) {
     const code = req.params.code;
-    const data: TDeleteCountry = { code };
+    let data: TDeleteCountry = { code };
 
     try {
       // Validate form data using Zod
-      DeleteCountrySchema.parse(data);
+      data = DeleteCountrySchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }

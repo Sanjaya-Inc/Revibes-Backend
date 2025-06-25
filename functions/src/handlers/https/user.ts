@@ -7,7 +7,7 @@ import {
   TChangeUserStatus,
   TCreateUser,
   TGetUser,
-} from "./../../dto/user";
+} from "../../dto/user";
 import { Request, Response } from "express";
 import AppResponse from "../../utils/formatter/AppResponse";
 import Routes from "./route";
@@ -40,9 +40,9 @@ export class UserHandlers {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    const data: TChangeUserPassword = req.body;
+    let data: TChangeUserPassword = req.body;
     try {
-      ChangeUserPasswordSchema.parse(data);
+      data = ChangeUserPasswordSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
@@ -83,9 +83,9 @@ export class UserHandlers {
     }
 
     const id = req.params.id;
-    const data: TGetUser = { id };
+    let data: TGetUser = { id };
     try {
-      GetUserSchema.parse(data);
+      data = GetUserSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
@@ -108,9 +108,9 @@ export class UserHandlers {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    const data: TCreateUser = req.body;
+    let data: TCreateUser = req.body;
     try {
-      CreateUserSchema.parse(data);
+      data = CreateUserSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
@@ -132,9 +132,9 @@ export class UserHandlers {
     }
 
     const id = req.params.id;
-    const data: TChangeUserStatus = { id, ...req.body };
+    let data: TChangeUserStatus = { id, ...req.body };
     try {
-      ChangeUserStatusSchema.parse(data);
+      data = ChangeUserStatusSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }

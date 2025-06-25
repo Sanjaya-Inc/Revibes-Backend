@@ -88,6 +88,7 @@ export type TAddLogisticItemMedia = z.infer<typeof AddLogisticItemMediaSchema>;
 export type TAddLogisticItemMediaRes = {
   uploadUrl: string;
   downloadUrl: string;
+  expiredAt: number;
 };
 
 export const DeleteLogisticItemSchema = z.object({

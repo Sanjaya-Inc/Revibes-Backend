@@ -4,6 +4,7 @@ import { bannerRoutes } from "./banner";
 import { countryRoutes } from "./country";
 import { userRoutes } from "./user";
 import { storeRoutes } from "./store";
+import { logisticOrderRoutes } from "./logisticOrder";
 
 import { errorHandler } from "../../middlewares/error";
 import { bodyParser } from "../../middlewares/parser";
@@ -15,6 +16,7 @@ const ROUTES = [
   ...countryRoutes.getApis(),
   ...userRoutes.getApis(),
   ...storeRoutes.getApis(),
+  ...logisticOrderRoutes.getApis(),
 ];
 
 export const app = express();

@@ -23,10 +23,10 @@ export const authRoutes = new Routes("auth");
 export class AuthHandlers {
   @registerRoute(authRoutes, "post", "signup/email")
   static async signup(req: Request, res: Response) {
-    const data: TSignup = req.body;
+    let data: TSignup = req.body;
 
     try {
-      SignupSchema.parse(data);
+      data = SignupSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
@@ -41,10 +41,10 @@ export class AuthHandlers {
 
   @registerRoute(authRoutes, "post", "signup/google")
   static async signupWithGoogle(req: Request, res: Response) {
-    const data: TSignupWithGoogle = req.body;
+    let data: TSignupWithGoogle = req.body;
 
     try {
-      SignupWithGoogleSchema.parse(data);
+      data = SignupWithGoogleSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
@@ -59,10 +59,10 @@ export class AuthHandlers {
 
   @registerRoute(authRoutes, "post", "login/email")
   static async login(req: Request, res: Response) {
-    const data: TLogin = req.body;
+    let data: TLogin = req.body;
 
     try {
-      LoginSchema.parse(data);
+      data = LoginSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
@@ -77,10 +77,10 @@ export class AuthHandlers {
 
   @registerRoute(authRoutes, "post", "login/google")
   static async loginWithGoogle(req: Request, res: Response) {
-    const data: TLoginWithGoogle = req.body;
+    let data: TLoginWithGoogle = req.body;
 
     try {
-      LoginWithGoogleSchema.parse(data);
+      data = LoginWithGoogleSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
@@ -108,10 +108,10 @@ export class AuthHandlers {
 
   @registerRoute(authRoutes, "post", "refresh")
   static async refresh(req: Request, res: Response) {
-    const data: TRefresh = req.body;
+    let data: TRefresh = req.body;
 
     try {
-      RefreshSchema.parse(data);
+      data = RefreshSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }

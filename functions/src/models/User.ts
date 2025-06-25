@@ -14,6 +14,7 @@ export enum UserRole {
 }
 
 export const publicFields: (keyof User)[] = [
+  "id",
   "role",
   "displayName",
   "createdAt",

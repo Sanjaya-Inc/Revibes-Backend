@@ -17,6 +17,7 @@ import {
 import LogisticItem, { TLogisticItemData } from "../models/LogisticItem";
 import LogisticOrder, {
   LogisticOrderStatus,
+  LogisticOrderType,
   TLogisticOrderData,
 } from "../models/LogisticOrder";
 import User, { UserRole } from "../models/User";
@@ -28,6 +29,13 @@ import {
   getFileStorageInstance,
 } from "../utils/firebase";
 import AppError from "../utils/formatter/AppError";
+import {
+  createPage,
+  TPaginateConstruct,
+  TPaginatedPage,
+} from "../utils/pagination";
+import { CountryController } from "./CountryController";
+import { StoreBranchController } from "./StoreBranchController";
 
 export type TGetLogisticOrderOpt = {
   withItems?: boolean;
@@ -56,7 +64,7 @@ export class LogisticOrderController {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    const logisticOrder = new LogisticOrder(orderDoc).getDetailFields();
+    const logisticOrder = new LogisticOrder(orderDoc);
 
     if (withItems) {
       // Get subcollection of logistic_item
@@ -91,29 +99,91 @@ export class LogisticOrderController {
   }
 
   @wrapError
+  public static async getOrders(
+    user: User,
+    filters: TPaginateConstruct,
+  ): Promise<TPaginatedPage<LogisticOrder>> {
+    filters.addQuery = (q) => q.where("maker", "==", user.id);
+    const { items, pagination } = await createPage<LogisticOrder>(
+      COLLECTION_MAP.LOGISTIC_ORDER,
+      filters,
+    );
+
+    const logisticOrders = items.map((item) =>
+      new LogisticOrder(item).getPublicFields(),
+    );
+
+    return {
+      items: logisticOrders,
+      pagination,
+    };
+  }
+
+  @wrapError
   public static async submitOrder(
     user: User,
     data: TSubmitLogisticOrder,
   ): Promise<void> {
-    const orderSnapshot = await db
-      .collection(COLLECTION_MAP.LOGISTIC_ORDER)
-      .doc(data.id)
-      .get();
+    const orderRef = db.collection(COLLECTION_MAP.LOGISTIC_ORDER).doc(data.id);
+
+    const orderSnapshot = await orderRef.get();
     const orderDoc = orderSnapshot.data();
     if (!orderDoc) {
       throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
     }
 
-    if (orderDoc.maker !== user.id) {
+    const order = new LogisticOrder(orderDoc);
+
+    if (order.maker !== user.id) {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    const order = new LogisticOrder(orderDoc);
+    if (order.status !== LogisticOrderStatus.DRAFT) {
+      throw new AppError(403, "LOGISTIC_ORDER.CANNOT_SUBMIT_NON_DRAFT");
+    }
+
+    const country = await CountryController.getCountry({ code: data.country });
+    if (!country) {
+      throw new AppError(404, "COUNTRY.NOT_FOUND");
+    }
+
+    if (data.type === LogisticOrderType.DROP_OFF) {
+      const { storeLocation } = data;
+      const store = await StoreBranchController.getStoreBranch({
+        id: storeLocation,
+      });
+      if (!store) {
+        throw new AppError(404, "STORE.NOT_FOUND");
+      }
+      order.storeLocation = storeLocation;
+    } else {
+      const { addressDetail } = data;
+      order.storeLocation = addressDetail;
+    }
+
+    order.type = data.type;
+    order.name = data.name;
+    order.country = data.country;
+    order.address = data.address;
+    order.postalCode = data.postalCode;
     order.status = LogisticOrderStatus.SUBMITTED;
+
     await db
       .collection(COLLECTION_MAP.LOGISTIC_ORDER)
       .doc(data.id)
       .update(order.toObject());
+
+    if (Array.isArray(data.items) && data.items.length > 0) {
+      const batch = db.batch();
+      data.items.forEach((item) => {
+        const itemRef = orderRef
+          .collection(COLLECTION_MAP.LOGISTIC_ITEM)
+          .doc(item.id);
+        // Only update fields present in item, do not overwrite other fields in Firestore
+        batch.set(itemRef, new LogisticItem(item).toObject(), { merge: true });
+      });
+      await batch.commit();
+    }
   }
 
   @wrapError
@@ -203,7 +273,7 @@ export class LogisticOrderController {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    const logisticItemRef = db
+    const logisticItemRef = order.logisticOrderRef
       .collection(COLLECTION_MAP.LOGISTIC_ITEM)
       .doc(logisticOrderItemId);
 
@@ -278,13 +348,21 @@ export class LogisticOrderController {
       contentType,
     }: TAddLogisticItemMedia,
   ): Promise<TAddLogisticItemMediaRes> {
-    const result = await this.getOrderItem(user, {
-      logisticOrderId,
-      logisticOrderItemId,
-    });
+    const result = await this.getOrderItem(
+      user,
+      {
+        logisticOrderId,
+        logisticOrderItemId,
+      },
+      { withOrder: true },
+    );
 
-    if (!result) {
+    if (!result?.logisticItem || !result?.logisticOrder) {
       throw new AppError(404, "LOGISTIC_ORDER.ITEM_NOT_FOUND");
+    }
+
+    if (result.logisticOrder?.status !== LogisticOrderStatus.DRAFT) {
+      throw new AppError(400, "LOGISTIC_ORDER.CANNOT_ADD_MEDIA_NON_DRAFT");
     }
 
     const fileId = generateId();
@@ -298,9 +376,13 @@ export class LogisticOrderController {
         fileId,
       );
 
-    const logisticItem = result.logisticItem;
+    const logisticItem = new LogisticItem(result.logisticItem);
 
-    logisticItem.media?.push({
+    if (!Array.isArray(logisticItem.media)) {
+      logisticItem.media = [];
+    }
+
+    logisticItem.media.push({
       uploadUrl,
       downloadUri,
       expiredAt,
@@ -311,13 +393,14 @@ export class LogisticOrderController {
       .doc(logisticOrderId)
       .collection(COLLECTION_MAP.LOGISTIC_ITEM)
       .doc(logisticOrderItemId)
-      .set(logisticItem, { merge: true });
+      .set(logisticItem.toObject(), { merge: true });
 
     const downloadUrl = storageInstance.getFullUrl(downloadUri);
 
     return {
       uploadUrl,
       downloadUrl,
+      expiredAt,
     };
   }
 }

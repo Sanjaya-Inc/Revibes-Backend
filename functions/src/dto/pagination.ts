@@ -18,7 +18,7 @@ export const PaginationSchema = z.object({
     .enum(paginationSortTypes, {
       errorMap: () => ({ message: "PAGINATION.SORT_ORDER_INVALID" }),
     })
-    .default("asc")
+    .default("desc")
     .optional(),
   lastDocId: z.string().optional(),
   firstDocId: z.string().optional(),

@@ -1,8 +1,6 @@
 import { z } from "zod";
-import LogisticOrder, { logisticOrderTypes } from "../models/LogisticOrder";
+import LogisticOrder, { LogisticOrderType } from "../models/LogisticOrder";
 import { LogisticItemSchema } from "./logisticItem";
-
-export const LogisticOrderTypeEnum = z.enum(logisticOrderTypes);
 
 const mainLogisticOrderSchema = {
   id: z
@@ -30,22 +28,34 @@ const mainLogisticOrderSchema = {
       required_error: "LOGISTIC.ORDER_POSTAL_CODE_REQUIRED",
     })
     .min(1, "LOGISTIC.ORDER_POSTAL_CODE_REQUIRED"),
-  date: z.coerce.date(),
   items: z
-    .array(LogisticItemSchema, {
-      required_error: "LOGISTIC.ORDER_ITEMS_REQUIRED",
-    })
+    .array(
+      LogisticItemSchema.extend({
+        id: z
+          .string({
+            required_error: "LOGISTIC.ITEM_ID_REQUIRED",
+          })
+          .min(1, "LOGISTIC.ITEM_ID_REQUIRED"),
+      }),
+      {
+        required_error: "LOGISTIC.ORDER_ITEMS_REQUIRED",
+      },
+    )
     .min(1, "LOGISTIC.ORDER_ITEMS_MIN_1"),
 };
 
 const DropOffSchema = z.object({
-  type: z.literal(logisticOrderTypes[0]),
-  storeLocation: z.number(),
+  type: z.literal(LogisticOrderType.DROP_OFF),
+  storeLocation: z
+    .string({
+      required_error: "LOGISTIC.STORE_ID_REQUIRED",
+    })
+    .min(1, "LOGISTIC.STORE_ID_REQUIRED"),
   ...mainLogisticOrderSchema,
 });
 
 const PickUpSchema = z.object({
-  type: z.literal("pick-up"),
+  type: z.literal(LogisticOrderType.PICK_UP),
   addressDetail: z.string(),
   ...mainLogisticOrderSchema,
 });

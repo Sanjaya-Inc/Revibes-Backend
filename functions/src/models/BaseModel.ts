@@ -8,6 +8,7 @@ export class BaseModel {
 
   setDate(key: string, input: any) {
     // If createdAt is a property of the child and not already set, assign it
+
     if (input[key] instanceof Timestamp) {
       (this as any)[key] = input[key].toDate();
     } else {

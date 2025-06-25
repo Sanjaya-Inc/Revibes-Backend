@@ -48,11 +48,11 @@ export class BannerHandlers {
   @registerRoute(bannerRoutes, "delete", ":id", authenticate, adminOnly)
   static async deleteBanner(req: Request, res: Response) {
     const id = req.params.id;
-    const data: TDeleteBanner = { id };
+    let data: TDeleteBanner = { id };
 
     try {
       // Validate form data using Zod
-      DeleteBannerSchema.parse(data);
+      data = DeleteBannerSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }

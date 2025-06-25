@@ -8,6 +8,7 @@ import { StoreBranchController } from "../../controllers/StoreBranchController";
 import {
   AddStoreBranchSchema,
   DeleteStoreBranchSchema,
+  EditStoreBranchSchema,
   TAddStoreBranch,
   TDeleteStoreBranch,
   TEditStoreBranch,
@@ -28,10 +29,10 @@ export class StoreHandlers {
 
   @registerRoute(storeRoutes, "post", "", authenticate, adminOnly)
   static async addStoreBranch(req: Request, res: Response) {
-    const data: TAddStoreBranch = req.body;
+    let data: TAddStoreBranch = req.body;
 
     try {
-      AddStoreBranchSchema.parse(data);
+      data = AddStoreBranchSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
@@ -47,10 +48,10 @@ export class StoreHandlers {
   @registerRoute(storeRoutes, "put", ":id", authenticate, adminOnly)
   static async editStoreBranch(req: Request, res: Response) {
     const id = req.params.id;
-    const data: TEditStoreBranch = { id, ...req.body };
+    let data: TEditStoreBranch = { id, ...req.body };
 
     try {
-      AddStoreBranchSchema.parse(data);
+      data = EditStoreBranchSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
@@ -66,11 +67,11 @@ export class StoreHandlers {
   @registerRoute(storeRoutes, "delete", ":id", authenticate, adminOnly)
   static async deleteStoreBranch(req: Request, res: Response) {
     const id = req.params.id;
-    const data: TDeleteStoreBranch = { id };
+    let data: TDeleteStoreBranch = { id };
 
     try {
       // Validate form data using Zod
-      DeleteStoreBranchSchema.parse(data);
+      data = DeleteStoreBranchSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
