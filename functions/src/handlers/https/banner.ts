@@ -12,6 +12,7 @@ import { registerRoute } from "../../utils/decorator/registerRoute";
 import { adminOnly, authenticate } from "../../middlewares/auth";
 import AppError from "../../utils/formatter/AppError";
 import { parseFormData } from "../../utils/formatter/formData";
+import { getFileStorageInstance } from "../../utils/firebase";
 
 export const bannerRoutes = new Routes("banners");
 
@@ -19,6 +20,10 @@ export class BannerHandlers {
   @registerRoute(bannerRoutes, "get", "", authenticate)
   static async getBanners(req: Request, res: Response) {
     const response = await BannerController.getBanners();
+    response.forEach((banner) => {
+      banner.uri = getFileStorageInstance().getFullUrl(banner.uri);
+    });
+
     new AppResponse({
       code: 200,
       message: "BANNER.FETCH_SUCCESS",

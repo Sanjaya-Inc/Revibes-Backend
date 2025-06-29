@@ -157,15 +157,16 @@ export class LogisticOrderController {
       }
       order.storeLocation = storeLocation;
     } else {
-      const { addressDetail } = data;
-      order.storeLocation = addressDetail;
+      const { address, addressDetail, postalCode } = data;
+      order.address = address;
+      order.addressDetail = addressDetail;
+      order.postalCode = postalCode;
     }
 
     order.type = data.type;
     order.name = data.name;
     order.country = data.country;
-    order.address = data.address;
-    order.postalCode = data.postalCode;
+
     order.status = LogisticOrderStatus.SUBMITTED;
 
     await db
@@ -175,13 +176,45 @@ export class LogisticOrderController {
 
     if (Array.isArray(data.items) && data.items.length > 0) {
       const batch = db.batch();
-      data.items.forEach((item) => {
-        const itemRef = orderRef
-          .collection(COLLECTION_MAP.LOGISTIC_ITEM)
-          .doc(item.id);
-        // Only update fields present in item, do not overwrite other fields in Firestore
-        batch.set(itemRef, new LogisticItem(item).toObject(), { merge: true });
-      });
+      for (const item of data.items) {
+        // Fetch the latest item data from Firestore
+        const getItemRes = await this.getOrderItem(user, {
+          logisticOrderId: order.id,
+          logisticOrderItemId: item.id,
+        });
+        if (!getItemRes) {
+          throw new AppError(404, "LOGISTIC_ORDER.ITEM_NOT_FOUND");
+        }
+
+        let dbItem = new LogisticItem(item);
+        if (getItemRes.logisticItem) {
+          dbItem = new LogisticItem({
+            ...getItemRes.logisticItem.toObject(),
+            ...item,
+          });
+        }
+
+        // Remove media files from Firestore item if they do not exist in Firebase Storage
+        if (Array.isArray(dbItem.media) && dbItem.media.length > 0) {
+          const storageInstance = getFileStorageInstance();
+          const mediaChecks = dbItem.media.map(async (media) => {
+            // Assume media.downloadUri is the storage path
+            const exists = await storageInstance.fileExists(media.downloadUri);
+            return exists ? media : null;
+          });
+          const checkedMedia = await Promise.all(mediaChecks);
+          const validMedia = checkedMedia.filter((media) => media !== null);
+          if (validMedia.length !== dbItem.media.length) {
+            dbItem.media = validMedia;
+          }
+        }
+
+        batch.set(
+          getItemRes.logisticItemRef,
+          { ...dbItem.toObject(), ...new LogisticItem(item).toObject() },
+          { merge: true },
+        );
+      }
       await batch.commit();
     }
   }

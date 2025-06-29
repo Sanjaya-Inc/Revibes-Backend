@@ -18,16 +18,6 @@ const mainLogisticOrderSchema = {
       required_error: "LOGISTIC.ORDER_COUNTRY_REQUIRED",
     })
     .min(1, "LOGISTIC.ORDER_COUNTRY_REQUIRED"),
-  address: z
-    .string({
-      required_error: "LOGISTIC.ORDER_ADDRESS_REQUIRED",
-    })
-    .min(1, "LOGISTIC.ORDER_ADDRESS_REQUIRED"),
-  postalCode: z
-    .string({
-      required_error: "LOGISTIC.ORDER_POSTAL_CODE_REQUIRED",
-    })
-    .min(1, "LOGISTIC.ORDER_POSTAL_CODE_REQUIRED"),
   items: z
     .array(
       LogisticItemSchema.extend({
@@ -56,7 +46,17 @@ const DropOffSchema = z.object({
 
 const PickUpSchema = z.object({
   type: z.literal(LogisticOrderType.PICK_UP),
-  addressDetail: z.string(),
+  address: z
+    .string({
+      required_error: "LOGISTIC.ORDER_ADDRESS_REQUIRED",
+    })
+    .min(1, "LOGISTIC.ORDER_ADDRESS_REQUIRED"),
+  addressDetail: z.string().optional(),
+  postalCode: z
+    .string({
+      required_error: "LOGISTIC.ORDER_POSTAL_CODE_REQUIRED",
+    })
+    .min(1, "LOGISTIC.ORDER_POSTAL_CODE_REQUIRED"),
   ...mainLogisticOrderSchema,
 });
 

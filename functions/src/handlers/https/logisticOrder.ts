@@ -24,6 +24,7 @@ import {
   TGetLogisticItems,
 } from "../../dto/logisticItem";
 import { PaginationSchema, TPagination } from "../../dto/pagination";
+import { getFileStorageInstance } from "../../utils/firebase";
 
 export const logisticOrderRoutes = new Routes("logistic-orders");
 
@@ -213,6 +214,12 @@ export class LogisticOrderHandlers {
     if (!response) {
       throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
     }
+
+    response.logisticOrder.items.forEach((item) => {
+      item.media?.forEach((f) => {
+        f.downloadUri = getFileStorageInstance().getFullUrl(f.downloadUri);
+      });
+    });
 
     new AppResponse({
       code: 200,

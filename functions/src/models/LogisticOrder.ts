@@ -54,6 +54,7 @@ export class LogisticOrder extends BaseModel {
   name!: string;
   country!: string;
   address!: string;
+  addressDetail?: string;
   postalCode!: string;
   storeLocation?: string;
   items!: LogisticItem[];

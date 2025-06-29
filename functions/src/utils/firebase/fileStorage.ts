@@ -89,6 +89,12 @@ export class FileStorage {
     if (files.length === 0) return;
     await Promise.all(files.map((file) => file.delete()));
   }
+
+  public async fileExists(uri: string): Promise<boolean> {
+    const file = this.bucket.file(uri);
+    const [exists] = await file.exists();
+    return exists;
+  }
 }
 
 let fileStorageInstance: FileStorage | null = null;

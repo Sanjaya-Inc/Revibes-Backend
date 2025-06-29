@@ -31,10 +31,6 @@ export class BannerController {
       banners.push(new Banner({ ...doc.data() }));
     });
 
-    banners.forEach((banner) => {
-      banner.uri = getFileStorageInstance().getFullUrl(banner.uri);
-    });
-
     return banners;
   }
 
