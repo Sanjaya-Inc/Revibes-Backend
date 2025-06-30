@@ -200,7 +200,11 @@ export class LogisticOrderController {
           const mediaChecks = dbItem.media.map(async (media) => {
             // Assume media.downloadUri is the storage path
             const exists = await storageInstance.fileExists(media.downloadUri);
-            return exists ? media : null;
+            if (exists) {
+              await storageInstance.makeFilePublic(media.downloadUri);
+              return media;
+            }
+            return null;
           });
           const checkedMedia = await Promise.all(mediaChecks);
           const validMedia = checkedMedia.filter((media) => media !== null);

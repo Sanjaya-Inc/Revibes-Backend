@@ -95,6 +95,11 @@ export class FileStorage {
     const [exists] = await file.exists();
     return exists;
   }
+
+  public async makeFilePublic(uri: string): Promise<void> {
+    const file = this.bucket.file(uri);
+    await file.makePublic();
+  }
 }
 
 let fileStorageInstance: FileStorage | null = null;
