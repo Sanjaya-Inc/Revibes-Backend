@@ -1,4 +1,5 @@
 export enum COLLECTION_MAP {
+  APP_SETTING = "app_settings",
   USER = "users",
   BANNER = "banners",
   COUNTRY = "countries",
