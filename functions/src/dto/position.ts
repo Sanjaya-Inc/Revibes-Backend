@@ -13,6 +13,7 @@ export const PositionSchema = z.object({
     })
     .min(-180, "POSITION.LONGITUDE_MIN")
     .max(180, "POSITION.LONGITUDE_MAX"),
+  distance: z.number().optional(),
 });
 
 export type TPosition = z.infer<typeof PositionSchema>;

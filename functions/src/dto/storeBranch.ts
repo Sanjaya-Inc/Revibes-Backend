@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { PositionSchema } from "./position";
 import { BranchStoreStatus } from "../models/StoreBranch";
+import { PaginationSchema } from "./pagination";
 
 export const GetStoreBranchSchema = z.object({
   id: z.string({
@@ -49,6 +50,38 @@ export const EditStoreBranchSchema = z.object({
 });
 
 export type TEditStoreBranch = z.infer<typeof EditStoreBranchSchema>;
+
+export const GetStoreBranchesSchema = z
+  .object({
+    ...PaginationSchema.shape,
+    longitude: z
+      .string()
+      .optional()
+      .transform((val) => (val !== undefined ? Number(val) : undefined))
+      .refine(
+        (val) => val === undefined || !isNaN(val),
+        { message: "STORE.LONGITUDE_MUST_BE_NUMBER" }
+      ),
+    latitude: z
+      .string()
+      .optional()
+      .transform((val) => (val !== undefined ? Number(val) : undefined))
+      .refine(
+        (val) => val === undefined || !isNaN(val),
+        { message: "STORE.LATITUDE_MUST_BE_NUMBER" }
+      ),
+  })
+  .refine(
+    (data) =>
+      (data.longitude === undefined && data.latitude === undefined) ||
+      (data.longitude !== undefined && data.latitude !== undefined),
+    {
+      message: "STORE.BOTH_LONGITUDE_LATITUDE_REQUIRED",
+      path: ["longitude", "latitude"],
+    }
+  );
+
+export type TGetStoreBranches = z.infer<typeof GetStoreBranchesSchema>;
 
 export const DeleteStoreBranchSchema = z.object({
   id: z.string({

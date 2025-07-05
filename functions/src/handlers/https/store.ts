@@ -9,17 +9,26 @@ import {
   AddStoreBranchSchema,
   DeleteStoreBranchSchema,
   EditStoreBranchSchema,
+  GetStoreBranchesSchema,
   TAddStoreBranch,
   TDeleteStoreBranch,
   TEditStoreBranch,
+  TGetStoreBranches,
 } from "../../dto/storeBranch";
 
 export const storeRoutes = new Routes("stores");
 
 export class StoreHandlers {
   @registerRoute(storeRoutes, "get", "", authenticate)
-  static async getStoreBranchs(req: Request, res: Response) {
-    const response = await StoreBranchController.getStoreBranches();
+  static async getStoreBranches(req: Request, res: Response) {
+    let filters: TGetStoreBranches;
+    try {
+      filters = GetStoreBranchesSchema.parse(req.query);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await StoreBranchController.getStoreBranches(filters);
     new AppResponse({
       code: 200,
       message: "STORE.FETCH_SUCCESS",

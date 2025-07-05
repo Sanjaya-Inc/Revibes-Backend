@@ -5,6 +5,7 @@ import {
   TDeleteStoreBranch,
   TEditStoreBranch,
   TGetStoreBranch,
+  TGetStoreBranches,
 } from "../dto/storeBranch";
 import StoreBranch, {
   BranchStoreStatus,
@@ -12,6 +13,8 @@ import StoreBranch, {
 } from "../models/StoreBranch";
 import { wrapError } from "../utils/decorator/wrapError";
 import AppError from "../utils/formatter/AppError";
+import { TPaginateConstruct } from "../utils/pagination";
+import { haversineDistance } from "../utils/geolocation";
 
 export class StoreBranchController {
   @wrapError
@@ -32,15 +35,45 @@ export class StoreBranchController {
   }
 
   @wrapError
-  public static async getStoreBranches(): Promise<StoreBranch[]> {
+  public static async getStoreBranches(filters: TGetStoreBranches & TPaginateConstruct): Promise<StoreBranch[]> {
+    const { limit, latitude, longitude } = filters;
+    
     const snapshot = await db
       .collection(COLLECTION_MAP.STORE_BRANCH)
       .where("status", "==", BranchStoreStatus.ACTIVE)
       .get();
-    const stores: StoreBranch[] = [];
+
+    let stores: StoreBranch[] = [];
     snapshot.forEach((doc) => {
       stores.push(new StoreBranch({ ...doc.data() }));
     });
+
+    if (typeof latitude === "number" && typeof longitude === "number") {
+      stores.forEach((store) => {
+        if (
+          typeof store.position?.latitude === "number" &&
+          typeof store.position?.longitude === "number"
+        ) {
+          store.position.distance = haversineDistance(
+            latitude,
+            longitude,
+            store.position.latitude,
+            store.position.longitude
+          );
+        }
+      })
+      
+      stores = stores.sort((a, b) => {
+        const distA = a.position?.distance ?? Infinity;
+        const distB = b.position?.distance ?? Infinity;
+        return distA - distB;
+      });
+    }
+
+    if (limit) {
+      stores = stores.slice(0, limit);
+    }
+
     return stores;
   }
 
