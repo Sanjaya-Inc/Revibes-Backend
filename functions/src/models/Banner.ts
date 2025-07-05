@@ -6,7 +6,7 @@ export class Banner extends BaseModel {
   id!: string;
   uri!: string;
   name!: string;
-  createdAt!: string;
+  createdAt!: Date;
   visible!: boolean;
 
   constructor(data: TBannerData) {
