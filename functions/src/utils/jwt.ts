@@ -5,8 +5,8 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not defined in environment variables.");
 }
 
-const ACCESS_TOKEN_EXPIRES_IN = "30m"; // Example: 30 minutes
-const REFRESH_TOKEN_EXPIRES_IN = "7d"; // Example: 7 days
+const ACCESS_TOKEN_EXPIRES_IN = "30d"; // Example: 30 days
+const REFRESH_TOKEN_EXPIRES_IN = "90d"; // Example: 90 days
 
 export type TJwtPayload = {
   id: string;
@@ -20,7 +20,7 @@ export const generateAccessToken = (payload: TJwtPayload): TJwtResult => {
   const token = jwt.sign(payload, JWT_SECRET, {
     expiresIn: ACCESS_TOKEN_EXPIRES_IN,
   });
-  const exp = new Date(Date.now() + 60 * 30 * 1000); // 30 minutes
+  const exp = new Date(Date.now() + 60 * 60 * 24 * 30 * 1000); // 30 days
   return [token, exp];
 };
 
@@ -28,6 +28,6 @@ export const generateRefreshToken = (payload: TJwtPayload): TJwtResult => {
   const token = jwt.sign(payload, JWT_SECRET, {
     expiresIn: REFRESH_TOKEN_EXPIRES_IN,
   });
-  const exp = new Date(Date.now() + 60 * 60 * 24 * 7 * 1000); // 7 days
+  const exp = new Date(Date.now() + 60 * 60 * 24 * 90 * 1000); // 90 days
   return [token, exp];
 };
