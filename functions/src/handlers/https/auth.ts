@@ -133,7 +133,7 @@ export class AuthHandlers {
     const response = await AuthController.getVerifyToken(req.user);
     new AppResponse({
       code: 200,
-      message: "AUTH.REFRESH_SUCCESS",
+      message: "AUTH.GET_VERIFY_TOKEN_SUCCESS",
       data: response,
     }).asJsonResponse(res);
   }
