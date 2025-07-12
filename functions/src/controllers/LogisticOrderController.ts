@@ -193,6 +193,7 @@ export class LogisticOrderController {
     order.type = data.type;
     order.name = data.name;
     order.country = data.country;
+    order.updatedAt = new Date();
 
     if (Array.isArray(data.items) && data.items.length > 0) {
       const batch = db.batch();
@@ -271,6 +272,7 @@ export class LogisticOrderController {
     order.type = data.type;
     order.name = data.name;
     order.country = data.country;
+    order.updatedAt = new Date();
 
     order.status = LogisticOrderStatus.SUBMITTED;
 
@@ -308,7 +310,6 @@ export class LogisticOrderController {
             // Assume media.downloadUri is the storage path
             const exists = await storageInstance.fileExists(media.downloadUri);
             if (exists) {
-              // await storageInstance.makeFilePublic(media.downloadUri);
               return media;
             }
             return null;
