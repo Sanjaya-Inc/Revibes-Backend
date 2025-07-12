@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { UserRole, UserStatus } from "../models/User";
+import User, { UserRole, UserStatus } from "../models/User";
+import { TFirestoreData } from "./common";
+
+export type TGetUserRes = TFirestoreData<User>;
 
 export const CreateUserSchema = z.object({
   id: z.string().optional(),
@@ -64,21 +67,6 @@ export const GetUserByEmailSchema = z.object({
 
 export type TGetUserByEmail = z.infer<typeof GetUserByEmailSchema>;
 
-export const ChangeUserPasswordSchema = z.object({
-  oldPassword: z
-    .string({
-      required_error: "USER.OLD_PASS_REQUIRED",
-    })
-    .min(1, "USER.OLD_PASS_REQUIRED"),
-  newPassword: z
-    .string({
-      required_error: "USER.NEW_PASS_REQUIRED",
-    })
-    .min(1, "USER.NEW_PASS_REQUIRED"),
-});
-
-export type TChangeUserPassword = z.infer<typeof ChangeUserPasswordSchema>;
-
 export const ChangeUserStatusSchema = z.object({
   id: z
     .string({
@@ -91,3 +79,16 @@ export const ChangeUserStatusSchema = z.object({
 });
 
 export type TChangeUserStatus = z.infer<typeof ChangeUserStatusSchema>;
+
+export const AddUserPointSchema = z.object({
+  id: z
+    .string({
+      required_error: "USER.ID_REQUIRED",
+    })
+    .min(1, "USER.ID_REQUIRED"),
+  amount: z.number({
+    required_error: "USER.AMOUNT_REQUIRED",
+  }),
+});
+
+export type TAddUserPoint = z.infer<typeof AddUserPointSchema>;

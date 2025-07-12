@@ -35,9 +35,11 @@ export class StoreBranchController {
   }
 
   @wrapError
-  public static async getStoreBranches(filters: TGetStoreBranches & TPaginateConstruct): Promise<StoreBranch[]> {
+  public static async getStoreBranches(
+    filters: TGetStoreBranches & TPaginateConstruct,
+  ): Promise<StoreBranch[]> {
     const { limit, latitude, longitude } = filters;
-    
+
     const snapshot = await db
       .collection(COLLECTION_MAP.STORE_BRANCH)
       .where("status", "==", BranchStoreStatus.ACTIVE)
@@ -58,11 +60,11 @@ export class StoreBranchController {
             latitude,
             longitude,
             store.position.latitude,
-            store.position.longitude
+            store.position.longitude,
           );
         }
-      })
-      
+      });
+
       stores = stores.sort((a, b) => {
         const distA = a.position?.distance ?? Infinity;
         const distB = b.position?.distance ?? Infinity;

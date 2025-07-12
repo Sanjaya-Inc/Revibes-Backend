@@ -1,11 +1,14 @@
-import { AppSettingController } from '../../controllers/AppSettingController';
+import { AppSettingController } from "../../controllers/AppSettingController";
 import { Request, Response } from "express";
 import AppResponse from "../../utils/formatter/AppResponse";
 import Routes from "./route";
 import { registerRoute } from "../../utils/decorator/registerRoute";
 import { adminOnly, authenticate } from "../../middlewares/auth";
 import AppError from "../../utils/formatter/AppError";
-import { TUpdateAppSetting, UpdateAppSettingSchema } from '../../dto/appSetting';
+import {
+  TUpdateAppSetting,
+  UpdateAppSettingSchema,
+} from "../../dto/appSetting";
 
 export const settingRoutes = new Routes("setting");
 
@@ -16,7 +19,7 @@ export class SettingHandlers {
     new AppResponse({
       code: 200,
       message: "SETTING.FETCH_APP_SUCCESS",
-      data: response.toObject(),
+      data: response.pickFields(),
     }).asJsonResponse(res);
   }
 

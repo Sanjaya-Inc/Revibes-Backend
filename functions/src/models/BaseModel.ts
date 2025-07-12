@@ -1,18 +1,28 @@
 import { Timestamp } from "firebase-admin/firestore";
 
 export class BaseModel {
-  constructor(input: Partial<Record<string, any>> = {}) {
-    this.setDate("createdAt", input);
-    this.setDate("updatedAt", input);
+  constructor(
+    input: Partial<Record<string, any>> = {},
+    defaultValues: Partial<Record<string, any>> = {},
+  ) {
+    // Call the conversion method, passing the input data
+    this.parseInput(input, defaultValues);
   }
 
-  setDate(key: string, input: any) {
-    // If createdAt is a property of the child and not already set, assign it
-
-    if (input[key] instanceof Timestamp) {
-      (this as any)[key] = input[key].toDate();
-    } else {
-      (this as any)[key] = input[key] === undefined ? new Date() : input[key];
+  parseInput(
+    input: Partial<Record<string, any>>,
+    defaultValues: Partial<Record<string, any>>,
+  ): void {
+    for (const key in defaultValues) {
+      const value = input[key];
+      const defaultValue = defaultValues[key];
+      if (value instanceof Timestamp) {
+        // Convert Timestamp to Date and assign directly to the instance
+        (this as any)[key] = value.toDate();
+      } else {
+        // Assign other properties as they are, or apply further logic
+        (this as any)[key] = value ?? defaultValue;
+      }
     }
   }
 

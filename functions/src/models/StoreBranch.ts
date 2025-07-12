@@ -11,6 +11,18 @@ export enum BranchStoreStatus {
   COMING_SOON = "coming-soon",
 }
 
+export const defaultStoreBranchData: TStoreBranchData = {
+  id: "",
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  name: "",
+  country: "",
+  address: "",
+  postalCode: "",
+  position: null,
+  status: BranchStoreStatus.ACTIVE,
+};
+
 export class StoreBranch extends BaseModel {
   id!: string;
   createdAt!: Date;
@@ -19,13 +31,11 @@ export class StoreBranch extends BaseModel {
   country!: string;
   address!: string;
   postalCode!: string;
-  position?: TPosition;
+  position?: TPosition | null;
   status!: BranchStoreStatus;
 
   constructor(data: TStoreBranchData) {
-    super();
-
-    Object.assign(this, { ...data });
+    super(data, defaultStoreBranchData);
   }
 }
 

@@ -15,11 +15,16 @@ export const authenticate = async (
     const token = req.headers.authorization.split("Bearer ")[1];
 
     const user = await UserController.getUserByAccessToken(token);
-    if (!user?.hasAccess()) {
+    if (!user) {
+      throw new AppError(401, "AUTH.INVALID_TOKEN");
+    }
+
+    if (!user.data?.hasAccess()) {
       throw new AppError(401, "AUTH.INVALID_TOKEN");
     }
 
     req.user = user;
+
     next(); // Proceed to the next handler
   } catch (error) {
     throw new AppError(401, "AUTH.INVALID_TOKEN");
@@ -31,7 +36,7 @@ export const adminOnly = async (
   res: Response,
   next: () => void,
 ) => {
-  if (req.user?.role !== UserRole.ADMIN) {
+  if (req?.user?.data.role !== UserRole.ADMIN) {
     throw new AppError(403, "COMMON.FORBIDDEN");
   }
 

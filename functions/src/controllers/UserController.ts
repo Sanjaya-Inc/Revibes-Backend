@@ -1,10 +1,11 @@
 import admin from "firebase-admin";
 import COLLECTION_MAP from "../constant/db";
 import {
-  TChangeUserPassword,
+  TAddUserPoint,
   TChangeUserStatus,
   TCreateUser,
   TGetUser,
+  TGetUserRes,
 } from "../dto/user";
 import { db, generateId } from "../utils/firebase";
 import User, { TUserData, UserRole, UserStatus } from "../models/User";
@@ -15,6 +16,7 @@ import {
   TPaginatedPage,
 } from "../utils/pagination";
 import AppError from "../utils/formatter/AppError";
+import { TChangePassword } from "../dto/me";
 
 export type TCreateUserOpt = {
   skipCheck?: boolean;
@@ -43,11 +45,10 @@ export class UserController {
       phoneNumber,
       password: hashedPassword,
       points: 0,
-      lastClaimedDate: null,
       role,
       status: UserStatus.ACTIVE,
-      accessTokenExpiresAt: null,
-      refreshTokenExpiresAt: null,
+      accessTokenExpiredAt: null,
+      refreshTokenExpiredAt: null,
     };
 
     if (!skipCheck) {
@@ -108,17 +109,26 @@ export class UserController {
   @wrapError
   public static async getUserByAccessToken(
     token: string,
-  ): Promise<User | null> {
-    const userSnapshot = await db
+  ): Promise<TGetUserRes | null> {
+    const result = await db
       .collection(COLLECTION_MAP.USER)
       .where("accessToken", "==", token)
       .get();
-    if (userSnapshot.empty) {
+    if (result.empty) {
       return null;
     }
 
-    const userDoc = userSnapshot.docs[0].data();
-    return new User(userDoc);
+    const snapshot = result.docs[0];
+    const userDoc = snapshot.data();
+    const data = new User(userDoc);
+
+    const ref = db.collection(COLLECTION_MAP.USER).doc(data.id);
+
+    return {
+      data,
+      ref,
+      snapshot,
+    };
   }
 
   @wrapError
@@ -171,6 +181,28 @@ export class UserController {
   }
 
   @wrapError
+  public static async addUserPoint({
+    id,
+    amount,
+  }: TAddUserPoint): Promise<void> {
+    const user = await UserController.getUser({ id });
+    if (!user) {
+      throw new AppError(404, "USER.NOT_FOUND");
+    }
+
+    if (user.email === process.env.ADMIN_ROOT_MAIL) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    await db
+      .collection(COLLECTION_MAP.USER)
+      .doc(id)
+      .update({
+        points: user.points + amount,
+      });
+  }
+
+  @wrapError
   public static async initAdminRoot(): Promise<User | null> {
     const adminMail = process.env.ADMIN_ROOT_MAIL || "";
     const user = await UserController.getUserByEmail(adminMail);
@@ -195,7 +227,7 @@ export class UserController {
   @wrapError
   public static async changeSelfPassword(
     user: User,
-    { oldPassword, newPassword }: TChangeUserPassword,
+    { oldPassword, newPassword }: TChangePassword,
   ): Promise<void> {
     const passMatch = await user.comparePassword(oldPassword);
     if (!passMatch) {

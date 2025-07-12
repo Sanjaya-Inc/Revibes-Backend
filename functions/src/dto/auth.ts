@@ -4,8 +4,8 @@ import { TUserMetadata } from "../models/User";
 export type TTokenPairRes = {
   accessToken: string;
   refreshToken: string;
-  accessTokenExpiresAt: Date;
-  refreshTokenExpiresAt: Date;
+  accessTokenExpiredAt: Date;
+  refreshTokenExpiredAt: Date;
 };
 
 export const SignupSchema = z.object({

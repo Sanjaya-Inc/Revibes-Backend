@@ -1,7 +1,8 @@
 import { z } from "zod";
-import LogisticItem, { logisticItemTypes } from "../models/LogisticItem";
+import LogisticItem, { LogisticItemType } from "../models/LogisticItem";
 import { ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES } from "../constant/file";
 import { TGetLogisticOrderRes } from "./logisticOrder";
+import { TFirestoreData } from "./common";
 
 export const LogisticItemSchema = z.object({
   name: z
@@ -9,7 +10,7 @@ export const LogisticItemSchema = z.object({
       required_error: "ITEM.NAME_REQUIRED",
     })
     .min(3, "ITEM.NAME_MIN_3"),
-  type: z.enum(logisticItemTypes, {
+  type: z.nativeEnum(LogisticItemType, {
     required_error: "ITEM.INVALID_TYPE",
   }),
   weight: z
@@ -44,16 +45,8 @@ export const GetLogisticItemSchema = z.object({
 
 export type TGetLogisticItem = z.infer<typeof GetLogisticItemSchema>;
 
-export type TGetLogisticItemRes = Partial<TGetLogisticOrderRes> & {
-  logisticItem: LogisticItem;
-  logisticItemRef: FirebaseFirestore.DocumentReference<
-    FirebaseFirestore.DocumentData,
-    FirebaseFirestore.DocumentData
-  >;
-  logisticItemSnapshot: FirebaseFirestore.DocumentSnapshot<
-    FirebaseFirestore.DocumentData,
-    FirebaseFirestore.DocumentData
-  >;
+export type TGetLogisticItemRes = TFirestoreData<LogisticItem> & {
+  order?: Partial<TGetLogisticOrderRes>
 };
 
 export const AddLogisticItemSchema = z.object({

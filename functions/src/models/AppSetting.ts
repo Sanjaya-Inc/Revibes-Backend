@@ -3,15 +3,33 @@ import { LogisticItemType } from "./LogisticItem";
 
 export type TAppSettingData = Partial<AppSetting>;
 
-export type TPointSetting = {[key in LogisticItemType]: number};
+export type TPointSetting = { [key in LogisticItemType]: number };
+
+export type TDailyReward = {
+  days: number;
+  initialPoint: number;
+  multiplier: number;
+};
+
+export const defaultAppSettingData: TAppSettingData = {
+  point: {
+    organic: 5,
+    "non-organic": 5,
+    b3: 5,
+  },
+  dailyReward: {
+    days: 7,
+    initialPoint: 5,
+    multiplier: 5,
+  },
+};
 
 export class AppSetting extends BaseModel {
   point!: TPointSetting;
+  dailyReward!: TDailyReward;
 
   constructor(data: TAppSettingData) {
-    super();
-
-    Object.assign(this, data);
+    super(data, defaultAppSettingData);
   }
 
   getPoint(type: LogisticItemType): number {
@@ -19,12 +37,6 @@ export class AppSetting extends BaseModel {
   }
 }
 
-export const defaultSetting: AppSetting = new AppSetting({
-  point: {
-    "organic": 5,
-    "non-organic": 5,
-    "b3": 5,
-  },
-})
+export const defaultSetting: AppSetting = new AppSetting(defaultAppSettingData);
 
 export default AppSetting;

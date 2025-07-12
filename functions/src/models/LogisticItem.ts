@@ -1,10 +1,13 @@
+import AppSetting from "./AppSetting";
 import BaseModel from "./BaseModel";
 
 export type TLogisticItemData = Partial<LogisticItem>;
 
-export const logisticItemTypes = ["organic", "non-organic", "b3"] as const;
-
-export type LogisticItemType = (typeof logisticItemTypes)[number];
+export enum LogisticItemType {
+  ORGANIC = "organic",
+  NON_ORGANIC = "non-organic",
+  B3 = "b3",
+}
 
 export type TMedia = {
   uploadUrl: string;
@@ -12,17 +15,27 @@ export type TMedia = {
   expiredAt: number;
 };
 
+export const defaultLogisticItemData: TLogisticItemData = {
+  id: "",
+  name: "",
+  type: LogisticItemType.ORGANIC,
+  weight: 0,
+  media: [],
+};
+
 export class LogisticItem extends BaseModel {
   id!: string;
   name!: string;
   type!: LogisticItemType;
   weight!: number;
-  media?: TMedia[];
+  media!: TMedia[];
 
   constructor(data: TLogisticItemData) {
-    super();
+    super(data, defaultLogisticItemData);
+  }
 
-    Object.assign(this, { ...data });
+  calculatePoint(setting: AppSetting) {
+    return setting.getPoint(this.type);
   }
 }
 

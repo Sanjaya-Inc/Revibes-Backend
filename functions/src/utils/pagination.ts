@@ -5,6 +5,10 @@ import AppError from "./formatter/AppError";
 import { TPagination } from "../dto/pagination";
 
 export type TPaginateConstruct = TPagination & {
+  ref?: FirebaseFirestore.DocumentReference<
+    FirebaseFirestore.DocumentData,
+    FirebaseFirestore.DocumentData
+  >;
   addQuery?: (
     query: FirebaseFirestore.Query<
       FirebaseFirestore.DocumentData,
@@ -75,10 +79,11 @@ export const createPage = async <T extends { id: string } = { id: string }>(
     lastDocId,
     direction = "next",
     addQuery,
+    ref,
   }: TPaginateConstruct,
 ): Promise<TPaginatedPage<T>> => {
   let firestoreQuery: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> =
-    db.collection(collection);
+    (ref ?? db).collection(collection);
 
   if (addQuery) {
     firestoreQuery = addQuery(firestoreQuery);

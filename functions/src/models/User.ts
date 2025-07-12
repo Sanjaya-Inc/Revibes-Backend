@@ -5,6 +5,8 @@ import {
 } from "./../utils/jwt";
 import BaseModel from "./BaseModel";
 import bcrypt from "bcrypt";
+import UserDailyReward from "./UserDailyReward";
+import { UserDevice } from "./userDevice";
 
 export type TUserData = Partial<User>;
 
@@ -28,7 +30,6 @@ export const detailFields: (keyof User)[] = [
   "email",
   "phoneNumber",
   "points",
-  "lastClaimedDate",
 ];
 
 export type TUserMetadata = {
@@ -41,6 +42,29 @@ export enum UserStatus {
   SUSPENDED = "suspended",
 }
 
+export const defaultUserData: TUserData = {
+  id: "",
+  role: UserRole.USER,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  displayName: "",
+  email: "",
+  phoneNumber: null,
+  password: null,
+  points: 0,
+
+  accessToken: null,
+  refreshToken: null,
+  accessTokenExpiredAt: null,
+  refreshTokenExpiredAt: null,
+
+  verifyToken: "",
+  status: UserStatus.ACTIVE,
+
+  // relation
+  dailyRewards: [],
+};
+
 export class User extends BaseModel {
   id!: string;
   role!: UserRole;
@@ -48,40 +72,44 @@ export class User extends BaseModel {
   updatedAt!: Date;
   displayName!: string;
   email!: string;
-  phoneNumber?: string;
-  password?: string;
+  phoneNumber?: string | null;
+  password?: string | null;
   points!: number;
-  lastClaimedDate?: Date | null;
 
-  accessToken?: string;
-  refreshToken?: string;
-  accessTokenExpiresAt?: Date | null;
-  refreshTokenExpiresAt?: Date | null;
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  accessTokenExpiredAt?: Date | null;
+  refreshTokenExpiredAt?: Date | null;
 
   verifyToken?: string;
   status!: UserStatus;
 
-  constructor(data: TUserData) {
-    super(data);
-    Object.assign(this, { ...data });
+  // relation
+  dailyRewards!: UserDailyReward[];
+  devices!: UserDevice[];
 
-    this.setDate("accessTokenExpiresAt", data);
-    this.setDate("refreshTokenExpiresAt", data);
+  constructor(data: TUserData) {
+    super(data, defaultUserData);
+  }
+
+  addPoint(amount: number): number {
+    this.points += amount;
+    return this.points;
   }
 
   hasAccess(): boolean {
     return (
       !!this.accessToken &&
-      !!this.accessTokenExpiresAt &&
-      this.accessTokenExpiresAt > new Date()
+      !!this.accessTokenExpiredAt &&
+      this.accessTokenExpiredAt > new Date()
     );
   }
 
   hasRefresh(): boolean {
     return (
       !!this.refreshToken &&
-      !!this.refreshTokenExpiresAt &&
-      this.refreshTokenExpiresAt > new Date()
+      !!this.refreshTokenExpiredAt &&
+      this.refreshTokenExpiredAt > new Date()
     );
   }
 
@@ -91,16 +119,16 @@ export class User extends BaseModel {
       email: this.email ?? "",
       displayName: this.displayName ?? "",
     };
-    [this.accessToken, this.accessTokenExpiresAt] =
+    [this.accessToken, this.accessTokenExpiredAt] =
       generateAccessToken(jwtPayload);
-    [this.refreshToken, this.refreshTokenExpiresAt] =
+    [this.refreshToken, this.refreshTokenExpiredAt] =
       generateRefreshToken(jwtPayload);
 
     return {
       accessToken: this.accessToken,
-      accessTokenExpiresAt: this.accessTokenExpiresAt,
+      accessTokenExpiredAt: this.accessTokenExpiredAt,
       refreshToken: this.refreshToken,
-      refreshTokenExpiresAt: this.refreshTokenExpiresAt,
+      refreshTokenExpiredAt: this.refreshTokenExpiredAt,
     };
   }
 

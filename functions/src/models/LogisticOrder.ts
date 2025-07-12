@@ -1,5 +1,6 @@
 import BaseModel from "./BaseModel";
 import LogisticItem, { TLogisticItemData } from "./LogisticItem";
+import { LogisticOrderHistory } from "./LogisticOrderHistory";
 
 export type TLogisticOrderData = Partial<LogisticOrder>;
 
@@ -44,7 +45,26 @@ export const detailFields: (keyof LogisticOrder)[] = [
   "status",
   "maker",
   "items",
+  "histories",
 ];
+
+export const defaultLogisticOrderData: TLogisticOrderData = {
+  id: "",
+  type: LogisticOrderType.DROP_OFF,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  name: "",
+  country: "",
+  address: "",
+  addressDetail: null,
+  postalCode: "",
+  storeLocation: null,
+  items: [],
+  status: LogisticOrderStatus.DRAFT,
+  maker: "",
+
+  histories: [],
+};
 
 export class LogisticOrder extends BaseModel {
   id!: string;
@@ -54,17 +74,16 @@ export class LogisticOrder extends BaseModel {
   name!: string;
   country!: string;
   address!: string;
-  addressDetail?: string;
+  addressDetail?: string | null;
   postalCode!: string;
-  storeLocation?: string;
+  storeLocation?: string | null;
   items!: LogisticItem[];
   status!: LogisticOrderStatus;
   maker!: string;
+  histories!: LogisticOrderHistory[];
 
   constructor(data: TLogisticOrderData) {
-    super();
-
-    Object.assign(this, { ...data });
+    super(data, defaultLogisticOrderData);
   }
 
   getPublicFields(keys = publicFields) {

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import LogisticOrder, { LogisticOrderType } from "../models/LogisticOrder";
 import { LogisticItemSchema } from "./logisticItem";
+import { TFirestoreData } from "./common";
 
 const mainLogisticOrderSchema = {
   id: z
@@ -67,6 +68,36 @@ export const LogisticOrderSchema = z.discriminatedUnion("type", [
 
 export type TSubmitLogisticOrder = z.infer<typeof LogisticOrderSchema>;
 
+export const ConfirmLogisticOrderSchema = z.object({
+  id: z
+    .string({
+      required_error: "LOGISTIC.ID_REQUIRED",
+    })
+    .min(1, "LOGISTIC.ID_REQUIRED"),
+  reject: z.boolean().default(false),
+  reason: z.string().optional(),
+  customPoint: z.number().optional(),
+});
+
+export type TConfirmLogisticOrder = z.infer<typeof ConfirmLogisticOrderSchema>;
+
+export const EstimateLogisticOrderPointSchema = z.object({
+  items: z
+    .array(LogisticItemSchema, {
+      required_error: "LOGISTIC.ORDER_ITEMS_REQUIRED",
+    })
+    .min(1, "LOGISTIC.ORDER_ITEMS_MIN_1"),
+});
+
+export type TEstimateLogisticOrderPoint = z.infer<
+  typeof EstimateLogisticOrderPointSchema
+>;
+
+export type TEstimateLogisticOrderPointRes = {
+  items: { [key: string]: number };
+  total: number;
+};
+
 export const GetLogisticOrderSchema = z.object({
   id: z
     .string({
@@ -77,17 +108,7 @@ export const GetLogisticOrderSchema = z.object({
 
 export type TGetLogisticOrder = z.infer<typeof GetLogisticOrderSchema>;
 
-export type TGetLogisticOrderRes = {
-  logisticOrder: LogisticOrder;
-  logisticOrderRef: FirebaseFirestore.DocumentReference<
-    FirebaseFirestore.DocumentData,
-    FirebaseFirestore.DocumentData
-  >;
-  logisticOrderSnapshot: FirebaseFirestore.DocumentSnapshot<
-    FirebaseFirestore.DocumentData,
-    FirebaseFirestore.DocumentData
-  >;
-};
+export type TGetLogisticOrderRes = TFirestoreData<LogisticOrder>;
 
 export const DeleteLogisticOrderSchema = z.object({
   id: z

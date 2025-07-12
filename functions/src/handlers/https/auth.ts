@@ -99,7 +99,7 @@ export class AuthHandlers {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    await AuthController.logout(req.user);
+    await AuthController.logout(req.user.data);
     new AppResponse({
       code: 200,
       message: "AUTH.LOGOUT_SUCCESS",
@@ -130,7 +130,7 @@ export class AuthHandlers {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    const response = await AuthController.getVerifyToken(req.user);
+    const response = await AuthController.getVerifyToken(req.user.data);
     new AppResponse({
       code: 200,
       message: "AUTH.GET_VERIFY_TOKEN_SUCCESS",

@@ -9,7 +9,10 @@ import {
   TGetLogisticItems,
 } from "../dto/logisticItem";
 import {
+  TConfirmLogisticOrder,
   TDeleteLogisticOrder,
+  TEstimateLogisticOrderPoint,
+  TEstimateLogisticOrderPointRes,
   TGetLogisticOrder,
   TGetLogisticOrderRes,
   TSubmitLogisticOrder,
@@ -20,6 +23,7 @@ import LogisticOrder, {
   LogisticOrderType,
   TLogisticOrderData,
 } from "../models/LogisticOrder";
+import { LogisticOrderHistory } from "../models/LogisticOrderHistory";
 import User, { UserRole } from "../models/User";
 import { wrapError } from "../utils/decorator/wrapError";
 import {
@@ -34,6 +38,7 @@ import {
   TPaginateConstruct,
   TPaginatedPage,
 } from "../utils/pagination";
+import { AppSettingController } from "./AppSettingController";
 import { CountryController } from "./CountryController";
 import { StoreBranchController } from "./StoreBranchController";
 
@@ -76,9 +81,9 @@ export class LogisticOrderController {
     }
 
     return {
-      logisticOrder,
-      logisticOrderRef: orderRef,
-      logisticOrderSnapshot: orderSnapshot,
+      data: logisticOrder,
+      ref: orderRef,
+      snapshot: orderSnapshot,
     };
   }
 
@@ -103,7 +108,11 @@ export class LogisticOrderController {
     user: User,
     filters: TPaginateConstruct,
   ): Promise<TPaginatedPage<LogisticOrder>> {
-    filters.addQuery = (q) => q.where("maker", "==", user.id);
+    // user will only be able to view their own orders
+    if (user.role == UserRole.USER) {
+      filters.addQuery = (q) => q.where("maker", "==", user.id);
+    }
+
     const { items, pagination } = await createPage<LogisticOrder>(
       COLLECTION_MAP.LOGISTIC_ORDER,
       filters,
@@ -120,7 +129,25 @@ export class LogisticOrderController {
   }
 
   @wrapError
-  public static async submitOrder(
+  public static async estimateOrderPoint(
+    data: TEstimateLogisticOrderPoint,
+  ): Promise<TEstimateLogisticOrderPointRes> {
+    const setting = await AppSettingController.getSetting();
+
+    let total = 0;
+    const items: Record<string, number> = {};
+    data.items.forEach((item, i) => {
+      const newItem = new LogisticItem(item);
+      const point = newItem.calculatePoint(setting);
+      items[i.toString()] = point;
+      total += point;
+    });
+
+    return { items, total };
+  }
+
+  @wrapError
+  public static async saveOrder(
     user: User,
     data: TSubmitLogisticOrder,
   ): Promise<void> {
@@ -133,6 +160,88 @@ export class LogisticOrderController {
     }
 
     const order = new LogisticOrder(orderDoc);
+
+    if (order.maker !== user.id) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    if (order.status !== LogisticOrderStatus.DRAFT) {
+      throw new AppError(403, "LOGISTIC_ORDER.CANNOT_CHANGE_NON_DRAFT");
+    }
+
+    const country = await CountryController.getCountry({ code: data.country });
+    if (!country) {
+      throw new AppError(404, "COUNTRY.NOT_FOUND");
+    }
+
+    if (data.type === LogisticOrderType.DROP_OFF) {
+      const { storeLocation } = data;
+      const store = await StoreBranchController.getStoreBranch({
+        id: storeLocation,
+      });
+      if (!store) {
+        throw new AppError(404, "STORE.NOT_FOUND");
+      }
+      order.storeLocation = storeLocation;
+    } else {
+      const { address, addressDetail, postalCode } = data;
+      order.address = address;
+      order.addressDetail = addressDetail;
+      order.postalCode = postalCode;
+    }
+
+    order.type = data.type;
+    order.name = data.name;
+    order.country = data.country;
+
+    if (Array.isArray(data.items) && data.items.length > 0) {
+      const batch = db.batch();
+
+      // Update order document
+      batch.update(
+        db.collection(COLLECTION_MAP.LOGISTIC_ORDER).doc(data.id),
+        order.toObject(),
+      );
+
+      for (const item of data.items) {
+        // Fetch the latest item data from Firestore
+        const getItemRes = await this.getOrderItem(user, {
+          logisticOrderId: order.id,
+          logisticOrderItemId: item.id,
+        });
+        if (!getItemRes) {
+          throw new AppError(404, "LOGISTIC_ORDER.ITEM_NOT_FOUND");
+        }
+
+        let dbItem = new LogisticItem(item);
+        if (getItemRes.data) {
+          dbItem = new LogisticItem({
+            ...getItemRes.data.toObject(),
+            ...item,
+          });
+        }
+
+        batch.set(
+          getItemRes.ref,
+          { ...dbItem.toObject(), ...new LogisticItem(item).toObject() },
+          { merge: true },
+        );
+      }
+      await batch.commit();
+    }
+  }
+
+  @wrapError
+  public static async submitOrder(
+    user: User,
+    data: TSubmitLogisticOrder,
+  ): Promise<void> {
+    const orderRes = await this.getOrder(user, {id: data.id});
+    if (!orderRes) {
+      throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
+    }
+
+    const {data: order, ref: orderRef} = orderRes;
 
     if (order.maker !== user.id) {
       throw new AppError(403, "COMMON.FORBIDDEN");
@@ -169,13 +278,15 @@ export class LogisticOrderController {
 
     order.status = LogisticOrderStatus.SUBMITTED;
 
-    await db
-      .collection(COLLECTION_MAP.LOGISTIC_ORDER)
-      .doc(data.id)
-      .update(order.toObject());
-
     if (Array.isArray(data.items) && data.items.length > 0) {
       const batch = db.batch();
+
+      // Update order document
+      batch.update(
+        db.collection(COLLECTION_MAP.LOGISTIC_ORDER).doc(data.id),
+        order.toObject(),
+      );
+
       for (const item of data.items) {
         // Fetch the latest item data from Firestore
         const getItemRes = await this.getOrderItem(user, {
@@ -187,9 +298,9 @@ export class LogisticOrderController {
         }
 
         let dbItem = new LogisticItem(item);
-        if (getItemRes.logisticItem) {
+        if (getItemRes.data) {
           dbItem = new LogisticItem({
-            ...getItemRes.logisticItem.toObject(),
+            ...getItemRes.data.toObject(),
             ...item,
           });
         }
@@ -201,7 +312,7 @@ export class LogisticOrderController {
             // Assume media.downloadUri is the storage path
             const exists = await storageInstance.fileExists(media.downloadUri);
             if (exists) {
-              await storageInstance.makeFilePublic(media.downloadUri);
+              // await storageInstance.makeFilePublic(media.downloadUri);
               return media;
             }
             return null;
@@ -214,13 +325,83 @@ export class LogisticOrderController {
         }
 
         batch.set(
-          getItemRes.logisticItemRef,
+          getItemRes.ref,
           { ...dbItem.toObject(), ...new LogisticItem(item).toObject() },
           { merge: true },
         );
       }
+
+      // add history
+      const historyDoc = orderRef.collection(COLLECTION_MAP.LOGISTIC_ORDER_HISTORY).doc();
+      const newHistory = new LogisticOrderHistory({id: historyDoc.id, status: LogisticOrderStatus.SUBMITTED, timestamp: new Date()});
+      batch.create(historyDoc, newHistory.toObject());
+
       await batch.commit();
     }
+  }
+
+  @wrapError
+  public static async confirmOrder(
+    user: User,
+    data: TConfirmLogisticOrder,
+  ): Promise<void> {
+    const orderRes = await this.getOrder(
+      user,
+      { id: data.id },
+      { withItems: true },
+    );
+    if (!orderRes) {
+      throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
+    }
+
+    const {data: order, ref: orderRef} = orderRes;
+
+    if (order.status !== LogisticOrderStatus.SUBMITTED) {
+      throw new AppError(403, "LOGISTIC_ORDER.CANNOT_SUBMIT_NON_DRAFT");
+    }
+
+    if (data.reject) {
+      order.status = LogisticOrderStatus.REJECTED;
+    } else {
+      order.status = LogisticOrderStatus.COMPLETED;
+    }
+
+    let orderPoint = 0;
+    const setting = await AppSettingController.getSetting();
+    if (data.customPoint) {
+      orderPoint = data.customPoint;
+    } else {
+      for (const item of order.items) {
+        orderPoint += item.calculatePoint(setting);
+      }
+    }
+
+    const batch = db.batch();
+    
+    // Update order document
+    batch.update(orderRef, {
+      status: order.status,
+    });
+
+    // Update user points
+    const userRef = db.collection(COLLECTION_MAP.USER).doc(user.id);
+    batch.update(userRef, {
+      points: user.addPoint(orderPoint),
+    });
+
+    let meta = null;
+    if (order.status === LogisticOrderStatus.REJECTED) {
+      meta = {
+        reason: data.reason,
+      }
+    }
+
+    // add history
+    const historyDoc = orderRef.collection(COLLECTION_MAP.LOGISTIC_ORDER_HISTORY).doc();
+    const newHistory = new LogisticOrderHistory({id: historyDoc.id, status: order.status, timestamp: new Date(), meta});
+    batch.create(historyDoc, newHistory.toObject());
+
+    await batch.commit();
   }
 
   @wrapError
@@ -263,7 +444,7 @@ export class LogisticOrderController {
       throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
     }
 
-    const docRef = result.logisticOrderRef
+    const docRef = result.ref
       .collection(COLLECTION_MAP.LOGISTIC_ITEM)
       .doc();
     const data: TLogisticItemData = {
@@ -292,7 +473,7 @@ export class LogisticOrderController {
       throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
     }
 
-    return order.logisticOrder.items;
+    return order.data.items;
   }
 
   @wrapError
@@ -306,11 +487,11 @@ export class LogisticOrderController {
       throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
     }
 
-    if (order.logisticOrder.maker !== user.id) {
+    if (order.data.maker !== user.id) {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    const logisticItemRef = order.logisticOrderRef
+    const logisticItemRef = order.ref
       .collection(COLLECTION_MAP.LOGISTIC_ITEM)
       .doc(logisticOrderItemId);
 
@@ -322,15 +503,15 @@ export class LogisticOrderController {
     }
     const logisticItem = new LogisticItem(orderItemDoc);
     let data: TGetLogisticItemRes = {
-      logisticItem,
-      logisticItemRef,
-      logisticItemSnapshot,
+      data: logisticItem,
+      ref: logisticItemRef,
+      snapshot: logisticItemSnapshot,
     };
 
     if (withOrder) {
       data = {
         ...data,
-        ...order,
+        order,
       };
     }
 
@@ -357,7 +538,7 @@ export class LogisticOrderController {
 
     if (
       user.role !== UserRole.ADMIN ||
-      result.logisticOrder?.maker !== user.id
+      result?.order?.data?.maker !== user.id
     ) {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
@@ -371,7 +552,7 @@ export class LogisticOrderController {
       ),
       db
         .collection(COLLECTION_MAP.LOGISTIC_ORDER)
-        .doc(result.logisticItem.id)
+        .doc(result.data.id)
         .delete(),
     ]);
   }
@@ -394,11 +575,12 @@ export class LogisticOrderController {
       { withOrder: true },
     );
 
-    if (!result?.logisticItem || !result?.logisticOrder) {
+    const order = result?.order;
+    if (!result?.data || !order?.data) {
       throw new AppError(404, "LOGISTIC_ORDER.ITEM_NOT_FOUND");
     }
 
-    if (result.logisticOrder?.status !== LogisticOrderStatus.DRAFT) {
+    if (order.data?.status !== LogisticOrderStatus.DRAFT) {
       throw new AppError(400, "LOGISTIC_ORDER.CANNOT_ADD_MEDIA_NON_DRAFT");
     }
 
@@ -413,7 +595,7 @@ export class LogisticOrderController {
         fileId,
       );
 
-    const logisticItem = new LogisticItem(result.logisticItem);
+    const logisticItem = new LogisticItem(result.data);
 
     if (!Array.isArray(logisticItem.media)) {
       logisticItem.media = [];
@@ -432,7 +614,7 @@ export class LogisticOrderController {
       .doc(logisticOrderItemId)
       .set(logisticItem.toObject(), { merge: true });
 
-    const downloadUrl = storageInstance.getFullUrl(downloadUri);
+    const downloadUrl = await storageInstance.getFullUrl(downloadUri);
 
     return {
       uploadUrl,

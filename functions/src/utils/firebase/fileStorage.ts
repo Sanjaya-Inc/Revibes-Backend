@@ -1,10 +1,13 @@
 import { Bucket, File } from "@google-cloud/storage";
 import admin from "firebase-admin";
+import { v4 as uuidv4 } from "uuid";
 import { TUploadFile } from "../../dto/file";
 
 export enum BasePath {
   BANNER = "banners/",
   LOGISTIC = "logistics/",
+  INVENTORY_ITEM = "inventory-items/",
+  VOUCHER = "vouchers/",
 }
 
 export type UploadOptions = {
@@ -14,9 +17,7 @@ export type UploadOptions = {
 export class FileStorage {
   private readonly storage: admin.storage.Storage;
   private readonly bucket: Bucket;
-  private readonly signedUrlExpTime: number = 15 * 60 * 1000; // URL expires in 15 minutes
-
-  private static readonly _storageUrl = "https://storage.googleapis.com";
+  private readonly signedUrlExpTime: number = 15 * 60 * 1000; // 15 minutes
 
   constructor() {
     this.storage = admin.storage();
@@ -28,10 +29,20 @@ export class FileStorage {
     return [baseName, ...paths].map(clean).join("/");
   }
 
-  public getFullUrl(uri: string) {
+  public async getFullUrl(uri: string): Promise<string> {
     if (!uri) return "";
-    // Assuming files are stored at the root of the bucket
-    return `${FileStorage._storageUrl}/${this.bucket.name}/${uri}`;
+
+    const file = this.bucket.file(uri);
+    const [metadata] = await file.getMetadata();
+    const token = metadata?.metadata?.firebaseStorageDownloadTokens;
+
+    if (token) {
+      const encodedPath = encodeURIComponent(uri);
+      return `https://firebasestorage.googleapis.com/v0/b/${this.bucket.name}/o/${encodedPath}?alt=media&token=${token}`;
+    }
+
+    // fallback: maybe it's public via makePublic()
+    return `https://storage.googleapis.com/${this.bucket.name}/${uri}`;
   }
 
   public async uploadFile(
@@ -43,14 +54,22 @@ export class FileStorage {
     const filePath = this.generateUri(baseName, ...paths);
     const uploadedFile = this.bucket.file(filePath);
 
-    await uploadedFile.save(file.buffer, {
-      metadata: {
-        contentType: file.mimetype,
-      },
-    });
+    const metadata: any = {
+      contentType: file.mimetype,
+    };
 
     if (opts?.public) {
-      uploadedFile.makePublic();
+      // Set token for Firebase-style public access
+      metadata.metadata = {
+        firebaseStorageDownloadTokens: uuidv4(),
+      };
+    }
+
+    await uploadedFile.save(file.buffer, { metadata });
+
+    if (opts?.public) {
+      // Optional: make GCS-style public (not needed if using token-based access)
+      // await uploadedFile.makePublic();
     }
 
     return [filePath, uploadedFile];
@@ -69,8 +88,9 @@ export class FileStorage {
       version: "v4",
       action: "write",
       expires: exp,
-      contentType: contentType,
+      contentType,
     });
+
     return [uploadUrl, downloadUri, exp];
   }
 
@@ -84,8 +104,8 @@ export class FileStorage {
     ...paths: string[]
   ): Promise<void> {
     const prefix = this.generateUri(baseName, ...paths);
-
     const [files] = await this.bucket.getFiles({ prefix });
+
     if (files.length === 0) return;
     await Promise.all(files.map((file) => file.delete()));
   }
@@ -102,6 +122,7 @@ export class FileStorage {
   }
 }
 
+// Singleton
 let fileStorageInstance: FileStorage | null = null;
 
 export function getFileStorageInstance(): FileStorage {

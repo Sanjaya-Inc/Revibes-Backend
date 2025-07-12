@@ -1,10 +1,10 @@
-import User from "./models/User";
+import { TGetUserRes } from "./dto/user";
 
 declare global {
   // Extend Express Request to include user field
   namespace Express {
     interface Request {
-      user?: User;
+      user?: TGetUserRes;
     }
   }
 

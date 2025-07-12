@@ -58,18 +58,16 @@ export const GetStoreBranchesSchema = z
       .string()
       .optional()
       .transform((val) => (val !== undefined ? Number(val) : undefined))
-      .refine(
-        (val) => val === undefined || !isNaN(val),
-        { message: "STORE.LONGITUDE_MUST_BE_NUMBER" }
-      ),
+      .refine((val) => val === undefined || !isNaN(val), {
+        message: "STORE.LONGITUDE_MUST_BE_NUMBER",
+      }),
     latitude: z
       .string()
       .optional()
       .transform((val) => (val !== undefined ? Number(val) : undefined))
-      .refine(
-        (val) => val === undefined || !isNaN(val),
-        { message: "STORE.LATITUDE_MUST_BE_NUMBER" }
-      ),
+      .refine((val) => val === undefined || !isNaN(val), {
+        message: "STORE.LATITUDE_MUST_BE_NUMBER",
+      }),
   })
   .refine(
     (data) =>
@@ -78,7 +76,7 @@ export const GetStoreBranchesSchema = z
     {
       message: "STORE.BOTH_LONGITUDE_LATITUDE_REQUIRED",
       path: ["longitude", "latitude"],
-    }
+    },
   );
 
 export type TGetStoreBranches = z.infer<typeof GetStoreBranchesSchema>;

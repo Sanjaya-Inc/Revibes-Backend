@@ -1,0 +1,145 @@
+import COLLECTION_MAP from "../constant/db";
+import {
+  BasePath,
+  getFileStorageInstance,
+} from "../utils/firebase/fileStorage";
+import { db } from "../utils/firebase";
+import { wrapError } from "../utils/decorator/wrapError";
+import AppError from "../utils/formatter/AppError";
+import {
+  TCreateVoucher,
+  TDeleteVoucher,
+  TGetVoucher,
+  TGetVoucherRes,
+} from "../dto/voucher";
+import Voucher, { TVoucherData, TVoucherValue } from "../models/Voucher";
+import {
+  createPage,
+  TPaginateConstruct,
+  TPaginatedPage,
+} from "../utils/pagination";
+import User, { UserRole } from "../models/User";
+import { and, where } from "firebase/firestore";
+
+export class VoucherController {
+  @wrapError
+  public static async getVoucher({
+    id,
+  }: TGetVoucher): Promise<TGetVoucherRes | null> {
+    const voucherRef = db.collection(COLLECTION_MAP.VOUCHER).doc(id);
+
+    const voucherSnapshot = await voucherRef.get();
+    const voucherDoc = voucherSnapshot.data();
+    if (!voucherDoc) {
+      return null;
+    }
+    const voucher = new Voucher(voucherDoc);
+
+    return {
+      data: voucher,
+      ref: voucherRef,
+      snapshot: voucherSnapshot,
+    };
+  }
+
+  @wrapError
+  public static async getVouchers(
+    user: User,
+    filters: TPaginateConstruct,
+  ): Promise<TPaginatedPage<Voucher>> {
+    // user will only be able to view list of voucher that claimable
+    if (user.role == UserRole.USER) {
+      const now = new Date();
+      filters.addQuery = (q) =>
+        q.where(
+          and(where("availableAt", "<=", now), where("expiredAt", ">=", now)),
+        );
+    }
+
+    const { items, pagination } = await createPage<Voucher>(
+      COLLECTION_MAP.VOUCHER,
+      filters,
+    );
+
+    const vouchers = items.map((item) => new Voucher(item).getPublicFields());
+
+    return {
+      items: vouchers,
+      pagination,
+    };
+  }
+
+  @wrapError
+  public static async createVoucher({
+    code,
+    name,
+    description,
+    type,
+    amount,
+    conditions,
+    claimPeriodStart,
+    claimPeriodEnd,
+    image,
+  }: TCreateVoucher): Promise<Voucher> {
+    const docRef = db.collection(COLLECTION_MAP.VOUCHER).doc();
+
+    let imageUri = "";
+    if (image) {
+      [imageUri] = await getFileStorageInstance().uploadFile(
+        image,
+        { public: true },
+        BasePath.VOUCHER,
+        docRef.id,
+      );
+    }
+
+    const value: TVoucherValue = {
+      type: type,
+      amount: amount,
+    };
+
+    claimPeriodStart ??= new Date();
+
+    const data: TVoucherData = {
+      id: docRef.id,
+      code,
+      name,
+      description,
+      value,
+      conditions,
+      imageUri,
+      claimPeriodStart,
+      claimPeriodEnd,
+    };
+
+    const voucher = new Voucher(data);
+
+    await docRef.set(voucher.toObject());
+
+    return voucher;
+  }
+
+  @wrapError
+  public static async deleteVoucher({ id }: TDeleteVoucher): Promise<void> {
+    // Remove file from Firebase Storage
+    const voucherRes = await this.getVoucher({ id });
+
+    if (!voucherRes) {
+      throw new AppError(404, "VOUCHER.NOT_FOUND");
+    }
+
+    const { data: voucher, ref: voucherRef } = voucherRes;
+    if (new Date() > voucher.claimPeriodStart) {
+      await voucherRef.update({
+        claimPeriodEnd: new Date(),
+      });
+      return;
+    }
+
+    if (voucher.imageUri) {
+      await getFileStorageInstance().removeFile(voucher.imageUri);
+    }
+
+    await db.collection(COLLECTION_MAP.VOUCHER).doc(id).delete();
+  }
+}

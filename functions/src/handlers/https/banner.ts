@@ -20,8 +20,8 @@ export class BannerHandlers {
   @registerRoute(bannerRoutes, "get", "", authenticate)
   static async getBanners(req: Request, res: Response) {
     const response = await BannerController.getBanners();
-    response.forEach((banner) => {
-      banner.uri = getFileStorageInstance().getFullUrl(banner.uri);
+    response.forEach(async (banner) => {
+      banner.uri = await getFileStorageInstance().getFullUrl(banner.uri);
     });
 
     new AppResponse({

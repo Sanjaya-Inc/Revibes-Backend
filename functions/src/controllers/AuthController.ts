@@ -58,9 +58,9 @@ export class AuthController {
     const tokens = user.generateTokens();
     await db.collection(COLLECTION_MAP.USER).doc(user.id).update({
       accessToken: tokens.accessToken,
-      accessTokenExpiresAt: tokens.accessTokenExpiresAt,
+      accessTokenExpiredAt: tokens.accessTokenExpiredAt,
       refreshToken: tokens.refreshToken,
-      refreshTokenExpiresAt: tokens.refreshTokenExpiresAt,
+      refreshTokenExpiredAt: tokens.refreshTokenExpiredAt,
     });
 
     return { user: user.getPublicFields(), tokens };
@@ -85,9 +85,9 @@ export class AuthController {
     const tokens = user.generateTokens();
     await db.collection(COLLECTION_MAP.USER).doc(user.id).update({
       accessToken: tokens.accessToken,
-      accessTokenExpiresAt: tokens.accessTokenExpiresAt,
+      accessTokenExpiredAt: tokens.accessTokenExpiredAt,
       refreshToken: tokens.refreshToken,
-      refreshTokenExpiresAt: tokens.refreshTokenExpiresAt,
+      refreshTokenExpiredAt: tokens.refreshTokenExpiredAt,
     });
 
     return tokens;
@@ -114,9 +114,9 @@ export class AuthController {
 
     await db.collection(COLLECTION_MAP.USER).doc(user.id).update({
       accessToken: tokens.accessToken,
-      accessTokenExpiresAt: tokens.accessTokenExpiresAt,
+      accessTokenExpiredAt: tokens.accessTokenExpiredAt,
       refreshToken: tokens.refreshToken,
-      refreshTokenExpiresAt: tokens.refreshTokenExpiresAt,
+      refreshTokenExpiredAt: tokens.refreshTokenExpiredAt,
     });
 
     return { user: user.getPublicFields(), tokens };
@@ -137,9 +137,9 @@ export class AuthController {
     const tokens = user.generateTokens();
     await db.collection(COLLECTION_MAP.USER).doc(user.id).update({
       accessToken: tokens.accessToken,
-      accessTokenExpiresAt: tokens.accessTokenExpiresAt,
+      accessTokenExpiredAt: tokens.accessTokenExpiredAt,
       refreshToken: tokens.refreshToken,
-      refreshTokenExpiresAt: tokens.refreshTokenExpiresAt,
+      refreshTokenExpiredAt: tokens.refreshTokenExpiredAt,
     });
 
     return { user, tokens };
@@ -149,9 +149,9 @@ export class AuthController {
   public static async logout(user: User): Promise<void> {
     db.collection(COLLECTION_MAP.USER).doc(user.id).update({
       accessToken: null,
-      accessTokenExpiresAt: null,
+      accessTokenExpiredAt: null,
       refreshToken: null,
-      refreshTokenExpiresAt: null,
+      refreshTokenExpiredAt: null,
     });
   }
 
@@ -165,9 +165,9 @@ export class AuthController {
     const newTokens = user.generateTokens();
     await db.collection(COLLECTION_MAP.USER).doc(user.id).update({
       accessToken: newTokens.accessToken,
-      accessTokenExpiresAt: newTokens.accessTokenExpiresAt,
+      accessTokenExpiredAt: newTokens.accessTokenExpiredAt,
       refreshToken: newTokens.refreshToken,
-      refreshTokenExpiresAt: newTokens.refreshTokenExpiresAt,
+      refreshTokenExpiredAt: newTokens.refreshTokenExpiredAt,
     });
 
     return newTokens;
