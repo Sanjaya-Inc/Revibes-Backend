@@ -95,9 +95,7 @@ export class MeController {
   }
 
   @wrapError
-  public static async claimDailyRewards(
-    user: TGetUserRes,
-  ): Promise<void> {
+  public static async claimDailyRewards(user: TGetUserRes): Promise<void> {
     const claimables = await this.getDailyRewards(user);
 
     // loop all reward and get 1 of not claimed reward in progress row

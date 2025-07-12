@@ -1,4 +1,3 @@
-
 import BaseModel from "./BaseModel";
 
 export type TUserDeviceData = Partial<UserDevice>;

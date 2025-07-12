@@ -1,3 +1,4 @@
+import { FileStorage } from "../utils/firebase";
 import AppSetting from "./AppSetting";
 import BaseModel from "./BaseModel";
 
@@ -36,6 +37,15 @@ export class LogisticItem extends BaseModel {
 
   calculatePoint(setting: AppSetting) {
     return setting.getPoint(this.type);
+  }
+
+  async retrieveFullUrl(storage: FileStorage) {
+    this.media = await Promise.all(
+      this.media.map(async (m) => ({
+        ...m,
+        downloadUri: await storage.getFullUrl(m.downloadUri),
+      })),
+    );
   }
 }
 

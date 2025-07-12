@@ -18,6 +18,14 @@ export class FileStorage {
   private readonly storage: admin.storage.Storage;
   private readonly bucket: Bucket;
   private readonly signedUrlExpTime: number = 15 * 60 * 1000; // 15 minutes
+  private static readonly _storageUrl =
+    process.env.ENV === "production"
+      ? "https://storage.googleapis.com"
+      : "http://localhost:9199";
+  private static readonly _firebaseStorageUrl =
+    process.env.ENV === "production"
+      ? "https://firebasestorage.googleapis.com"
+      : "http://localhost:9199";
 
   constructor() {
     this.storage = admin.storage();
@@ -32,17 +40,22 @@ export class FileStorage {
   public async getFullUrl(uri: string): Promise<string> {
     if (!uri) return "";
 
-    const file = this.bucket.file(uri);
-    const [metadata] = await file.getMetadata();
-    const token = metadata?.metadata?.firebaseStorageDownloadTokens;
-
-    if (token) {
-      const encodedPath = encodeURIComponent(uri);
-      return `https://firebasestorage.googleapis.com/v0/b/${this.bucket.name}/o/${encodedPath}?alt=media&token=${token}`;
+    let token: any = "";
+    try {
+      const file = this.bucket.file(uri);
+      const [metadata] = await file.getMetadata();
+      token = metadata?.metadata?.firebaseStorageDownloadTokens;
+    } catch (err) {
+      console.error("Failed to get file metadata:", err);
     }
 
-    // fallback: maybe it's public via makePublic()
-    return `https://storage.googleapis.com/${this.bucket.name}/${uri}`;
+    const encodedPath = encodeURIComponent(uri);
+    if (token) {
+      return `${FileStorage._firebaseStorageUrl}/v0/b/${this.bucket.name}/o/${encodedPath}?alt=media&token=${token}`;
+    } else {
+      // fallback: maybe it's public via makePublic()
+      return `${FileStorage._storageUrl}/${this.bucket.name}/${encodedPath}?alt=media`;
+    }
   }
 
   public async uploadFile(
@@ -58,7 +71,7 @@ export class FileStorage {
       contentType: file.mimetype,
     };
 
-    if (opts?.public) {
+    if (!opts?.public) {
       // Set token for Firebase-style public access
       metadata.metadata = {
         firebaseStorageDownloadTokens: uuidv4(),
@@ -69,7 +82,7 @@ export class FileStorage {
 
     if (opts?.public) {
       // Optional: make GCS-style public (not needed if using token-based access)
-      // await uploadedFile.makePublic();
+      await uploadedFile.makePublic();
     }
 
     return [filePath, uploadedFile];
@@ -89,6 +102,10 @@ export class FileStorage {
       action: "write",
       expires: exp,
       contentType,
+      // CRITICAL: Include x-goog-acl in extensionHeaders when generating the URL
+      extensionHeaders: {
+        "x-goog-acl": "public-read", // This header is now "signed" into the URL
+      },
     });
 
     return [uploadUrl, downloadUri, exp];

@@ -1,3 +1,4 @@
+import { FileStorage } from "../utils/firebase";
 import BaseModel from "./BaseModel";
 import LogisticItem, { TLogisticItemData } from "./LogisticItem";
 import { LogisticOrderHistory } from "./LogisticOrderHistory";
@@ -97,6 +98,12 @@ export class LogisticOrder extends BaseModel {
   assignItems(logisticItems: TLogisticItemData[]) {
     this.items = logisticItems.map(
       (item: TLogisticItemData) => new LogisticItem(item),
+    );
+  }
+
+  async retrieveFullUrl(storage: FileStorage) {
+    await Promise.all(
+      this.items.map(async (i) => await i.retrieveFullUrl(storage)),
     );
   }
 }

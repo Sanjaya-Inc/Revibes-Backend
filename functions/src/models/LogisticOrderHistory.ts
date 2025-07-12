@@ -1,4 +1,3 @@
-
 import BaseModel from "./BaseModel";
 import { LogisticOrderStatus } from "./LogisticOrder";
 

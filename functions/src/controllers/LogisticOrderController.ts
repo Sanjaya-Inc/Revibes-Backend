@@ -221,11 +221,7 @@ export class LogisticOrderController {
           });
         }
 
-        batch.set(
-          getItemRes.ref,
-          { ...dbItem.toObject(), ...new LogisticItem(item).toObject() },
-          { merge: true },
-        );
+        batch.set(getItemRes.ref, { ...dbItem.toObject() }, { merge: true });
       }
       await batch.commit();
     }
@@ -236,12 +232,12 @@ export class LogisticOrderController {
     user: User,
     data: TSubmitLogisticOrder,
   ): Promise<void> {
-    const orderRes = await this.getOrder(user, {id: data.id});
+    const orderRes = await this.getOrder(user, { id: data.id });
     if (!orderRes) {
       throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
     }
 
-    const {data: order, ref: orderRef} = orderRes;
+    const { data: order, ref: orderRef } = orderRes;
 
     if (order.maker !== user.id) {
       throw new AppError(403, "COMMON.FORBIDDEN");
@@ -324,16 +320,18 @@ export class LogisticOrderController {
           }
         }
 
-        batch.set(
-          getItemRes.ref,
-          { ...dbItem.toObject(), ...new LogisticItem(item).toObject() },
-          { merge: true },
-        );
+        batch.set(getItemRes.ref, { ...dbItem.toObject() }, { merge: true });
       }
 
       // add history
-      const historyDoc = orderRef.collection(COLLECTION_MAP.LOGISTIC_ORDER_HISTORY).doc();
-      const newHistory = new LogisticOrderHistory({id: historyDoc.id, status: LogisticOrderStatus.SUBMITTED, timestamp: new Date()});
+      const historyDoc = orderRef
+        .collection(COLLECTION_MAP.LOGISTIC_ORDER_HISTORY)
+        .doc();
+      const newHistory = new LogisticOrderHistory({
+        id: historyDoc.id,
+        status: LogisticOrderStatus.SUBMITTED,
+        timestamp: new Date(),
+      });
       batch.create(historyDoc, newHistory.toObject());
 
       await batch.commit();
@@ -354,7 +352,7 @@ export class LogisticOrderController {
       throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
     }
 
-    const {data: order, ref: orderRef} = orderRes;
+    const { data: order, ref: orderRef } = orderRes;
 
     if (order.status !== LogisticOrderStatus.SUBMITTED) {
       throw new AppError(403, "LOGISTIC_ORDER.CANNOT_SUBMIT_NON_DRAFT");
@@ -377,14 +375,14 @@ export class LogisticOrderController {
     }
 
     const batch = db.batch();
-    
+
     // Update order document
     batch.update(orderRef, {
       status: order.status,
     });
 
     // Update user points
-    const userRef = db.collection(COLLECTION_MAP.USER).doc(user.id);
+    const userRef = db.collection(COLLECTION_MAP.USER).doc(order.maker);
     batch.update(userRef, {
       points: user.addPoint(orderPoint),
     });
@@ -393,12 +391,19 @@ export class LogisticOrderController {
     if (order.status === LogisticOrderStatus.REJECTED) {
       meta = {
         reason: data.reason,
-      }
+      };
     }
 
     // add history
-    const historyDoc = orderRef.collection(COLLECTION_MAP.LOGISTIC_ORDER_HISTORY).doc();
-    const newHistory = new LogisticOrderHistory({id: historyDoc.id, status: order.status, timestamp: new Date(), meta});
+    const historyDoc = orderRef
+      .collection(COLLECTION_MAP.LOGISTIC_ORDER_HISTORY)
+      .doc();
+    const newHistory = new LogisticOrderHistory({
+      id: historyDoc.id,
+      status: order.status,
+      timestamp: new Date(),
+      meta,
+    });
     batch.create(historyDoc, newHistory.toObject());
 
     await batch.commit();
@@ -444,9 +449,7 @@ export class LogisticOrderController {
       throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
     }
 
-    const docRef = result.ref
-      .collection(COLLECTION_MAP.LOGISTIC_ITEM)
-      .doc();
+    const docRef = result.ref.collection(COLLECTION_MAP.LOGISTIC_ITEM).doc();
     const data: TLogisticItemData = {
       id: docRef.id,
     };
@@ -550,10 +553,7 @@ export class LogisticOrderController {
         "items",
         logisticOrderItemId,
       ),
-      db
-        .collection(COLLECTION_MAP.LOGISTIC_ORDER)
-        .doc(result.data.id)
-        .delete(),
+      db.collection(COLLECTION_MAP.LOGISTIC_ORDER).doc(result.data.id).delete(),
     ]);
   }
 
@@ -618,7 +618,7 @@ export class LogisticOrderController {
 
     return {
       uploadUrl,
-      downloadUrl,
+      downloadUrl: downloadUrl,
       expiredAt,
     };
   }

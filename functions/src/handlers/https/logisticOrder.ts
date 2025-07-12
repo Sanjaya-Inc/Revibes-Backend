@@ -250,11 +250,7 @@ export class LogisticOrderHandlers {
       throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
     }
 
-    response.data.items.forEach((item) => {
-      item.media?.forEach(async (f) => {
-        f.downloadUri = await getFileStorageInstance().getFullUrl(f.downloadUri);
-      });
-    });
+    await response.data.retrieveFullUrl(getFileStorageInstance());
 
     new AppResponse({
       code: 200,

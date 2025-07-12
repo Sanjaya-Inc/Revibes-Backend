@@ -8,4 +8,4 @@ export type TFirestoreData<T> = {
     FirebaseFirestore.DocumentData,
     FirebaseFirestore.DocumentData
   >;
-}
+};

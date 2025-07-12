@@ -46,7 +46,7 @@ export const GetLogisticItemSchema = z.object({
 export type TGetLogisticItem = z.infer<typeof GetLogisticItemSchema>;
 
 export type TGetLogisticItemRes = TFirestoreData<LogisticItem> & {
-  order?: Partial<TGetLogisticOrderRes>
+  order?: Partial<TGetLogisticOrderRes>;
 };
 
 export const AddLogisticItemSchema = z.object({
