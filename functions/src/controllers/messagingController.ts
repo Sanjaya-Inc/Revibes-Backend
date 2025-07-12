@@ -16,12 +16,12 @@ export class MessagingController {
     switch (order.status) {
       case LogisticOrderStatus.SUBMITTED: {
         new FcmMessaging<TSubmittedDropoffNotifPayload>(
-        {
+          {
             title: "New Dropoff Request",
             body: `${maker?.displayName} just created a new dropoff request`,
-          customData: {
+            customData: {
               orderId: order.id,
-          },
+            },
           },
           ...adminTokens,
         ).send();
