@@ -40,6 +40,7 @@ import {
 } from "../utils/pagination";
 import { AppSettingController } from "./AppSettingController";
 import { CountryController } from "./CountryController";
+import { MessagingController } from "./messagingController";
 import { StoreBranchController } from "./StoreBranchController";
 
 export type TGetLogisticOrderOpt = {
@@ -337,6 +338,8 @@ export class LogisticOrderController {
 
       await batch.commit();
     }
+
+    MessagingController.DropoffNotif(order);
   }
 
   @wrapError

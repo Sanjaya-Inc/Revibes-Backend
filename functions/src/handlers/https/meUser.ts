@@ -7,6 +7,12 @@ import { authenticate } from "../../middlewares/auth";
 import AppError from "../../utils/formatter/AppError";
 import { MeController } from "../../controllers/MeController";
 import { PaginationSchema, TPagination } from "../../dto/pagination";
+import {
+  RemoveUserDeviceSchema,
+  SaveUserDeviceSchema,
+  TRemoveUserDevice,
+  TSaveUserDevice,
+} from "../../dto/userDevice";
 
 export const meRoutes = new Routes("me");
 
@@ -90,6 +96,69 @@ export class MeHandlers {
     new AppResponse({
       code: 200,
       message: "ME.FETCH_VOUCHER_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(meRoutes, "get", "devices", authenticate)
+  static async getDevices(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const response = await MeController.getDevices(req.user);
+    new AppResponse({
+      code: 200,
+      message: "ME.FETCH_DEVICE_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(meRoutes, "put", "devices", authenticate)
+  static async saveDevice(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const userAgent: string =
+      req.get("User-Agent") || req.get("user-agent") || "";
+    let data: TSaveUserDevice = { ...req.body, userAgent };
+
+    try {
+      // Validate form data using Zod
+      data = SaveUserDeviceSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await MeController.saveDevice(req.user, data);
+    new AppResponse({
+      code: 200,
+      message: "ME.ADD_DEVICE_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(meRoutes, "delete", "devices/:id", authenticate)
+  static async deleteDevice(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const id = req.params.id;
+    let data: TRemoveUserDevice = { id };
+
+    try {
+      // Validate form data using Zod
+      data = RemoveUserDeviceSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await MeController.removeDevice(req.user, data);
+    new AppResponse({
+      code: 200,
+      message: "ME.DELETE_DEVICE_SUCCESS",
       data: response,
     }).asJsonResponse(res);
   }

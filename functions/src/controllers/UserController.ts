@@ -17,9 +17,14 @@ import {
 } from "../utils/pagination";
 import AppError from "../utils/formatter/AppError";
 import { TChangePassword } from "../dto/me";
+import UserDevice from "../models/userDevice";
 
 export type TCreateUserOpt = {
   skipCheck?: boolean;
+};
+
+export type TGetAdminsOpt = {
+  withDevices?: boolean;
 };
 
 export class UserController {
@@ -244,5 +249,32 @@ export class UserController {
     await db.collection(COLLECTION_MAP.USER).doc(user.id).update({
       password: hashedPassword,
     });
+  }
+
+  @wrapError
+  public static async getAdmins({ withDevices }: TGetAdminsOpt = {}): Promise<
+    User[]
+  > {
+    const usersSnapshot = await db.collection(COLLECTION_MAP.USER).get();
+
+    return await Promise.all(
+      usersSnapshot.docs.map(async (doc) => {
+        // Get devices subcollection for this user
+        const devicesSnapshot = await db
+          .collection(COLLECTION_MAP.USER)
+          .doc(doc.id)
+          .collection(COLLECTION_MAP.USER_DEVICE)
+          .get();
+
+        const devices: UserDevice[] = [];
+        if (withDevices) {
+          devices.push(
+            ...devicesSnapshot.docs.map((doc) => new UserDevice(doc.data())),
+          );
+        }
+
+        return new User({ ...doc.data(), devices });
+      }),
+    );
   }
 }

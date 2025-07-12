@@ -3,6 +3,7 @@ export enum COLLECTION_MAP {
   USER = "users",
   USER_DAILY_REWARD = "user_daily_rewards",
   USER_VOUCHER = "user_vouchers",
+  USER_DEVICE = "user_devices",
   BANNER = "banners",
   COUNTRY = "countries",
   LOGISTIC_ORDER = "logistic_orders",

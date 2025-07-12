@@ -16,6 +16,8 @@ import UserDailyReward from "../models/UserDailyReward";
 import { AppSettingController } from "./AppSettingController";
 import { WriteBatch } from "firebase-admin/firestore";
 import { isDateToday } from "../utils/date";
+import { TRemoveUserDevice, TSaveUserDevice } from "../dto/userDevice";
+import UserDevice from "../models/userDevice";
 
 export class MeController {
   @wrapError
@@ -169,30 +171,66 @@ export class MeController {
   }
 
   @wrapError
-  public static async registerFcmToken(
+  public static async getDevices(user: TGetUserRes): Promise<UserDevice[]> {
+    const snapshot = await user.ref
+      .collection(COLLECTION_MAP.USER_DEVICE)
+      .get();
+
+    const devices: UserDevice[] = [];
+    snapshot.forEach((doc) => {
+      devices.push(new UserDevice({ ...doc.data() }));
+    });
+
+    return devices;
+  }
+
+  @wrapError
+  public static async saveDevice(
     user: TGetUserRes,
-    filters: TPaginateConstruct,
-  ): Promise<TPaginatedPage<UserVoucher>> {
-    filters.ref = user.ref;
-    filters.addQuery = (q) =>
-      q.where(
-        and(
-          where("status", "!=", UserVoucherStatus.REDEEMED),
-          where("status", "!=", UserVoucherStatus.EXPIRED),
-        ),
-      );
-    const { items, pagination } = await createPage<UserVoucher>(
-      COLLECTION_MAP.VOUCHER,
-      filters,
-    );
+    data: TSaveUserDevice,
+  ): Promise<UserDevice> {
+    const result = await user.ref
+      .collection(COLLECTION_MAP.USER_DEVICE)
+      .where("deviceToken", "==", data.deviceToken)
+      .get();
 
-    const vouchers = items.map((item) =>
-      new UserVoucher(item).getPublicFields(),
-    );
+    if (result.empty) {
+      const docRef = user.ref.collection(COLLECTION_MAP.USER_DEVICE).doc();
 
-    return {
-      items: vouchers,
-      pagination,
-    };
+      const device = new UserDevice({ ...data, id: docRef.id });
+      device.extractType();
+
+      await docRef.set(device.toObject());
+
+      return device;
+    } else {
+      const snapshot = result.docs[0];
+      const device = new UserDevice(snapshot.data());
+      device.fcmToken = data.fcmToken;
+      device.updatedAt = new Date();
+
+      await user.ref
+        .collection(COLLECTION_MAP.USER_DEVICE)
+        .doc(device.id)
+        .update(device.toObject());
+      return device;
+    }
+  }
+
+  @wrapError
+  public static async removeDevice(
+    user: TGetUserRes,
+    { id }: TRemoveUserDevice,
+  ): Promise<void> {
+    const device = await user.ref
+      .collection(COLLECTION_MAP.USER_DEVICE)
+      .doc(id)
+      .get();
+
+    if (!device.exists) {
+      throw new AppError(404, "USER_DEVICE.NOT_FOUND");
+    }
+
+    await user.ref.collection(COLLECTION_MAP.USER_DEVICE).doc(id).delete();
   }
 }

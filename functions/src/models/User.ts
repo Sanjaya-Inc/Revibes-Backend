@@ -63,6 +63,7 @@ export const defaultUserData: TUserData = {
 
   // relation
   dailyRewards: [],
+  devices: [],
 };
 
 export class User extends BaseModel {
