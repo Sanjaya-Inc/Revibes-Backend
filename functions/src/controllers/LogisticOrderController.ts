@@ -9,12 +9,13 @@ import {
   TGetLogisticItems,
 } from "../dto/logisticItem";
 import {
-  TConfirmLogisticOrder,
+  TCompleteLogisticOrder,
   TDeleteLogisticOrder,
   TEstimateLogisticOrderPoint,
   TEstimateLogisticOrderPointRes,
   TGetLogisticOrder,
   TGetLogisticOrderRes,
+  TRejectLogisticOrder,
   TSubmitLogisticOrder,
 } from "../dto/logisticOrder";
 import LogisticItem, { TLogisticItemData } from "../models/LogisticItem";
@@ -45,6 +46,7 @@ import { StoreBranchController } from "./StoreBranchController";
 
 export type TGetLogisticOrderOpt = {
   withItems?: boolean;
+  withHistories?: boolean;
 };
 
 export type TGetLogisticOrderItemOpt = {
@@ -56,7 +58,7 @@ export class LogisticOrderController {
   public static async getOrder(
     user: User,
     { id }: TGetLogisticOrder,
-    { withItems = false }: TGetLogisticOrderOpt = {},
+    { withItems, withHistories }: TGetLogisticOrderOpt = {},
   ): Promise<TGetLogisticOrderRes | null> {
     const orderRef = db.collection(COLLECTION_MAP.LOGISTIC_ORDER).doc(id);
 
@@ -77,8 +79,21 @@ export class LogisticOrderController {
       const itemsSnapshot = await orderRef
         .collection(COLLECTION_MAP.LOGISTIC_ITEM)
         .get();
-      const logisticItems = itemsSnapshot.docs.map((doc) => doc.data());
-      logisticOrder.assignItems(logisticItems);
+
+      logisticOrder.items = itemsSnapshot.docs.map(
+        (doc) => new LogisticItem(doc.data()),
+      );
+    }
+
+    if (withHistories) {
+      // Get subcollection of logistic_item
+      const historiesSnapshot = await orderRef
+        .collection(COLLECTION_MAP.LOGISTIC_ORDER_HISTORY)
+        .get();
+
+      logisticOrder.histories = historiesSnapshot.docs.map(
+        (doc) => new LogisticOrderHistory(doc.data()),
+      );
     }
 
     return {
@@ -121,6 +136,20 @@ export class LogisticOrderController {
 
     const logisticOrders = items.map((item) =>
       new LogisticOrder(item).getPublicFields(),
+    );
+
+    await Promise.all(
+      logisticOrders.map(async (order) => {
+        const itemSnapshots = await db
+          .collection(COLLECTION_MAP.LOGISTIC_ORDER)
+          .doc(order.id)
+          .collection(COLLECTION_MAP.LOGISTIC_ITEM)
+          .get();
+
+        order.items = itemSnapshots.docs.map(
+          (doc) => new LogisticItem(doc.data()),
+        );
+      }),
     );
 
     return {
@@ -234,7 +263,11 @@ export class LogisticOrderController {
     user: User,
     data: TSubmitLogisticOrder,
   ): Promise<void> {
-    const orderRes = await this.getOrder(user, { id: data.id });
+    const orderRes = await this.getOrder(
+      user,
+      { id: data.id },
+      { withItems: true },
+    );
     if (!orderRes) {
       throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
     }
@@ -277,75 +310,103 @@ export class LogisticOrderController {
 
     order.status = LogisticOrderStatus.SUBMITTED;
 
-    if (Array.isArray(data.items) && data.items.length > 0) {
-      const batch = db.batch();
+    const batch = db.batch();
 
-      // Update order document
-      batch.update(
-        db.collection(COLLECTION_MAP.LOGISTIC_ORDER).doc(data.id),
-        order.toObject(),
-      );
+    // Update order document
+    batch.update(db.collection(COLLECTION_MAP.LOGISTIC_ORDER).doc(data.id), {
+      type: order.type,
+      updatedAt: order.updatedAt,
+      name: order.name,
+      country: order.country,
+      address: order.address,
+      addressDetail: order.addressDetail,
+      postalCode: order.postalCode,
+      storeLocation: order.storeLocation,
+      status: order.status,
+      totalPoint: order.totalPoint,
+    });
 
-      for (const item of data.items) {
-        // Fetch the latest item data from Firestore
-        const getItemRes = await this.getOrderItem(user, {
-          logisticOrderId: order.id,
-          logisticOrderItemId: item.id,
-        });
-        if (!getItemRes) {
-          throw new AppError(404, "LOGISTIC_ORDER.ITEM_NOT_FOUND");
-        }
+    // saved order items on database
+    const { items } = order;
 
-        let dbItem = new LogisticItem(item);
-        if (getItemRes.data) {
-          dbItem = new LogisticItem({
-            ...getItemRes.data.toObject(),
-            ...item,
-          });
-        }
-
-        // Remove media files from Firestore item if they do not exist in Firebase Storage
-        if (Array.isArray(dbItem.media) && dbItem.media.length > 0) {
-          const storageInstance = getFileStorageInstance();
-          const mediaChecks = dbItem.media.map(async (media) => {
-            // Assume media.downloadUri is the storage path
-            const exists = await storageInstance.fileExists(media.downloadUri);
-            if (exists) {
-              return media;
-            }
-            return null;
-          });
-          const checkedMedia = await Promise.all(mediaChecks);
-          const validMedia = checkedMedia.filter((media) => media !== null);
-          if (validMedia.length !== dbItem.media.length) {
-            dbItem.media = validMedia;
-          }
-        }
-
-        batch.set(getItemRes.ref, { ...dbItem.toObject() }, { merge: true });
+    // update submitted items
+    for (const item of data.items) {
+      const itemRecord = items.find((i) => i.id === item.id);
+      if (!itemRecord) {
+        throw new AppError(404, "LOGISTIC_ORDER.ITEM_NOT_FOUND");
       }
 
-      // add history
-      const historyDoc = orderRef
-        .collection(COLLECTION_MAP.LOGISTIC_ORDER_HISTORY)
-        .doc();
-      const newHistory = new LogisticOrderHistory({
-        id: historyDoc.id,
-        status: LogisticOrderStatus.SUBMITTED,
-        timestamp: new Date(),
-      });
-      batch.create(historyDoc, newHistory.toObject());
+      let dbItem = new LogisticItem(item);
+      if (itemRecord) {
+        dbItem = new LogisticItem({
+          ...itemRecord.toObject(),
+          ...item,
+        });
+      }
 
-      await batch.commit();
+      // Remove media files from Firestore item if they do not exist in Firebase Storage
+      if (Array.isArray(dbItem.media) && dbItem.media.length > 0) {
+        const storageInstance = getFileStorageInstance();
+        const mediaChecks = dbItem.media.map(async (media) => {
+          // Assume media.downloadUri is the storage path
+          const exists = await storageInstance.fileExists(media.downloadUri);
+          if (exists) {
+            return media;
+          }
+          return null;
+        });
+        const checkedMedia = await Promise.all(mediaChecks);
+        const validMedia = checkedMedia.filter((media) => media !== null);
+        if (validMedia.length !== dbItem.media.length) {
+          dbItem.media = validMedia;
+        }
+      }
+
+      const itemRef = db
+        .collection(COLLECTION_MAP.LOGISTIC_ORDER)
+        .doc(order.id)
+        .collection(COLLECTION_MAP.LOGISTIC_ITEM)
+        .doc(itemRecord.id);
+      batch.set(itemRef, { ...dbItem.toObject() }, { merge: true });
     }
+
+    // Delete not submitted items
+    const submittedItemIds = data.items.map((i) => i.id);
+    for (const item of items.filter((i) => !submittedItemIds.includes(i.id))) {
+      // Remove media files from Firestore item if they do not exist in Firebase Storage
+      if (Array.isArray(item.media) && item.media.length > 0) {
+        const storageInstance = getFileStorageInstance();
+        storageInstance.removeFolder(BasePath.LOGISTIC, order.id, "items");
+      }
+
+      const itemRef = db
+        .collection(COLLECTION_MAP.LOGISTIC_ORDER)
+        .doc(order.id)
+        .collection(COLLECTION_MAP.LOGISTIC_ITEM)
+        .doc(item.id);
+      batch.delete(itemRef);
+    }
+
+    // add history
+    const historyDoc = orderRef
+      .collection(COLLECTION_MAP.LOGISTIC_ORDER_HISTORY)
+      .doc();
+    const newHistory = new LogisticOrderHistory({
+      id: historyDoc.id,
+      status: LogisticOrderStatus.SUBMITTED,
+      timestamp: new Date(),
+    });
+    batch.create(historyDoc, newHistory.toObject());
+
+    await batch.commit();
 
     MessagingController.DropoffNotif(order);
   }
 
   @wrapError
-  public static async confirmOrder(
+  public static async rejectOrder(
     user: User,
-    data: TConfirmLogisticOrder,
+    data: TRejectLogisticOrder,
   ): Promise<void> {
     const orderRes = await this.getOrder(
       user,
@@ -358,31 +419,101 @@ export class LogisticOrderController {
 
     const { data: order, ref: orderRef } = orderRes;
 
-    if (order.status !== LogisticOrderStatus.SUBMITTED) {
-      throw new AppError(403, "LOGISTIC_ORDER.CANNOT_SUBMIT_NON_DRAFT");
+    if (![LogisticOrderStatus.SUBMITTED].includes(order.status)) {
+      throw new AppError(403, "LOGISTIC_ORDER.CANNOT_REJECT_ORDER");
     }
 
-    if (data.reject) {
-      order.status = LogisticOrderStatus.REJECTED;
-    } else {
-      order.status = LogisticOrderStatus.COMPLETED;
-    }
-
-    let orderPoint = 0;
-    const setting = await AppSettingController.getSetting();
-    if (data.customPoint) {
-      orderPoint = data.customPoint;
-    } else {
-      for (const item of order.items) {
-        orderPoint += item.calculatePoint(setting);
-      }
-    }
+    order.status = LogisticOrderStatus.REJECTED;
+    order.updatedAt = new Date();
 
     const batch = db.batch();
 
     // Update order document
     batch.update(orderRef, {
       status: order.status,
+      updatedAt: order.updatedAt,
+    });
+
+    let meta = null;
+    if (data.reason) {
+      meta = {
+        reason: data.reason,
+      };
+    }
+
+    // add history
+    const historyDoc = orderRef
+      .collection(COLLECTION_MAP.LOGISTIC_ORDER_HISTORY)
+      .doc();
+    const newHistory = new LogisticOrderHistory({
+      id: historyDoc.id,
+      status: order.status,
+      timestamp: new Date(),
+      meta,
+    });
+    batch.create(historyDoc, newHistory.toObject());
+
+    await batch.commit();
+  }
+
+  @wrapError
+  public static async completeOrder(
+    user: User,
+    data: TCompleteLogisticOrder,
+  ): Promise<void> {
+    const orderRes = await this.getOrder(
+      user,
+      { id: data.id },
+      { withItems: true },
+    );
+    if (!orderRes) {
+      throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
+    }
+
+    const { data: order, ref: orderRef } = orderRes;
+
+    if (![LogisticOrderStatus.SUBMITTED].includes(order.status)) {
+      throw new AppError(403, "LOGISTIC_ORDER.CANNOT_COMPLETE_ORDER");
+    }
+
+    let orderPoint = 0;
+    const setting = await AppSettingController.getSetting();
+    if (data.customTotalPoint) {
+      orderPoint = data.customTotalPoint;
+    } else if (data.customPoints && data.customPoints?.length > 0) {
+      for (const item of order.items) {
+        const customPoint = data.customPoints.find((i) => i.id === item.id);
+        if (customPoint) {
+          item.point = customPoint?.point;
+          orderPoint += item.point;
+        }
+      }
+    } else {
+      for (const item of order.items) {
+        orderPoint += item.calculatePoint(setting);
+      }
+    }
+
+    order.status = LogisticOrderStatus.COMPLETED;
+    order.totalPoint = orderPoint;
+    order.updatedAt = new Date();
+
+    const batch = db.batch();
+
+    // Update order document
+    batch.update(orderRef, {
+      status: order.status,
+      totalPoint: order.totalPoint,
+      updatedAt: order.updatedAt,
+    });
+
+    order.items.forEach((item) => {
+      const itemRef = orderRef
+        .collection(COLLECTION_MAP.LOGISTIC_ITEM)
+        .doc(item.id);
+      batch.update(itemRef, {
+        point: item.point,
+      });
     });
 
     // Update user points
@@ -391,12 +522,7 @@ export class LogisticOrderController {
       points: user.addPoint(orderPoint),
     });
 
-    let meta = null;
-    if (order.status === LogisticOrderStatus.REJECTED) {
-      meta = {
-        reason: data.reason,
-      };
-    }
+    const meta = null;
 
     // add history
     const historyDoc = orderRef

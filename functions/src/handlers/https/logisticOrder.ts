@@ -6,15 +6,17 @@ import { adminOnly, authenticate } from "../../middlewares/auth";
 import AppError from "../../utils/formatter/AppError";
 import { LogisticOrderController } from "../../controllers/LogisticOrderController";
 import {
-  ConfirmLogisticOrderSchema,
+  CompleteLogisticOrderSchema,
   DeleteLogisticOrderSchema,
   EstimateLogisticOrderPointSchema,
   GetLogisticOrderSchema,
   LogisticOrderSchema,
-  TConfirmLogisticOrder,
+  RejectLogisticOrderSchema,
+  TCompleteLogisticOrder,
   TDeleteLogisticOrder,
   TEstimateLogisticOrderPoint,
   TGetLogisticOrder,
+  TRejectLogisticOrder,
   TSubmitLogisticOrder,
 } from "../../dto/logisticOrder";
 import {
@@ -161,7 +163,12 @@ export class LogisticOrderHandlers {
     }).asJsonResponse(res);
   }
 
-  @registerRoute(logisticOrderRoutes, "post", "estimate-point", authenticate)
+  @registerRoute(
+    logisticOrderRoutes,
+    "post",
+    ":id/estimate-point",
+    authenticate,
+  )
   static async estimateOrderPoint(req: Request, res: Response) {
     if (!req.user) {
       throw new AppError(403, "COMMON.FORBIDDEN");
@@ -182,80 +189,6 @@ export class LogisticOrderHandlers {
       code: 200,
       message: "LOGISTIC_ORDER.ESTIMATE_POINT_SUCCESS",
       data: response,
-    }).asJsonResponse(res);
-  }
-
-  @registerRoute(logisticOrderRoutes, "post", "", authenticate)
-  static async addOrder(req: Request, res: Response) {
-    if (!req.user) {
-      throw new AppError(403, "COMMON.FORBIDDEN");
-    }
-
-    const response = await LogisticOrderController.addOrder(req.user.data);
-
-    new AppResponse({
-      code: 201,
-      message: "LOGISTIC_ORDER.ADD_SUCCESS",
-      data: response,
-    }).asJsonResponse(res);
-  }
-
-  @registerRoute(logisticOrderRoutes, "get", "", authenticate)
-  static async getOrders(req: Request, res: Response) {
-    if (!req.user) {
-      throw new AppError(403, "COMMON.FORBIDDEN");
-    }
-
-    let pagination: TPagination;
-    try {
-      pagination = PaginationSchema.parse(req.query);
-    } catch (err: any) {
-      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
-    }
-
-    const response = await LogisticOrderController.getOrders(
-      req.user.data,
-      pagination,
-    );
-    new AppResponse({
-      code: 200,
-      message: "LOGISTIC_ORDER.FETCH_SUCCESS",
-      data: response,
-    }).asJsonResponse(res);
-  }
-
-  @registerRoute(logisticOrderRoutes, "get", ":id", authenticate)
-  static async getOrder(req: Request, res: Response) {
-    if (!req.user) {
-      throw new AppError(403, "COMMON.FORBIDDEN");
-    }
-
-    const id = req.params.id;
-    let data: TGetLogisticOrder = { id };
-    try {
-      // Validate form data using Zod
-      data = GetLogisticOrderSchema.parse(data);
-    } catch (err: any) {
-      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
-    }
-
-    const response = await LogisticOrderController.getOrder(
-      req.user.data,
-      data,
-      {
-        withItems: true,
-      },
-    );
-    if (!response) {
-      throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
-    }
-
-    await response.data.retrieveFullUrl(getFileStorageInstance());
-
-    new AppResponse({
-      code: 200,
-      message: "LOGISTIC_ORDER.FETCH_SUCCESS",
-      data: response.data.pickFields(),
     }).asJsonResponse(res);
   }
 
@@ -310,30 +243,96 @@ export class LogisticOrderHandlers {
   @registerRoute(
     logisticOrderRoutes,
     "patch",
-    ":id/confirm",
+    ":id/reject",
     authenticate,
     adminOnly,
   )
-  static async confirmOrder(req: Request, res: Response) {
+  static async rejectOrder(req: Request, res: Response) {
     if (!req.user) {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
     const id = req.params.id;
-    let data: TConfirmLogisticOrder = { id, ...req.body };
+    let data: TRejectLogisticOrder = { id, ...req.body };
 
     try {
       // Validate form data using Zod
-      data = ConfirmLogisticOrderSchema.parse(data);
+      data = RejectLogisticOrderSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    await LogisticOrderController.confirmOrder(req.user.data, data);
+    await LogisticOrderController.rejectOrder(req.user.data, data);
 
     new AppResponse({
       code: 200,
-      message: "LOGISTIC_ORDER.CONFIRM_SUCCESS",
+      message: "LOGISTIC_ORDER.REJECT_SUCCESS",
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(
+    logisticOrderRoutes,
+    "patch",
+    ":id/complete",
+    authenticate,
+    adminOnly,
+  )
+  static async completeOrder(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const id = req.params.id;
+    let data: TCompleteLogisticOrder = { id, ...req.body };
+
+    try {
+      // Validate form data using Zod
+      data = CompleteLogisticOrderSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    await LogisticOrderController.completeOrder(req.user.data, data);
+
+    new AppResponse({
+      code: 200,
+      message: "LOGISTIC_ORDER.COMPLETE_SUCCESS",
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(logisticOrderRoutes, "get", ":id", authenticate)
+  static async getOrder(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const id = req.params.id;
+    let data: TGetLogisticOrder = { id };
+    try {
+      // Validate form data using Zod
+      data = GetLogisticOrderSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await LogisticOrderController.getOrder(
+      req.user.data,
+      data,
+      {
+        withItems: true,
+        withHistories: true,
+      },
+    );
+    if (!response) {
+      throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
+    }
+
+    await response.data.retrieveFullUrl(getFileStorageInstance());
+
+    new AppResponse({
+      code: 200,
+      message: "LOGISTIC_ORDER.FETCH_SUCCESS",
+      data: response.data.pickFields(),
     }).asJsonResponse(res);
   }
 
@@ -357,6 +356,45 @@ export class LogisticOrderHandlers {
     new AppResponse({
       code: 200,
       message: "LOGISTIC_ORDER.GET_ITEMS_SUCCESS",
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(logisticOrderRoutes, "post", "", authenticate)
+  static async addOrder(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const response = await LogisticOrderController.addOrder(req.user.data);
+
+    new AppResponse({
+      code: 201,
+      message: "LOGISTIC_ORDER.ADD_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(logisticOrderRoutes, "get", "", authenticate)
+  static async getOrders(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    let pagination: TPagination;
+    try {
+      pagination = PaginationSchema.parse(req.query);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await LogisticOrderController.getOrders(
+      req.user.data,
+      pagination,
+    );
+    new AppResponse({
+      code: 200,
+      message: "LOGISTIC_ORDER.FETCH_SUCCESS",
+      data: response,
     }).asJsonResponse(res);
   }
 }

@@ -21,6 +21,7 @@ export const defaultLogisticItemData: TLogisticItemData = {
   name: "",
   type: LogisticItemType.ORGANIC,
   weight: 0,
+  point: 0,
   media: [],
 };
 
@@ -29,6 +30,7 @@ export class LogisticItem extends BaseModel {
   name!: string;
   type!: LogisticItemType;
   weight!: number;
+  point!: number;
   media!: TMedia[];
 
   constructor(data: TLogisticItemData) {
@@ -36,7 +38,8 @@ export class LogisticItem extends BaseModel {
   }
 
   calculatePoint(setting: AppSetting) {
-    return setting.getPoint(this.type);
+    this.point = setting.getPoint(this.type);
+    return this.point;
   }
 
   async retrieveFullUrl(storage: FileStorage) {

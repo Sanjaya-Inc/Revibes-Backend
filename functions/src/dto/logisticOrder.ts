@@ -68,18 +68,45 @@ export const LogisticOrderSchema = z.discriminatedUnion("type", [
 
 export type TSubmitLogisticOrder = z.infer<typeof LogisticOrderSchema>;
 
-export const ConfirmLogisticOrderSchema = z.object({
+export const RejectLogisticOrderSchema = z.object({
   id: z
     .string({
       required_error: "LOGISTIC.ID_REQUIRED",
     })
     .min(1, "LOGISTIC.ID_REQUIRED"),
-  reject: z.boolean().default(false),
   reason: z.string().optional(),
-  customPoint: z.number().optional(),
 });
 
-export type TConfirmLogisticOrder = z.infer<typeof ConfirmLogisticOrderSchema>;
+export type TRejectLogisticOrder = z.infer<typeof RejectLogisticOrderSchema>;
+
+export const CompleteLogisticOrderSchema = z.object({
+  id: z
+    .string({
+      required_error: "LOGISTIC.ID_REQUIRED",
+    })
+    .min(1, "LOGISTIC.ID_REQUIRED"),
+  customTotalPoint: z.number().optional(),
+  customPoints: z
+    .array(
+      z.object({
+        id: z
+          .string({
+            required_error: "LOGISTIC.ITEM_ID_REQUIRED",
+          })
+          .min(1, "LOGISTIC.ITEM_ID_REQUIRED"),
+        point: z
+          .number({
+            required_error: "LOGISTIC.ITEM_POINT_REQUIRED",
+          })
+          .min(1, "LOGISTIC.ITEM_POINT_REQUIRED"),
+      }),
+    )
+    .optional(),
+});
+
+export type TCompleteLogisticOrder = z.infer<
+  typeof CompleteLogisticOrderSchema
+>;
 
 export const EstimateLogisticOrderPointSchema = z.object({
   items: z

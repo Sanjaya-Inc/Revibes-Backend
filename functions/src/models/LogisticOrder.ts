@@ -1,6 +1,6 @@
 import { FileStorage } from "../utils/firebase";
 import BaseModel from "./BaseModel";
-import LogisticItem, { TLogisticItemData } from "./LogisticItem";
+import LogisticItem from "./LogisticItem";
 import { LogisticOrderHistory } from "./LogisticOrderHistory";
 
 export type TLogisticOrderData = Partial<LogisticOrder>;
@@ -15,7 +15,6 @@ export enum LogisticOrderStatus {
   SUBMITTED = "submitted",
   REJECTED = "rejected",
   COMPLETED = "completed",
-  CANCELLED = "cancelled",
 }
 
 export const publicFields: (keyof LogisticOrder)[] = [
@@ -31,6 +30,7 @@ export const publicFields: (keyof LogisticOrder)[] = [
   "status",
   "maker",
   "items",
+  "totalPoint",
 ];
 
 export const detailFields: (keyof LogisticOrder)[] = [
@@ -41,10 +41,12 @@ export const detailFields: (keyof LogisticOrder)[] = [
   "name",
   "country",
   "address",
+  "addressDetail",
   "postalCode",
   "storeLocation",
   "status",
   "maker",
+  "totalPoint",
   "items",
   "histories",
 ];
@@ -63,6 +65,7 @@ export const defaultLogisticOrderData: TLogisticOrderData = {
   items: [],
   status: LogisticOrderStatus.DRAFT,
   maker: "",
+  totalPoint: 0,
 
   histories: [],
 };
@@ -81,6 +84,7 @@ export class LogisticOrder extends BaseModel {
   items!: LogisticItem[];
   status!: LogisticOrderStatus;
   maker!: string;
+  totalPoint!: number;
   histories!: LogisticOrderHistory[];
 
   constructor(data: TLogisticOrderData) {
@@ -93,12 +97,6 @@ export class LogisticOrder extends BaseModel {
 
   getDetailFields(keys = detailFields) {
     return super.pickFields(keys);
-  }
-
-  assignItems(logisticItems: TLogisticItemData[]) {
-    this.items = logisticItems.map(
-      (item: TLogisticItemData) => new LogisticItem(item),
-    );
   }
 
   async retrieveFullUrl(storage: FileStorage) {
