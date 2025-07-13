@@ -665,7 +665,7 @@ export class LogisticOrderController {
       { withOrder: true },
     );
 
-    if (!result) {
+    if (!result || !result.order?.ref) {
       throw new AppError(404, "LOGISTIC_ORDER.ITEM_NOT_FOUND");
     }
 
@@ -683,7 +683,10 @@ export class LogisticOrderController {
         "items",
         logisticOrderItemId,
       ),
-      db.collection(COLLECTION_MAP.LOGISTIC_ORDER).doc(result.data.id).delete(),
+      result?.order?.ref
+        .collection(COLLECTION_MAP.LOGISTIC_ITEM)
+        .doc(result.data.id)
+        .delete(),
     ]);
   }
 

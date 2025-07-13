@@ -163,35 +163,6 @@ export class LogisticOrderHandlers {
     }).asJsonResponse(res);
   }
 
-  @registerRoute(
-    logisticOrderRoutes,
-    "post",
-    ":id/estimate-point",
-    authenticate,
-  )
-  static async estimateOrderPoint(req: Request, res: Response) {
-    if (!req.user) {
-      throw new AppError(403, "COMMON.FORBIDDEN");
-    }
-
-    let data: TEstimateLogisticOrderPoint = req.body;
-
-    try {
-      // Validate form data using Zod
-      data = EstimateLogisticOrderPointSchema.parse(data);
-    } catch (err: any) {
-      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
-    }
-
-    const response = await LogisticOrderController.estimateOrderPoint(data);
-
-    new AppResponse({
-      code: 200,
-      message: "LOGISTIC_ORDER.ESTIMATE_POINT_SUCCESS",
-      data: response,
-    }).asJsonResponse(res);
-  }
-
   @registerRoute(logisticOrderRoutes, "put", ":id/save", authenticate)
   static async saveOrder(req: Request, res: Response) {
     if (!req.user) {
@@ -356,6 +327,30 @@ export class LogisticOrderHandlers {
     new AppResponse({
       code: 200,
       message: "LOGISTIC_ORDER.GET_ITEMS_SUCCESS",
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(logisticOrderRoutes, "post", "estimate-point", authenticate)
+  static async estimateOrderPoint(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    let data: TEstimateLogisticOrderPoint = req.body;
+
+    try {
+      // Validate form data using Zod
+      data = EstimateLogisticOrderPointSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await LogisticOrderController.estimateOrderPoint(data);
+
+    new AppResponse({
+      code: 200,
+      message: "LOGISTIC_ORDER.ESTIMATE_POINT_SUCCESS",
+      data: response,
     }).asJsonResponse(res);
   }
 
