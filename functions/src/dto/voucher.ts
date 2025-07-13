@@ -2,6 +2,8 @@ import { z } from "zod";
 import { ImageSchema } from "./file";
 import Voucher, { VoucherValueType } from "../models/Voucher";
 import { TFirestoreData } from "./common";
+import { dropUndefinedFromObject } from "../utils/zod";
+import { Currency } from "../constant/currency";
 
 // This schema represents the file object as parsed
 export const CreateVoucherSchema = z.object({
@@ -19,47 +21,202 @@ export const CreateVoucherSchema = z.object({
   type: z.nativeEnum(VoucherValueType, {
     required_error: "VOUCHER.TYPE_REQUIRED",
   }),
-  amount: z.number({
-    required_error: "VOUCHER.CODE_REQUIRED",
-  }),
-  conditions: z
-    .object({
-      usageLimit: z.number().min(0, "VOUCHER.USAGE_LIMIT_MIN").optional(),
-      minOrderItem: z.number().min(0, "VOUCHER.MIN_ORDER_ITEM_MIN").optional(),
-      minOrderAmount: z
-        .number()
-        .min(0, "VOUCHER.MIN_ORDER_AMOUNT_MIN")
-        .optional(),
-      maxDiscountAmount: z
-        .number()
-        .min(0, "VOUCHER.MAX_DISCOUNT_AMOUNT_MIN")
-        .optional(),
+  amount: z.preprocess(
+    // Preprocess function for 'amount'
+    (arg) => {
+      if (typeof arg === "string" && !isNaN(parseFloat(arg))) {
+        return parseFloat(arg);
+      }
+      return arg; // Let Zod's .number() handle invalid types
+    },
+    z
+      .number({
+        required_error: "VOUCHER.AMOUNT_REQUIRED",
+        invalid_type_error: "VOUCHER.AMOUNT_INVALID",
+      })
+      .min(0, "VOUCHER.AMOUNT_MIN_INVALID"), // Add a min constraint for amount if applicable
+  ),
+  currency: z
+    .nativeEnum(Currency, {
+      errorMap: () => ({ message: "VOUCHER.CURRENCY_INVALID" }),
     })
     .optional(),
-  claimPeriodStart: z
+  conditions: z
     .preprocess(
-      (arg) =>
-        typeof arg === "string" || arg instanceof Date
-          ? new Date(arg)
-          : undefined,
-      z.date({
-        required_error: "VOUCHER.CLAIM_PERIOD_START_REQUIRED",
-        invalid_type_error: "VOUCHER.CLAIM_PERIOD_START_INVALID",
-      }),
+      (arg) => {
+        // If the top-level 'conditions' field is undefined, null, or an empty string,
+        // return undefined so the final .optional() can make the whole object optional.
+        if (
+          arg === undefined ||
+          arg === null ||
+          (typeof arg === "string" && arg.trim() === "")
+        ) {
+          return undefined;
+        }
+        // If it's a string that looks like an object, try parsing it
+        if (
+          typeof arg === "string" &&
+          arg.startsWith("{") &&
+          arg.endsWith("}")
+        ) {
+          try {
+            return JSON.parse(arg);
+          } catch (e) {
+            return undefined; // If parsing fails, treat as undefined
+          }
+        }
+        return arg; // Pass through if it's already an object or another valid type
+      },
+      // The inner object schema for conditions, which will be validated if 'conditions' is present
+      z.object(
+        {
+          maxClaim: z.preprocess(
+            (arg) => {
+              if (
+                arg === null ||
+                (typeof arg === "string" && arg.trim().toLowerCase() === "null")
+              ) {
+                return undefined;
+              }
+              if (typeof arg === "string" && !isNaN(parseFloat(arg))) {
+                return parseFloat(arg);
+              }
+              return arg;
+            },
+            z
+              .number({
+                invalid_type_error: "VOUCHER.CONDITIONS.MAX_CLAIM_INVALID",
+              })
+              .min(1, "VOUCHER.CONDITIONS.MAX_CLAIM_MIN")
+              .optional(), // Add min constraint
+          ),
+
+          maxUsage: z.preprocess(
+            (arg) => {
+              if (
+                arg === null ||
+                (typeof arg === "string" && arg.trim().toLowerCase() === "null")
+              ) {
+                return undefined;
+              }
+              if (typeof arg === "string" && !isNaN(parseFloat(arg))) {
+                return parseFloat(arg);
+              }
+              return arg;
+            },
+            z
+              .number({
+                invalid_type_error: "VOUCHER.CONDITIONS.MAX_USAGE_INVALID",
+              })
+              .min(1, "VOUCHER.CONDITIONS.MAX_USAGE_MIN")
+              .optional(), // Add min constraint
+          ),
+
+          minOrderItem: z.preprocess(
+            (arg) => {
+              if (
+                arg === null ||
+                (typeof arg === "string" && arg.trim().toLowerCase() === "null")
+              ) {
+                return undefined;
+              }
+              if (typeof arg === "string" && !isNaN(parseFloat(arg))) {
+                return parseFloat(arg);
+              }
+              return arg;
+            },
+            z
+              .number({
+                invalid_type_error: "VOUCHER.CONDITIONS.MIN_ORDER_ITEM_INVALID",
+              })
+              .min(1, "VOUCHER.CONDITIONS.MIN_ORDER_ITEM_MIN")
+              .optional(), // Add min constraint
+          ),
+
+          minOrderAmount: z.preprocess(
+            (arg) => {
+              if (
+                arg === null ||
+                (typeof arg === "string" && arg.trim().toLowerCase() === "null")
+              ) {
+                return undefined;
+              }
+              if (typeof arg === "string" && !isNaN(parseFloat(arg))) {
+                return parseFloat(arg);
+              }
+              return arg;
+            },
+            z
+              .number({
+                invalid_type_error:
+                  "VOUCHER.CONDITIONS.MIN_ORDER_AMOUNT_INVALID",
+              })
+              .min(1, "VOUCHER.CONDITIONS.MIN_ORDER_AMOUNT_MIN")
+              .optional(), // Add min constraint
+          ),
+
+          maxDiscountAmount: z.preprocess(
+            (arg) => {
+              if (
+                arg === null ||
+                (typeof arg === "string" && arg.trim().toLowerCase() === "null")
+              ) {
+                return undefined;
+              }
+              if (typeof arg === "string" && !isNaN(parseFloat(arg))) {
+                return parseFloat(arg);
+              }
+              return arg;
+            },
+            z
+              .number({
+                invalid_type_error:
+                  "VOUCHER.CONDITIONS.MAX_DISCOUNT_AMOUNT_INVALID",
+              })
+              .min(1, "VOUCHER.CONDITIONS.MAX_DISCOUNT_AMOUNT_MIN")
+              .optional(), // Add min constraint
+          ),
+        },
+        { required_error: "VOUCHER.INVALID_CONDITIONS_OBJECT" },
+      ),
     )
-    .optional(),
-  claimPeriodEnd: z
-    .preprocess(
-      (arg) =>
-        typeof arg === "string" || arg instanceof Date
-          ? new Date(arg)
-          : undefined,
-      z.date({
-        required_error: "VOUCHER.CLAIM_PERIOD_END_REQUIRED",
+    .nullable()
+    .optional()
+    .transform((arg) => dropUndefinedFromObject(arg)), // This .optional() makes the entire conditions object optional.
+  claimPeriodStart: z.preprocess(
+    (arg) => {
+      // If string or Date, convert to Date.
+      // If null or undefined, return now.
+      if (typeof arg === "string" || arg instanceof Date) {
+        const date = new Date(arg);
+        // Check for "Invalid Date"
+        return isNaN(date.getTime()) ? new Date() : date; // If invalid, default to now
+      }
+      return new Date(); // Default to current date/time if no input or invalid
+    },
+    z.date({
+      invalid_type_error: "VOUCHER.CLAIM_PERIOD_START_INVALID",
+    }),
+  ), // No .optional() or .required_error here, as preprocess handles default
+  claimPeriodEnd: z.preprocess(
+    (arg) => {
+      // If string or Date, convert to Date.
+      // If null, undefined, or empty string, return null.
+      if (typeof arg === "string" && arg.trim() === "") {
+        return null; // Treat empty string as null
+      }
+      if (typeof arg === "string" || arg instanceof Date) {
+        const date = new Date(arg);
+        return isNaN(date.getTime()) ? null : date; // If invalid date, return null
+      }
+      return null; // Default to null if no input or unexpected type
+    },
+    z
+      .date({
         invalid_type_error: "VOUCHER.CLAIM_PERIOD_END_INVALID",
-      }),
-    )
-    .optional(),
+      })
+      .nullable(), // Ensure the final type is Date | null
+  ),
   image: ImageSchema.refine(
     (val) =>
       val !== undefined &&

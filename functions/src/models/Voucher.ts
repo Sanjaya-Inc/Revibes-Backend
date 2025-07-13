@@ -1,3 +1,4 @@
+import { Currency } from "../constant/currency";
 import BaseModel from "./BaseModel";
 
 export type TVoucherData = Partial<Voucher>;
@@ -10,17 +11,30 @@ export enum VoucherValueType {
 export type TVoucherValue = {
   type: VoucherValueType;
   amount: number;
-  currency?: string;
+  currency?: Currency;
 };
 
 export type TVoucherCondition = {
-  usageLimit: number;
-  minOrderItem: number;
-  minOrderAmount: number;
-  maxDiscountAmount: number;
+  maxClaim: number; // max voucher claim that user can have
+  maxUsage: number; // max number of transaction that user can use this voucher
+  minOrderItem: number; // minimum item in a single transaction that can use this voucher
+  minOrderAmount: number; // minimum total amount in a single transaction that can use this voucher
+  maxDiscountAmount: number; // max discount amount in a single transaction that can apply when use this voucher
 };
 
 export const publicFields: (keyof Voucher)[] = [
+  "id",
+  "code",
+  "name",
+  "value",
+  "imageUri",
+  "claimPeriodStart",
+  "claimPeriodEnd",
+  "createdAt",
+  "updatedAt",
+];
+
+export const detailFields: (keyof Voucher)[] = [
   "id",
   "code",
   "name",
@@ -48,6 +62,7 @@ export const defaultVoucherData: TVoucherData = {
 
   claimPeriodStart: new Date(),
   claimPeriodEnd: null,
+
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -62,7 +77,8 @@ export class Voucher extends BaseModel {
   imageUri?: string;
 
   claimPeriodStart!: Date;
-  claimPeriodEnd!: Date | null;
+  claimPeriodEnd?: Date | null;
+
   createdAt!: Date;
   updatedAt!: Date;
 
@@ -74,7 +90,7 @@ export class Voucher extends BaseModel {
     return super.pickFields(keys);
   }
 
-  getDetailFields(keys = publicFields) {
+  getDetailFields(keys = detailFields) {
     return super.pickFields(keys);
   }
 }

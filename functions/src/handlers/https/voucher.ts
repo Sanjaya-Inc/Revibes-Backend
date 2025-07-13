@@ -10,14 +10,17 @@ import { PaginationSchema, TPagination } from "../../dto/pagination";
 import {
   CreateVoucherSchema,
   DeleteVoucherSchema,
+  GetVoucherSchema,
   TCreateVoucher,
   TDeleteVoucher,
+  TGetVoucher,
 } from "../../dto/voucher";
+import { getFileStorageInstance } from "../../utils/firebase";
 
 export const voucherRoutes = new Routes("vouchers");
 
 export class VoucherHandlers {
-  @registerRoute(voucherRoutes, "get", "", authenticate)
+  @registerRoute(voucherRoutes, "get", "", authenticate, adminOnly)
   static async getVouchers(req: Request, res: Response) {
     if (!req.user) {
       throw new AppError(403, "COMMON.FORBIDDEN");
@@ -34,6 +37,18 @@ export class VoucherHandlers {
       req.user.data,
       pagination,
     );
+
+    await Promise.all(
+      response.items.map(async (voucher) => {
+        if (voucher.imageUri) {
+          const url = await getFileStorageInstance().getFullUrl(
+            voucher.imageUri,
+          );
+          voucher.imageUri = url;
+        }
+      }),
+    );
+
     new AppResponse({
       code: 200,
       message: "VOUCHER.FETCH_SUCCESS",
@@ -41,13 +56,46 @@ export class VoucherHandlers {
     }).asJsonResponse(res);
   }
 
+  @registerRoute(voucherRoutes, "get", ":id", authenticate, adminOnly)
+  static async getOrder(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const id = req.params.id;
+    let data: TGetVoucher = { id };
+    try {
+      // Validate form data using Zod
+      data = GetVoucherSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await VoucherController.getVoucher(data);
+    if (!response) {
+      throw new AppError(404, "VOUCHER.NOT_FOUND");
+    }
+
+    if (response.data.imageUri) {
+      response.data.imageUri = await getFileStorageInstance().getFullUrl(
+        response.data.imageUri,
+      );
+    }
+
+    new AppResponse({
+      code: 200,
+      message: "VOUCHER.FETCH_SUCCESS",
+      data: response.data.pickFields(),
+    }).asJsonResponse(res);
+  }
+
   @registerRoute(voucherRoutes, "post", "", authenticate, adminOnly)
   static async createVoucher(req: Request, res: Response) {
-    const data = parseFormData<TCreateVoucher>(req);
+    let data = parseFormData<TCreateVoucher>(req);
 
     try {
       // Validate form data using Zod
-      CreateVoucherSchema.parse(data);
+      data = CreateVoucherSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }

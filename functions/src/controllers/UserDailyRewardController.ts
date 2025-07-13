@@ -9,7 +9,6 @@ import { WriteBatch } from "firebase-admin/firestore";
 import { isDateToday } from "../utils/date";
 
 export class UserDailyRewardController {
-
   @wrapError
   public static async generateClaimableRewards(
     user: TGetUserRes,

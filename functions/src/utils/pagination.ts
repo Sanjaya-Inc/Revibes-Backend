@@ -28,20 +28,37 @@ export type TPaginatedPage<T> = {
   };
 };
 
-function getDocSnapshot(base: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData, FirebaseFirestore.DocumentData> | FirebaseFirestore.Firestore, collection: COLLECTION_MAP, docId?: string) {
+function getDocSnapshot(
+  base:
+    | FirebaseFirestore.DocumentReference<
+        FirebaseFirestore.DocumentData,
+        FirebaseFirestore.DocumentData
+      >
+    | FirebaseFirestore.Firestore,
+  collection: COLLECTION_MAP,
+  docId?: string,
+) {
   if (!docId) return null;
   return base.collection(collection).doc(docId).get();
 }
 
 async function checkHasMorePrev(
-  base: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData, FirebaseFirestore.DocumentData> | FirebaseFirestore.Firestore,
+  base:
+    | FirebaseFirestore.DocumentReference<
+        FirebaseFirestore.DocumentData,
+        FirebaseFirestore.DocumentData
+      >
+    | FirebaseFirestore.Firestore,
   collection: COLLECTION_MAP,
   sortBy: string,
   sortOrder: "asc" | "desc",
   addQuery: TPaginateConstruct["addQuery"],
   docId: string,
 ) {
-  const checkPrevDocSnapshot = await base.collection(collection).doc(docId).get();
+  const checkPrevDocSnapshot = await base
+    .collection(collection)
+    .doc(docId)
+    .get();
   let veryPrevQuery = base.collection(collection).orderBy(sortBy, sortOrder);
   if (addQuery) {
     veryPrevQuery = addQuery(veryPrevQuery);
@@ -52,7 +69,12 @@ async function checkHasMorePrev(
 }
 
 async function checkHasMorePrevInitial(
-  base: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData, FirebaseFirestore.DocumentData> | FirebaseFirestore.Firestore,
+  base:
+    | FirebaseFirestore.DocumentReference<
+        FirebaseFirestore.DocumentData,
+        FirebaseFirestore.DocumentData
+      >
+    | FirebaseFirestore.Firestore,
   collection: COLLECTION_MAP,
   sortBy: string,
   sortOrder: "asc" | "desc",

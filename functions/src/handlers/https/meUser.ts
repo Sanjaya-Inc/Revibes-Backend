@@ -95,7 +95,10 @@ export class MeHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    const response = await UserVoucherController.getVouchers(req.user, pagination);
+    const response = await UserVoucherController.getVouchers(
+      req.user,
+      pagination,
+    );
     new AppResponse({
       code: 200,
       message: "ME.FETCH_VOUCHER_SUCCESS",

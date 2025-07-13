@@ -20,6 +20,7 @@ import {
 } from "../utils/pagination";
 import User, { UserRole } from "../models/User";
 import { and, where } from "firebase/firestore";
+import { Filter } from "firebase-admin/firestore";
 
 export class VoucherController {
   @wrapError
@@ -77,10 +78,37 @@ export class VoucherController {
     type,
     amount,
     conditions,
-    claimPeriodStart,
-    claimPeriodEnd,
+    claimPeriodStart = new Date(),
+    claimPeriodEnd = null,
     image,
   }: TCreateVoucher): Promise<Voucher> {
+    const result = await db
+      .collection(COLLECTION_MAP.VOUCHER)
+      .where("code", "==", code) // This top-level where is fine
+      .where(
+        // The outer where here accepts a Filter object
+        Filter.and(
+          // Use Filter.and() from Admin SDK
+          Filter.where("claimPeriodStart", ">=", claimPeriodStart), // Use Filter.where()
+          Filter.or(
+            // Use Filter.or()
+            Filter.where("claimPeriodEnd", "<=", claimPeriodEnd), // Use Filter.where()
+            Filter.where("claimPeriodEnd", "==", null), // Use Filter.where()
+          ),
+        ),
+      )
+      .get();
+
+    if (result.docs?.length > 0) {
+      throw new AppError(400, "VOUCHER_CODE.CODE_USED_FOR_THIS_PERIOD");
+    }
+
+    if (claimPeriodEnd) {
+      if (claimPeriodEnd < claimPeriodStart) {
+        throw new AppError(400, "VOUCHER_CODE.INVALID_PERIOD_RANGE");
+      }
+    }
+
     const docRef = db.collection(COLLECTION_MAP.VOUCHER).doc();
 
     let imageUri = "";
@@ -111,6 +139,8 @@ export class VoucherController {
       claimPeriodStart,
       claimPeriodEnd,
     };
+
+    console.log("check given data ======", data);
 
     const voucher = new Voucher(data);
 
