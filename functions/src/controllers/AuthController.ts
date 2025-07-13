@@ -134,15 +134,15 @@ export class AuthController {
       throw new AppError(401, "AUTH.USER_OR_PASS_INVALID");
     }
 
-    const tokens = user.generateTokens();
-    await db.collection(COLLECTION_MAP.USER).doc(user.id).update({
+    const tokens = user.data.generateTokens();
+    await db.collection(COLLECTION_MAP.USER).doc(user.data.id).update({
       accessToken: tokens.accessToken,
       accessTokenExpiredAt: tokens.accessTokenExpiredAt,
       refreshToken: tokens.refreshToken,
       refreshTokenExpiredAt: tokens.refreshTokenExpiredAt,
     });
 
-    return { user, tokens };
+    return { user: user.data, tokens };
   }
 
   @wrapError

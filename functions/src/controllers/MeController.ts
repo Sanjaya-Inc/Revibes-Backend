@@ -131,7 +131,6 @@ export class MeController {
         }
         await this.generateClaimableRewards(user, batch);
       } else {
-        console.log("check 2 ======")
         const claimableRef = user.ref
           .collection(COLLECTION_MAP.USER_DAILY_REWARD)
           .doc(item.id);

@@ -63,7 +63,7 @@ export class UserHandlers {
     new AppResponse({
       code: 200,
       message: "USER.FETCH_SUCCESS",
-      data: response.getDetailFields(),
+      data: response.data.getDetailFields(),
     }).asJsonResponse(res);
   }
 

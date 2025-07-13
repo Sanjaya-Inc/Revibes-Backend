@@ -145,6 +145,10 @@ export class User extends BaseModel {
     return await bcrypt.hash(password, salt);
   }
 
+  getFcmTokens(): string[] {
+    return this.devices.map(device => device.fcmToken);
+  }
+
   getPublicFields(keys = publicFields) {
     return super.pickFields(keys);
   }
