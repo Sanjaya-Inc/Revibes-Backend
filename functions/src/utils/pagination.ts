@@ -28,20 +28,21 @@ export type TPaginatedPage<T> = {
   };
 };
 
-function getDocSnapshot(collection: COLLECTION_MAP, docId?: string) {
+function getDocSnapshot(base: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData, FirebaseFirestore.DocumentData> | FirebaseFirestore.Firestore, collection: COLLECTION_MAP, docId?: string) {
   if (!docId) return null;
-  return db.collection(collection).doc(docId).get();
+  return base.collection(collection).doc(docId).get();
 }
 
 async function checkHasMorePrev(
+  base: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData, FirebaseFirestore.DocumentData> | FirebaseFirestore.Firestore,
   collection: COLLECTION_MAP,
   sortBy: string,
   sortOrder: "asc" | "desc",
   addQuery: TPaginateConstruct["addQuery"],
   docId: string,
 ) {
-  const checkPrevDocSnapshot = await db.collection(collection).doc(docId).get();
-  let veryPrevQuery = db.collection(collection).orderBy(sortBy, sortOrder);
+  const checkPrevDocSnapshot = await base.collection(collection).doc(docId).get();
+  let veryPrevQuery = base.collection(collection).orderBy(sortBy, sortOrder);
   if (addQuery) {
     veryPrevQuery = addQuery(veryPrevQuery);
   }
@@ -51,16 +52,17 @@ async function checkHasMorePrev(
 }
 
 async function checkHasMorePrevInitial(
+  base: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData, FirebaseFirestore.DocumentData> | FirebaseFirestore.Firestore,
   collection: COLLECTION_MAP,
   sortBy: string,
   sortOrder: "asc" | "desc",
   docId: string,
 ) {
-  const checkFirstDocSnapshot = await db
+  const checkFirstDocSnapshot = await base
     .collection(collection)
     .doc(docId)
     .get();
-  const checkStartQuery = db
+  const checkStartQuery = base
     .collection(collection)
     // .orderBy(sortBy, sortOrder)
     .endBefore(checkFirstDocSnapshot)
@@ -82,8 +84,9 @@ export const createPage = async <T extends { id: string } = { id: string }>(
     ref,
   }: TPaginateConstruct,
 ): Promise<TPaginatedPage<T>> => {
+  const base = ref ?? db;
   let firestoreQuery: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> =
-    (ref ?? db).collection(collection);
+    base.collection(collection);
 
   if (addQuery) {
     firestoreQuery = addQuery(firestoreQuery);
@@ -93,7 +96,7 @@ export const createPage = async <T extends { id: string } = { id: string }>(
 
   let lastDocSnapshot: DocumentSnapshot | null = null;
   if (lastDocId) {
-    lastDocSnapshot = await getDocSnapshot(collection, lastDocId);
+    lastDocSnapshot = await getDocSnapshot(base, collection, lastDocId);
     if (!lastDocSnapshot || !lastDocSnapshot.exists) {
       throw new AppError(404, "COMMON.CURSOR_DOC_NOT_FOUND");
     }
@@ -101,7 +104,7 @@ export const createPage = async <T extends { id: string } = { id: string }>(
 
   let firstDocSnapshot: DocumentSnapshot | null = null;
   if (firstDocId) {
-    firstDocSnapshot = await getDocSnapshot(collection, firstDocId);
+    firstDocSnapshot = await getDocSnapshot(base, collection, firstDocId);
     if (!firstDocSnapshot || !firstDocSnapshot.exists) {
       throw new AppError(404, "COMMON.CURSOR_DOC_NOT_FOUND");
     }
@@ -110,9 +113,10 @@ export const createPage = async <T extends { id: string } = { id: string }>(
   if (direction === "next" && lastDocSnapshot) {
     firestoreQuery = firestoreQuery.startAfter(lastDocSnapshot);
   } else if (direction === "prev" && firstDocSnapshot) {
-    firestoreQuery = db
+    firestoreQuery = base
       .collection(collection)
       .orderBy(sortBy, sortOrder === "asc" ? "desc" : "asc");
+
     if (addQuery) {
       firestoreQuery = addQuery(firestoreQuery);
     }
@@ -141,6 +145,7 @@ export const createPage = async <T extends { id: string } = { id: string }>(
     items.reverse();
     if (items.length > 0) {
       hasMorePrev = await checkHasMorePrev(
+        base,
         collection,
         sortBy,
         sortOrder,
@@ -150,6 +155,7 @@ export const createPage = async <T extends { id: string } = { id: string }>(
     }
   } else if (items.length > 0) {
     hasMorePrev = await checkHasMorePrevInitial(
+      base,
       collection,
       sortBy,
       sortOrder,
