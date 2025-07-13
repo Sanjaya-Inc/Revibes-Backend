@@ -13,6 +13,9 @@ import {
   TRemoveUserDevice,
   TSaveUserDevice,
 } from "../../dto/userDevice";
+import { UserDeviceController } from "../../controllers/UserDeviceController";
+import { UserDailyRewardController } from "../../controllers/UserDailyRewardController";
+import { UserVoucherController } from "../../controllers/UserVoucherController";
 
 export const meRoutes = new Routes("me");
 
@@ -58,7 +61,7 @@ export class MeHandlers {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    const response = await MeController.getDailyRewards(req.user);
+    const response = await UserDailyRewardController.getDailyRewards(req.user);
     new AppResponse({
       code: 200,
       message: "ME.FETCH_DAILY_REWARD_SUCCESS",
@@ -72,7 +75,7 @@ export class MeHandlers {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    await MeController.claimDailyRewards(req.user);
+    await UserDailyRewardController.claimDailyRewards(req.user);
     new AppResponse({
       code: 200,
       message: "ME.CLAIM_DAILY_REWARD_SUCCESS",
@@ -92,7 +95,7 @@ export class MeHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    const response = await MeController.getVouchers(req.user, pagination);
+    const response = await UserVoucherController.getVouchers(req.user, pagination);
     new AppResponse({
       code: 200,
       message: "ME.FETCH_VOUCHER_SUCCESS",
@@ -106,7 +109,7 @@ export class MeHandlers {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    const response = await MeController.getDevices(req.user);
+    const response = await UserDeviceController.getDevices(req.user);
     new AppResponse({
       code: 200,
       message: "ME.FETCH_DEVICE_SUCCESS",
@@ -131,7 +134,7 @@ export class MeHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    const response = await MeController.saveDevice(req.user, data);
+    const response = await UserDeviceController.saveDevice(req.user, data);
     new AppResponse({
       code: 200,
       message: "ME.ADD_DEVICE_SUCCESS",
@@ -155,7 +158,7 @@ export class MeHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    const response = await MeController.removeDevice(req.user, data);
+    const response = await UserDeviceController.removeDevice(req.user, data);
     new AppResponse({
       code: 200,
       message: "ME.DELETE_DEVICE_SUCCESS",

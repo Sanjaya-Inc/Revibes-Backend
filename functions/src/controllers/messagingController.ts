@@ -7,15 +7,16 @@ import { TSubmittedDropoffNotifPayload } from "../dto/messaging";
 export class MessagingController {
   @wrapError
   public static async DropoffNotif(order: LogisticOrder): Promise<void> {
-    const maker = await UserController.getUser({ id: order.maker }, { withDevices: true });
+    const maker = await UserController.getUser(
+      { id: order.maker },
+      { withDevices: true },
+    );
     const makerTokens: string[] = [];
     if (maker) {
-      makerTokens.push(...maker.data.getFcmTokens()); 
+      makerTokens.push(...maker.data.getFcmTokens());
     }
     const admins = await UserController.getAdmins({ withDevices: true });
-    const adminTokens = admins.flatMap((admin) =>
-      admin.getFcmTokens(),
-    );
+    const adminTokens = admins.flatMap((admin) => admin.getFcmTokens());
 
     switch (order.status) {
       case LogisticOrderStatus.SUBMITTED: {

@@ -146,7 +146,7 @@ export class User extends BaseModel {
   }
 
   getFcmTokens(): string[] {
-    return this.devices.map(device => device.fcmToken);
+    return this.devices.map((device) => device.fcmToken);
   }
 
   getPublicFields(keys = publicFields) {

@@ -88,7 +88,10 @@ export class UserController {
   }
 
   @wrapError
-  public static async getUser({ id }: TGetUser, { withDevices }: TGetUserOpt = {}): Promise<TGetUserRes | null> {
+  public static async getUser(
+    { id }: TGetUser,
+    { withDevices }: TGetUserOpt = {},
+  ): Promise<TGetUserRes | null> {
     const ref = db.collection(COLLECTION_MAP.USER).doc(id);
     const snapshot = await ref.get();
     const userDoc = snapshot.data();
@@ -98,8 +101,12 @@ export class UserController {
 
     const data = new User(userDoc);
     if (withDevices) {
-      const deviceSnapshot = await ref.collection(COLLECTION_MAP.USER_DEVICE).get();
-      data.devices = deviceSnapshot.docs.map(device => new UserDevice(device.data()));
+      const deviceSnapshot = await ref
+        .collection(COLLECTION_MAP.USER_DEVICE)
+        .get();
+      data.devices = deviceSnapshot.docs.map(
+        (device) => new UserDevice(device.data()),
+      );
     }
 
     return {

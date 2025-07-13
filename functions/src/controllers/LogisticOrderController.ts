@@ -41,7 +41,7 @@ import {
 } from "../utils/pagination";
 import { AppSettingController } from "./AppSettingController";
 import { CountryController } from "./CountryController";
-import { MessagingController } from "./messagingController";
+import { MessagingController } from "./MessagingController";
 import { StoreBranchController } from "./StoreBranchController";
 
 export type TGetLogisticOrderOpt = {
