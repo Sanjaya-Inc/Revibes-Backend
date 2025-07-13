@@ -65,6 +65,7 @@ export class MeController {
       const docRef = userDailyRewardsRef.doc();
       const newClaimable = new UserDailyReward({
         id: docRef.id,
+        index: i + 1,
         amount: initialPoint + i * multiplier,
       });
       claimables.push(newClaimable);
@@ -83,6 +84,7 @@ export class MeController {
   ): Promise<UserDailyReward[]> {
     const snapshot = await user.ref
       .collection(COLLECTION_MAP.USER_DAILY_REWARD)
+      .orderBy("index", "asc")
       .get();
     let claimables: UserDailyReward[] = [];
     snapshot.forEach((doc) => {
@@ -111,7 +113,7 @@ export class MeController {
       if (prevIndex !== -1) {
         const lastClaimed = claimables[prevIndex];
         if (lastClaimed.claimedAt && isDateToday(lastClaimed.claimedAt)) {
-          throw new AppError(403, "ME.CANNOT_CLAIM_TWICE");
+          throw new AppError(403, "ME.CANNOT_CLAIM_TWICE_A_DAY");
         }
       }
 
@@ -129,11 +131,12 @@ export class MeController {
         }
         await this.generateClaimableRewards(user, batch);
       } else {
+        console.log("check 2 ======")
         const claimableRef = user.ref
           .collection(COLLECTION_MAP.USER_DAILY_REWARD)
           .doc(item.id);
         batch.update(claimableRef, {
-          claimedAt: item.claimedAt,
+          claimedAt: new Date(),
         });
       }
 
