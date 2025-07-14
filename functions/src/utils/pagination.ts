@@ -1,23 +1,13 @@
 import { COLLECTION_MAP } from "./../constant/db";
-import { DocumentSnapshot } from "firebase-admin/firestore";
+import { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Query } from "firebase-admin/firestore";
 import { db } from "./firebase";
 import AppError from "./formatter/AppError";
 import { TPagination } from "../dto/pagination";
 
-export type TPaginateConstruct = TPagination & {
-  ref?: FirebaseFirestore.DocumentReference<
-    FirebaseFirestore.DocumentData,
-    FirebaseFirestore.DocumentData
-  >;
-  addQuery?: (
-    query: FirebaseFirestore.Query<
-      FirebaseFirestore.DocumentData,
-      FirebaseFirestore.DocumentData
-    >,
-  ) => FirebaseFirestore.Query<
-    FirebaseFirestore.DocumentData,
-    FirebaseFirestore.DocumentData
-  >;
+export type TPaginateConstruct<T> = TPagination & {
+  ref?: DocumentReference<DocumentData, DocumentData>;
+  addQuery?: (query: Query<DocumentData, DocumentData>) => Query<DocumentData, DocumentData>;
+  construct?: (new (...args: any[]) => T);
 };
 
 export type TPaginatedPage<T> = {
@@ -29,12 +19,7 @@ export type TPaginatedPage<T> = {
 };
 
 function getDocSnapshot(
-  base:
-    | FirebaseFirestore.DocumentReference<
-        FirebaseFirestore.DocumentData,
-        FirebaseFirestore.DocumentData
-      >
-    | FirebaseFirestore.Firestore,
+  base: DocumentReference<DocumentData, DocumentData> | Firestore,
   collection: COLLECTION_MAP,
   docId?: string,
 ) {
@@ -42,17 +27,12 @@ function getDocSnapshot(
   return base.collection(collection).doc(docId).get();
 }
 
-async function checkHasMorePrev(
-  base:
-    | FirebaseFirestore.DocumentReference<
-        FirebaseFirestore.DocumentData,
-        FirebaseFirestore.DocumentData
-      >
-    | FirebaseFirestore.Firestore,
+async function checkHasMorePrev<T>(
+  base: DocumentReference<DocumentData, DocumentData> | Firestore,
   collection: COLLECTION_MAP,
   sortBy: string,
   sortOrder: "asc" | "desc",
-  addQuery: TPaginateConstruct["addQuery"],
+  addQuery: TPaginateConstruct<T>["addQuery"],
   docId: string,
 ) {
   const checkPrevDocSnapshot = await base
@@ -69,12 +49,7 @@ async function checkHasMorePrev(
 }
 
 async function checkHasMorePrevInitial(
-  base:
-    | FirebaseFirestore.DocumentReference<
-        FirebaseFirestore.DocumentData,
-        FirebaseFirestore.DocumentData
-      >
-    | FirebaseFirestore.Firestore,
+  base: DocumentReference<DocumentData, DocumentData> | Firestore,
   collection: COLLECTION_MAP,
   sortBy: string,
   sortOrder: "asc" | "desc",
@@ -104,10 +79,12 @@ export const createPage = async <T extends { id: string } = { id: string }>(
     direction = "next",
     addQuery,
     ref,
-  }: TPaginateConstruct,
+    construct,
+    
+  }: TPaginateConstruct<T>,
 ): Promise<TPaginatedPage<T>> => {
   const base = ref ?? db;
-  let firestoreQuery: FirebaseFirestore.Query<FirebaseFirestore.DocumentData> =
+  let firestoreQuery: Query<DocumentData> =
     base.collection(collection);
 
   if (addQuery) {
@@ -152,7 +129,10 @@ export const createPage = async <T extends { id: string } = { id: string }>(
 
   const items: T[] = [];
   snapshot.forEach((doc) => {
-    items.push({ id: doc.id, ...doc.data() } as T);
+    items.push(
+      construct ? 
+        new construct({ id: doc.id, ...doc.data() }) 
+        : { id: doc.id, ...doc.data() } as T);
   });
 
   let hasMoreNext = false;

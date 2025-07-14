@@ -16,6 +16,7 @@ import { adminOnly, authenticate } from "../../middlewares/auth";
 import AppError from "../../utils/formatter/AppError";
 import { UserController } from "../../controllers/UserController";
 import { PaginationSchema, TPagination } from "../../dto/pagination";
+import User from "../../models/User";
 
 export const userRoutes = new Routes("users");
 
@@ -34,6 +35,8 @@ export class UserHandlers {
     }
 
     const response = await UserController.getUsers(pagination);
+    response.items = response.items.map((item) => new User(item).getPublicFields());
+    
     new AppResponse({
       code: 200,
       message: "USER.FETCH_SUCCESS",

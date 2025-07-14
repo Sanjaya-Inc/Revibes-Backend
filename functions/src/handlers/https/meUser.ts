@@ -16,6 +16,7 @@ import {
 import { UserDeviceController } from "../../controllers/UserDeviceController";
 import { UserDailyRewardController } from "../../controllers/UserDailyRewardController";
 import { UserVoucherController } from "../../controllers/UserVoucherController";
+import UserVoucher from "../../models/UserVoucher";
 
 export const meRoutes = new Routes("me");
 
@@ -99,6 +100,11 @@ export class MeHandlers {
       req.user,
       pagination,
     );
+
+    response.items = response.items.map((item) =>
+      new UserVoucher(item).getPublicFields(),
+    );
+
     new AppResponse({
       code: 200,
       message: "ME.FETCH_VOUCHER_SUCCESS",

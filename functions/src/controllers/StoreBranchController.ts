@@ -13,7 +13,6 @@ import StoreBranch, {
 } from "../models/StoreBranch";
 import { wrapError } from "../utils/decorator/wrapError";
 import AppError from "../utils/formatter/AppError";
-import { TPaginateConstruct } from "../utils/pagination";
 import { haversineDistance } from "../utils/geolocation";
 
 export class StoreBranchController {
@@ -36,7 +35,7 @@ export class StoreBranchController {
 
   @wrapError
   public static async getStoreBranches(
-    filters: TGetStoreBranches & TPaginateConstruct,
+    filters: TGetStoreBranches,
   ): Promise<StoreBranch[]> {
     const { limit, latitude, longitude } = filters;
 

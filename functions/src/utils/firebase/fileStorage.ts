@@ -8,6 +8,7 @@ export enum BasePath {
   LOGISTIC = "logistics/",
   INVENTORY_ITEM = "inventory-items/",
   VOUCHER = "vouchers/",
+  MISSION = "missions/",
 }
 
 export type UploadOptions = {
@@ -46,7 +47,7 @@ export class FileStorage {
       const [metadata] = await file.getMetadata();
       token = metadata?.metadata?.firebaseStorageDownloadTokens;
     } catch (err) {
-      console.error("Failed to get file metadata:", err);
+      console.error("Failed to get file metadata");
     }
 
     const encodedPath = encodeURIComponent(uri);

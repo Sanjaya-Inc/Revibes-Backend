@@ -1,12 +1,16 @@
 import { wrapError } from "../utils/decorator/wrapError";
-import LogisticOrder, { LogisticOrderStatus } from "../models/LogisticOrder";
+import LogisticOrder, {
+  LogisticOrderStatus,
+  LogisticOrderType,
+} from "../models/LogisticOrder";
 import FcmMessaging from "../utils/firebase/fcmMessaging";
 import { UserController } from "./UserController";
 import { TSubmittedDropoffNotifPayload } from "../dto/messaging";
+import { NotificationType } from "../constant/notificationType";
 
-export class MessagingController {
+export class NotificationController {
   @wrapError
-  public static async DropoffNotif(order: LogisticOrder): Promise<void> {
+  public static async Dropoff(order: LogisticOrder): Promise<void> {
     const maker = await UserController.getUser(
       { id: order.maker },
       { withDevices: true },
@@ -26,7 +30,10 @@ export class MessagingController {
               title: "New Dropoff Request",
               body: `${maker?.data.displayName} just created a new dropoff request`,
               customData: {
+                type: NotificationType.LOGISTIC_ORDER,
+                orderType: LogisticOrderType.DROP_OFF,
                 orderId: order.id,
+                status: order.status,
               },
             },
             ...adminTokens,
@@ -42,7 +49,10 @@ export class MessagingController {
               title: "Your Dropoff Request Completed",
               body: `You just received ${order.totalPoint} points`,
               customData: {
+                type: NotificationType.LOGISTIC_ORDER,
+                orderType: LogisticOrderType.DROP_OFF,
                 orderId: order.id,
+                status: order.status,
               },
             },
             ...makerTokens,
@@ -58,7 +68,10 @@ export class MessagingController {
               title: "Your Dropoff Request Was Rejected",
               body: "Your request just rejected, click to view this issue",
               customData: {
+                type: NotificationType.LOGISTIC_ORDER,
+                orderType: LogisticOrderType.DROP_OFF,
                 orderId: order.id,
+                status: order.status,
               },
             },
             ...makerTokens,

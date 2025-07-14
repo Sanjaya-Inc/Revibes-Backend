@@ -1,7 +1,11 @@
 import { z } from "zod";
-import LogisticOrder, { LogisticOrderType } from "../models/LogisticOrder";
+import LogisticOrder, {
+  LogisticOrderStatus,
+  LogisticOrderType,
+} from "../models/LogisticOrder";
 import { LogisticItemSchema } from "./logisticItem";
 import { TFirestoreData } from "./common";
+import { PaginationSchema } from "./pagination";
 
 const mainLogisticOrderSchema = {
   id: z
@@ -136,6 +140,22 @@ export const GetLogisticOrderSchema = z.object({
 export type TGetLogisticOrder = z.infer<typeof GetLogisticOrderSchema>;
 
 export type TGetLogisticOrderRes = TFirestoreData<LogisticOrder>;
+
+export const GetLogisticOrdersSchema = z.object({
+  ...PaginationSchema.shape,
+  statuses: z.preprocess(
+    // Preprocess function for 'amount'
+    (arg) => {
+      if (typeof arg === "string") {
+        return [arg];
+      }
+      return arg; // Let Zod's .array() handle invalid types
+    },
+    z.array(z.nativeEnum(LogisticOrderStatus)).optional(),
+  ).optional(),
+});
+
+export type TGetLogisticOrders = z.infer<typeof GetLogisticOrdersSchema>;
 
 export const DeleteLogisticOrderSchema = z.object({
   id: z

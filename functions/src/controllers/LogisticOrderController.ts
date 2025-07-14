@@ -1,3 +1,4 @@
+import { COLLECTION_MAP } from './../constant/db';
 import COLLECTION_MAP from "../constant/db";
 import {
   TAddLogisticItem,
@@ -15,6 +16,7 @@ import {
   TEstimateLogisticOrderPointRes,
   TGetLogisticOrder,
   TGetLogisticOrderRes,
+  TGetLogisticOrders,
   TRejectLogisticOrder,
   TSubmitLogisticOrder,
 } from "../dto/logisticOrder";
@@ -41,10 +43,12 @@ import {
 } from "../utils/pagination";
 import { AppSettingController } from "./AppSettingController";
 import { CountryController } from "./CountryController";
-import { MessagingController } from "./MessagingController";
+import { NotificationController } from "./NotificationController";
 import { StoreBranchController } from "./StoreBranchController";
+import StoreBranch from '../models/StoreBranch';
 
 export type TGetLogisticOrderOpt = {
+  withStore?: boolean;
   withItems?: boolean;
   withHistories?: boolean;
 };
@@ -58,7 +62,7 @@ export class LogisticOrderController {
   public static async getOrder(
     user: User,
     { id }: TGetLogisticOrder,
-    { withItems, withHistories }: TGetLogisticOrderOpt = {},
+    { withItems, withHistories, withStore }: TGetLogisticOrderOpt = {},
   ): Promise<TGetLogisticOrderRes | null> {
     const orderRef = db.collection(COLLECTION_MAP.LOGISTIC_ORDER).doc(id);
 
@@ -96,6 +100,16 @@ export class LogisticOrderController {
       );
     }
 
+    if (withStore && logisticOrder.storeLocation) {
+      const storeSnapshot = await db.collection(COLLECTION_MAP.STORE_BRANCH)
+        .doc(logisticOrder.storeLocation)
+        .get();
+      const storeDoc = storeSnapshot.data();
+      if (storeDoc) {
+        logisticOrder.store = new StoreBranch(storeDoc);
+      }
+    }
+
     return {
       data: logisticOrder,
       ref: orderRef,
@@ -122,38 +136,71 @@ export class LogisticOrderController {
   @wrapError
   public static async getOrders(
     user: User,
-    filters: TPaginateConstruct,
+    filters: TGetLogisticOrders & TPaginateConstruct<LogisticOrder>,
+    { withItems, withHistories, withStore }: TGetLogisticOrderOpt = {},
   ): Promise<TPaginatedPage<LogisticOrder>> {
-    // user will only be able to view their own orders
-    if (user.role == UserRole.USER) {
-      filters.addQuery = (q) => q.where("maker", "==", user.id);
-    }
+    const { statuses } = filters;
+    filters.construct = LogisticOrder;
+    filters.addQuery = (q) => {
+      if (statuses && statuses?.length > 0) {
+        
+        q = q.where("status", "in", statuses);
+      }
+
+      if (user.role == UserRole.USER) {
+        q = q.where("maker", "==", user.id);
+      }
+
+      return q;
+    };
 
     const { items, pagination } = await createPage<LogisticOrder>(
       COLLECTION_MAP.LOGISTIC_ORDER,
       filters,
     );
 
-    const logisticOrders = items.map((item) =>
-      new LogisticOrder(item).getPublicFields(),
-    );
-
     await Promise.all(
-      logisticOrders.map(async (order) => {
-        const itemSnapshots = await db
-          .collection(COLLECTION_MAP.LOGISTIC_ORDER)
-          .doc(order.id)
-          .collection(COLLECTION_MAP.LOGISTIC_ITEM)
-          .get();
+      items.map(async (order) => {
+        
+        if (withItems) {
+          const itemSnapshots = await db
+            .collection(COLLECTION_MAP.LOGISTIC_ORDER)
+            .doc(order.id)
+            .collection(COLLECTION_MAP.LOGISTIC_ITEM)
+            .get();
 
-        order.items = itemSnapshots.docs.map(
-          (doc) => new LogisticItem(doc.data()),
-        );
+          order.items = itemSnapshots.docs.map(
+            (doc) => new LogisticItem(doc.data()),
+          );
+        }
+
+        if (withHistories) {
+          // Get subcollection of logistic_item
+          const historiesSnapshot = await db
+            .collection(COLLECTION_MAP.LOGISTIC_ORDER)
+            .doc(order.id)
+            .collection(COLLECTION_MAP.LOGISTIC_ORDER_HISTORY)
+            .get();
+
+          order.histories = historiesSnapshot.docs.map(
+            (doc) => new LogisticOrderHistory(doc.data()),
+          );
+        }
+
+        if (withStore && order.storeLocation) {
+          const storeSnapshot = await db.collection(COLLECTION_MAP.STORE_BRANCH)
+            .doc(order.storeLocation)
+            .get();
+          const storeDoc = storeSnapshot.data();
+          if (storeDoc) {
+            order.store = new StoreBranch(storeDoc);
+          }
+        }
       }),
     );
 
     return {
-      items: logisticOrders,
+      items: items,
       pagination,
     };
   }
@@ -400,7 +447,7 @@ export class LogisticOrderController {
 
     await batch.commit();
 
-    MessagingController.DropoffNotif(order);
+    NotificationController.Dropoff(order);
   }
 
   @wrapError
@@ -454,6 +501,8 @@ export class LogisticOrderController {
     batch.create(historyDoc, newHistory.toObject());
 
     await batch.commit();
+
+    NotificationController.Dropoff(order);
   }
 
   @wrapError
@@ -537,6 +586,8 @@ export class LogisticOrderController {
     batch.create(historyDoc, newHistory.toObject());
 
     await batch.commit();
+
+    NotificationController.Dropoff(order);
   }
 
   @wrapError

@@ -46,7 +46,7 @@ export class VoucherController {
   @wrapError
   public static async getVouchers(
     user: User,
-    filters: TPaginateConstruct,
+    filters: TPaginateConstruct<Voucher>,
   ): Promise<TPaginatedPage<Voucher>> {
     // user will only be able to view list of voucher that claimable
     if (user.role == UserRole.USER) {
@@ -139,8 +139,6 @@ export class VoucherController {
       claimPeriodStart,
       claimPeriodEnd,
     };
-
-    console.log("check given data ======", data);
 
     const voucher = new Voucher(data);
 

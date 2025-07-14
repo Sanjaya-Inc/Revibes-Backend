@@ -2,6 +2,7 @@ import { FileStorage } from "../utils/firebase";
 import BaseModel from "./BaseModel";
 import LogisticItem from "./LogisticItem";
 import { LogisticOrderHistory } from "./LogisticOrderHistory";
+import StoreBranch from "./StoreBranch";
 
 export type TLogisticOrderData = Partial<LogisticOrder>;
 
@@ -31,6 +32,7 @@ export const publicFields: (keyof LogisticOrder)[] = [
   "maker",
   "items",
   "totalPoint",
+  "store",
 ];
 
 export const detailFields: (keyof LogisticOrder)[] = [
@@ -49,6 +51,7 @@ export const detailFields: (keyof LogisticOrder)[] = [
   "totalPoint",
   "items",
   "histories",
+  "store",
 ];
 
 export const defaultLogisticOrderData: TLogisticOrderData = {
@@ -86,6 +89,9 @@ export class LogisticOrder extends BaseModel {
   maker!: string;
   totalPoint!: number;
   histories!: LogisticOrderHistory[];
+
+  // relation
+  store?: StoreBranch;
 
   constructor(data: TLogisticOrderData) {
     super(data, defaultLogisticOrderData);

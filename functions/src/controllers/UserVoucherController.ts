@@ -12,7 +12,7 @@ export class UserVoucherController {
   @wrapError
   public static async getVouchers(
     user: TGetUserRes,
-    filters: TPaginateConstruct,
+    filters: TPaginateConstruct<UserVoucher>,
   ): Promise<TPaginatedPage<UserVoucher>> {
     filters.ref = user.ref;
     filters.addQuery = (q) =>
@@ -23,10 +23,6 @@ export class UserVoucherController {
     const { items, pagination } = await createPage<UserVoucher>(
       COLLECTION_MAP.USER_VOUCHER,
       filters,
-    );
-
-    const vouchers = items.map((item) =>
-      new UserVoucher(item).getPublicFields(),
     );
 
     return {

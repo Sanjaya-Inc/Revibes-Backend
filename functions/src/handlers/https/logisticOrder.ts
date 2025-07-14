@@ -10,12 +10,14 @@ import {
   DeleteLogisticOrderSchema,
   EstimateLogisticOrderPointSchema,
   GetLogisticOrderSchema,
+  GetLogisticOrdersSchema,
   LogisticOrderSchema,
   RejectLogisticOrderSchema,
   TCompleteLogisticOrder,
   TDeleteLogisticOrder,
   TEstimateLogisticOrderPoint,
   TGetLogisticOrder,
+  TGetLogisticOrders,
   TRejectLogisticOrder,
   TSubmitLogisticOrder,
 } from "../../dto/logisticOrder";
@@ -292,6 +294,7 @@ export class LogisticOrderHandlers {
       {
         withItems: true,
         withHistories: true,
+        withStore: true,
       },
     );
     if (!response) {
@@ -375,17 +378,28 @@ export class LogisticOrderHandlers {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    let pagination: TPagination;
+    let filters: TGetLogisticOrders;
     try {
-      pagination = PaginationSchema.parse(req.query);
+      filters = GetLogisticOrdersSchema.parse(req.query);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
     const response = await LogisticOrderController.getOrders(
       req.user.data,
-      pagination,
+      filters,
+      {withItems: true, withStore: true}
     );
+
+    const fileStorageInstance = getFileStorageInstance();
+
+    await Promise.all(
+      response.items.map(async (o) => {
+        await o.retrieveFullUrl(fileStorageInstance);
+        return o.getPublicFields();
+      }),
+    );
+
     new AppResponse({
       code: 200,
       message: "LOGISTIC_ORDER.FETCH_SUCCESS",

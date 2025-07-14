@@ -198,25 +198,27 @@ export const CreateVoucherSchema = z.object({
       invalid_type_error: "VOUCHER.CLAIM_PERIOD_START_INVALID",
     }),
   ), // No .optional() or .required_error here, as preprocess handles default
-  claimPeriodEnd: z.preprocess(
-    (arg) => {
-      // If string or Date, convert to Date.
-      // If null, undefined, or empty string, return null.
-      if (typeof arg === "string" && arg.trim() === "") {
-        return null; // Treat empty string as null
-      }
-      if (typeof arg === "string" || arg instanceof Date) {
-        const date = new Date(arg);
-        return isNaN(date.getTime()) ? null : date; // If invalid date, return null
-      }
-      return null; // Default to null if no input or unexpected type
-    },
-    z
-      .date({
-        invalid_type_error: "VOUCHER.CLAIM_PERIOD_END_INVALID",
-      })
-      .nullable(), // Ensure the final type is Date | null
-  ),
+  claimPeriodEnd: z
+    .preprocess(
+      (arg) => {
+        // If string or Date, convert to Date.
+        // If null, undefined, or empty string, return null.
+        if (typeof arg === "string" && arg.trim() === "") {
+          return null; // Treat empty string as null
+        }
+        if (typeof arg === "string" || arg instanceof Date) {
+          const date = new Date(arg);
+          return isNaN(date.getTime()) ? null : date; // If invalid date, return null
+        }
+        return null; // Default to null if no input or unexpected type
+      },
+      z
+        .date({
+          invalid_type_error: "VOUCHER.CLAIM_PERIOD_END_INVALID",
+        })
+        .nullable(), // Ensure the final type is Date | null
+    )
+    .optional(),
   image: ImageSchema.refine(
     (val) =>
       val !== undefined &&
