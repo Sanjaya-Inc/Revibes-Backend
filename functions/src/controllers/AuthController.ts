@@ -14,6 +14,7 @@ import COLLECTION_MAP from "../constant/db";
 import AppError from "../utils/formatter/AppError";
 import User, { UserRole } from "../models/User";
 import { wrapError } from "../utils/decorator/wrapError";
+import { UserRecord } from "firebase-admin/auth";
 
 export class AuthController {
   @wrapError
@@ -36,12 +37,21 @@ export class AuthController {
       throw new AppError(400, "AUTH.EMAIL_USED");
     }
 
-    const userAuth = await admin.auth().createUser({
-      displayName,
-      email,
-      phoneNumber,
-      password,
-    });
+    let userAuth: UserRecord;
+    try {
+      userAuth = await admin.auth().createUser({
+        displayName,
+        email,
+        phoneNumber,
+        password,
+      });
+    } catch (e: any) {
+      if (e.errorInfo?.code === 'auth/phone-number-already-exists') {
+        throw new AppError(400, "AUTH.PHONE_USED");
+      } else {
+        throw new AppError(500, "AUTH.INTERNAL_SERVER_ERROR");
+      }
+    }
 
     const user = await UserController.createUser(
       {
