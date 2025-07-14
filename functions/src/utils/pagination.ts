@@ -1,13 +1,21 @@
 import { COLLECTION_MAP } from "./../constant/db";
-import { DocumentData, DocumentReference, DocumentSnapshot, Firestore, Query } from "firebase-admin/firestore";
+import {
+  DocumentData,
+  DocumentReference,
+  DocumentSnapshot,
+  Firestore,
+  Query,
+} from "firebase-admin/firestore";
 import { db } from "./firebase";
 import AppError from "./formatter/AppError";
 import { TPagination } from "../dto/pagination";
 
 export type TPaginateConstruct<T> = TPagination & {
   ref?: DocumentReference<DocumentData, DocumentData>;
-  addQuery?: (query: Query<DocumentData, DocumentData>) => Query<DocumentData, DocumentData>;
-  construct?: (new (...args: any[]) => T);
+  addQuery?: (
+    query: Query<DocumentData, DocumentData>,
+  ) => Query<DocumentData, DocumentData>;
+  construct?: new (...args: any[]) => T;
 };
 
 export type TPaginatedPage<T> = {
@@ -80,12 +88,10 @@ export const createPage = async <T extends { id: string } = { id: string }>(
     addQuery,
     ref,
     construct,
-    
   }: TPaginateConstruct<T>,
 ): Promise<TPaginatedPage<T>> => {
   const base = ref ?? db;
-  let firestoreQuery: Query<DocumentData> =
-    base.collection(collection);
+  let firestoreQuery: Query<DocumentData> = base.collection(collection);
 
   if (addQuery) {
     firestoreQuery = addQuery(firestoreQuery);
@@ -130,9 +136,10 @@ export const createPage = async <T extends { id: string } = { id: string }>(
   const items: T[] = [];
   snapshot.forEach((doc) => {
     items.push(
-      construct ? 
-        new construct({ id: doc.id, ...doc.data() }) 
-        : { id: doc.id, ...doc.data() } as T);
+      construct
+        ? new construct({ id: doc.id, ...doc.data() })
+        : ({ id: doc.id, ...doc.data() } as T),
+    );
   });
 
   let hasMoreNext = false;

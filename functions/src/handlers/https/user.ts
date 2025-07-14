@@ -35,8 +35,10 @@ export class UserHandlers {
     }
 
     const response = await UserController.getUsers(pagination);
-    response.items = response.items.map((item) => new User(item).getPublicFields());
-    
+    response.items = response.items.map((item) =>
+      new User(item).getPublicFields(),
+    );
+
     new AppResponse({
       code: 200,
       message: "USER.FETCH_SUCCESS",

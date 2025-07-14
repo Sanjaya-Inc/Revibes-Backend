@@ -39,7 +39,9 @@ export class VoucherHandlers {
       pagination,
     );
 
-    response.items = response.items.map((item) => new Voucher(item).getPublicFields());
+    response.items = response.items.map((item) =>
+      new Voucher(item).getPublicFields(),
+    );
 
     await Promise.all(
       response.items.map(async (voucher) => {

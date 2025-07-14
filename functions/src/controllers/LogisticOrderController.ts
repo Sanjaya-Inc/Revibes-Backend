@@ -1,5 +1,4 @@
-import { COLLECTION_MAP } from './../constant/db';
-import COLLECTION_MAP from "../constant/db";
+import COLLECTION_MAP from "./../constant/db";
 import {
   TAddLogisticItem,
   TAddLogisticItemMedia,
@@ -45,7 +44,7 @@ import { AppSettingController } from "./AppSettingController";
 import { CountryController } from "./CountryController";
 import { NotificationController } from "./NotificationController";
 import { StoreBranchController } from "./StoreBranchController";
-import StoreBranch from '../models/StoreBranch';
+import StoreBranch from "../models/StoreBranch";
 
 export type TGetLogisticOrderOpt = {
   withStore?: boolean;
@@ -101,7 +100,8 @@ export class LogisticOrderController {
     }
 
     if (withStore && logisticOrder.storeLocation) {
-      const storeSnapshot = await db.collection(COLLECTION_MAP.STORE_BRANCH)
+      const storeSnapshot = await db
+        .collection(COLLECTION_MAP.STORE_BRANCH)
         .doc(logisticOrder.storeLocation)
         .get();
       const storeDoc = storeSnapshot.data();
@@ -143,7 +143,6 @@ export class LogisticOrderController {
     filters.construct = LogisticOrder;
     filters.addQuery = (q) => {
       if (statuses && statuses?.length > 0) {
-        
         q = q.where("status", "in", statuses);
       }
 
@@ -161,7 +160,6 @@ export class LogisticOrderController {
 
     await Promise.all(
       items.map(async (order) => {
-        
         if (withItems) {
           const itemSnapshots = await db
             .collection(COLLECTION_MAP.LOGISTIC_ORDER)
@@ -188,7 +186,8 @@ export class LogisticOrderController {
         }
 
         if (withStore && order.storeLocation) {
-          const storeSnapshot = await db.collection(COLLECTION_MAP.STORE_BRANCH)
+          const storeSnapshot = await db
+            .collection(COLLECTION_MAP.STORE_BRANCH)
             .doc(order.storeLocation)
             .get();
           const storeDoc = storeSnapshot.data();

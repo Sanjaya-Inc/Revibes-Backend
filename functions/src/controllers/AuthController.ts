@@ -46,7 +46,7 @@ export class AuthController {
         password,
       });
     } catch (e: any) {
-      if (e.errorInfo?.code === 'auth/phone-number-already-exists') {
+      if (e.errorInfo?.code === "auth/phone-number-already-exists") {
         throw new AppError(400, "AUTH.PHONE_USED");
       } else {
         throw new AppError(500, "AUTH.INTERNAL_SERVER_ERROR");

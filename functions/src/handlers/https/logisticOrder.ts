@@ -31,7 +31,6 @@ import {
   TDeleteLogisticItem,
   TGetLogisticItems,
 } from "../../dto/logisticItem";
-import { PaginationSchema, TPagination } from "../../dto/pagination";
 import { getFileStorageInstance } from "../../utils/firebase";
 
 export const logisticOrderRoutes = new Routes("logistic-orders");
@@ -388,7 +387,7 @@ export class LogisticOrderHandlers {
     const response = await LogisticOrderController.getOrders(
       req.user.data,
       filters,
-      {withItems: true, withStore: true}
+      { withItems: true, withStore: true },
     );
 
     const fileStorageInstance = getFileStorageInstance();

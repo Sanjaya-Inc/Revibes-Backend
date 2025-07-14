@@ -20,14 +20,7 @@ export class UserVoucherController {
         UserVoucherStatus.REDEEMED,
         UserVoucherStatus.EXPIRED,
       ]);
-    const { items, pagination } = await createPage<UserVoucher>(
-      COLLECTION_MAP.USER_VOUCHER,
-      filters,
-    );
 
-    return {
-      items: vouchers,
-      pagination,
-    };
+    return createPage<UserVoucher>(COLLECTION_MAP.USER_VOUCHER, filters);
   }
 }
