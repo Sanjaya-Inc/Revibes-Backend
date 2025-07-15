@@ -148,7 +148,7 @@ export const GetLogisticOrdersSchema = z.object({
       // Preprocess function for 'amount'
       (arg) => {
         if (typeof arg === "string") {
-          return [arg];
+          return arg.split(",");
         }
         return arg; // Let Zod's .array() handle invalid types
       },
