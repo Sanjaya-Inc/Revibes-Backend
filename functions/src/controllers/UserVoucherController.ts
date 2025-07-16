@@ -14,6 +14,7 @@ export class UserVoucherController {
     user: TGetUserRes,
     filters: TPaginateConstruct<UserVoucher>,
   ): Promise<TPaginatedPage<UserVoucher>> {
+    filters.construct = UserVoucher;
     filters.ref = user.ref;
     filters.addQuery = (q) =>
       q.where("status", "not-in", [

@@ -74,6 +74,7 @@ export class UserController {
   public static async getUsers(
     filters: TPaginateConstruct<User>,
   ): Promise<TPaginatedPage<User>> {
+    filters.construct = User;
     return await createPage<User>(COLLECTION_MAP.USER, filters);
   }
 

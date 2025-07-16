@@ -101,8 +101,8 @@ export class MeHandlers {
       pagination,
     );
 
-    response.items = response.items.map((item) =>
-      new UserVoucher(item).getPublicFields(),
+    response.items = response.items.map((i) =>
+      i.getPublicFields(),
     );
 
     new AppResponse({

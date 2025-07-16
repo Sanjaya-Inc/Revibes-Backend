@@ -48,6 +48,7 @@ export class VoucherController {
     user: User,
     filters: TPaginateConstruct<Voucher>,
   ): Promise<TPaginatedPage<Voucher>> {
+    filters.construct = Voucher
     // user will only be able to view list of voucher that claimable
     if (user.role == UserRole.USER) {
       const now = new Date();
@@ -61,11 +62,8 @@ export class VoucherController {
       COLLECTION_MAP.VOUCHER,
       filters,
     );
-
-    const vouchers = items.map((item) => new Voucher(item).getPublicFields());
-
     return {
-      items: vouchers,
+      items,
       pagination,
     };
   }
