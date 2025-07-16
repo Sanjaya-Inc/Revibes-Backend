@@ -8,9 +8,9 @@ export const publicFields: (keyof InventoryItem)[] = [
   "createdAt",
   "updatedAt",
   "name",
-  "imageUrl",
+  "featuredimageUri",
   "stock",
-  "isActive",
+  "isAvailable",
 ];
 
 export const detailFields: (keyof InventoryItem)[] = [
@@ -19,20 +19,20 @@ export const detailFields: (keyof InventoryItem)[] = [
   "updatedAt",
   "name",
   "description",
-  "imageUrl",
+  "featuredimageUri",
   "media",
   "stock",
-  "isActive",
+  "isAvailable",
 ];
 
 export const defaultInventoryItemData: TInventoryItemData = {
   id: "",
   name: "",
   description: "",
-  imageUrl: "",
+  featuredimageUri: "",
   media: [],
   stock: 0,
-  isActive: true,
+  isAvailable: true,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -41,10 +41,10 @@ export class InventoryItem extends BaseModel {
   id!: string;
   name!: string;
   description?: string;
-  imageUrl?: string;
+  featuredimageUri?: string;
   media!: TMedia[];
   stock!: number;
-  isActive!: boolean;
+  isAvailable!: boolean;
   createdAt!: Date;
   updatedAt!: Date;
 

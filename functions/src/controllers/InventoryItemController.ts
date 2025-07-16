@@ -18,13 +18,15 @@ import {
   TPaginateConstruct,
   TPaginatedPage,
 } from "../utils/pagination";
-import User, { UserRole } from "../models/User";
+import { UserRole } from "../models/User";
+import { TGetUserRes } from "../dto/user";
 
 export class InventoryItemController {
   @wrapError
-  public static async getItem({
+  public static async getItem(user: TGetUserRes, {
     id,
   }: TGetInventoryItem): Promise<TGetInventoryItemRes | null> {
+    
     const ref = db.collection(COLLECTION_MAP.INVENTORY_ITEM).doc(id);
     const snapshot = await ref.get();
     const doc = snapshot.data();
@@ -32,6 +34,10 @@ export class InventoryItemController {
       return null;
     }
     const data = new InventoryItem(doc);
+
+    if (user.data.role === UserRole.USER && !data.isAvailable) {
+      throw new AppError(404, "INVENTORY.ITEM_NOT_FOUND");
+    }
 
     return {
       data,
@@ -42,10 +48,11 @@ export class InventoryItemController {
 
   @wrapError
   public static async getItems(
-    user: User,
+    user: TGetUserRes,
     filters: TPaginateConstruct<InventoryItem>,
   ): Promise<TPaginatedPage<InventoryItem>> {
-    if (user.role === UserRole.USER) {
+    filters.construct = InventoryItem;
+    if (user.data.role === UserRole.USER) {
       filters.addQuery = (q) => q.where("isActive", "==", true);
     }
 
@@ -63,7 +70,6 @@ export class InventoryItemController {
     image,
   }: TAddInventoryItem): Promise<InventoryItem> {
     const docRef = db.collection(COLLECTION_MAP.INVENTORY_ITEM).doc();
-
     let uri = "";
     if (image) {
       [uri] = await getFileStorageInstance().uploadFile(
@@ -78,7 +84,7 @@ export class InventoryItemController {
       id: docRef.id,
       name: name,
       description: description,
-      imageUrl: uri,
+      featuredimageUri: uri,
       stock: stock,
     };
 
@@ -89,15 +95,15 @@ export class InventoryItemController {
   }
 
   @wrapError
-  public static async deleteItem({ id }: TDeleteBanner): Promise<void> {
-    const item = await this.getItem({ id });
+  public static async deleteItem(user: TGetUserRes, { id }: TDeleteBanner): Promise<void> {
+    const item = await this.getItem(user, { id });
 
     if (!item) {
       throw new AppError(404, "INVENTORY_ITEM.NOT_FOUND");
     }
 
-    if (item.data.imageUrl) {
-      await getFileStorageInstance().removeFile(item.data.imageUrl);
+    if (item.data.featuredimageUri) {
+      await getFileStorageInstance().removeFile(item.data.featuredimageUri);
     }
 
     await db.collection(COLLECTION_MAP.INVENTORY_ITEM).doc(id).delete();
