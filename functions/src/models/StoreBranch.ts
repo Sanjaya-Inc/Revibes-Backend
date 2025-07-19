@@ -21,6 +21,7 @@ export const defaultStoreBranchData: TStoreBranchData = {
   postalCode: "",
   position: null,
   status: BranchStoreStatus.ACTIVE,
+  inUse: false,
 };
 
 export class StoreBranch extends BaseModel {
@@ -33,6 +34,7 @@ export class StoreBranch extends BaseModel {
   postalCode!: string;
   position?: TPosition | null;
   status!: BranchStoreStatus;
+  inUse!: boolean;
 
   constructor(data: TStoreBranchData) {
     super(data, defaultStoreBranchData);

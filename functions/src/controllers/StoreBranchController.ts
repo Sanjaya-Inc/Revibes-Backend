@@ -14,6 +14,9 @@ import StoreBranch, {
 import { wrapError } from "../utils/decorator/wrapError";
 import AppError from "../utils/formatter/AppError";
 import { haversineDistance } from "../utils/geolocation";
+import { TGetUserRes } from "../dto/user";
+import { UserRole } from "../models/User";
+import { DocumentData, Query } from "firebase-admin/firestore";
 
 export class StoreBranchController {
   @wrapError
@@ -35,14 +38,19 @@ export class StoreBranchController {
 
   @wrapError
   public static async getStoreBranches(
+    user: TGetUserRes,
     filters: TGetStoreBranches,
   ): Promise<StoreBranch[]> {
     const { limit, latitude, longitude } = filters;
 
-    const snapshot = await db
-      .collection(COLLECTION_MAP.STORE_BRANCH)
-      .where("status", "==", BranchStoreStatus.ACTIVE)
-      .get();
+    let query: Query<DocumentData> = db.collection(COLLECTION_MAP.STORE_BRANCH);
+
+    if (user.data.role === UserRole.USER) {
+      query = query
+        .where("status", "==", BranchStoreStatus.ACTIVE);
+    }
+
+    const snapshot = await query.get();
 
     let stores: StoreBranch[] = [];
     snapshot.forEach((doc) => {
@@ -140,6 +148,11 @@ export class StoreBranchController {
       throw new AppError(404, "STORE.NOT_FOUND");
     }
 
-    await db.collection(COLLECTION_MAP.STORE_BRANCH).doc(id).delete();
+    if (store.inUse) {
+      store.status = BranchStoreStatus.PERMANENTLY_CLOSED;
+      await db.collection(COLLECTION_MAP.STORE_BRANCH).doc(id).set(store.toObject());
+    } else {
+      await db.collection(COLLECTION_MAP.STORE_BRANCH).doc(id).delete();
+    }
   }
 }

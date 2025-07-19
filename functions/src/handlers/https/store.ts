@@ -21,6 +21,10 @@ export const storeRoutes = new Routes("stores");
 export class StoreHandlers {
   @registerRoute(storeRoutes, "get", "", authenticate)
   static async getStoreBranches(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
     let filters: TGetStoreBranches;
     try {
       filters = GetStoreBranchesSchema.parse(req.query);
@@ -28,7 +32,7 @@ export class StoreHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    const response = await StoreBranchController.getStoreBranches(filters);
+    const response = await StoreBranchController.getStoreBranches(req.user, filters);
     new AppResponse({
       code: 200,
       message: "STORE.FETCH_SUCCESS",
