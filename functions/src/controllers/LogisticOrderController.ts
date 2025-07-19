@@ -72,7 +72,7 @@ export class LogisticOrderController {
     }
 
     if (user.role !== UserRole.ADMIN && orderDoc.maker !== user.id) {
-      throw new AppError(403, "COMMON.FORBIDDEN");
+      throw new AppError(404, "LOGISTIC_ORDER.NOT_FOUND");
     }
 
     const logisticOrder = new LogisticOrder(orderDoc);
@@ -199,7 +199,7 @@ export class LogisticOrderController {
     );
 
     return {
-      items: items,
+      items,
       pagination,
     };
   }
@@ -364,8 +364,8 @@ export class LogisticOrderController {
     if (store && !store.inUse) {
       store.inUse = true;
       batch.update(db.collection(COLLECTION_MAP.STORE_BRANCH).doc(store?.id), {
-        ...store.toObject()
-      })
+        ...store.toObject(),
+      });
     }
 
     // Update order document

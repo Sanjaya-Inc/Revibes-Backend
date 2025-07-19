@@ -12,9 +12,28 @@ export enum LogisticOrderType {
 }
 
 export enum LogisticOrderStatus {
+  // User save a request.
   DRAFT = "draft",
+
+  // User submitted new request for new order.
   SUBMITTED = "submitted",
+
+  // An officer has been assigned to the pickup task.
+  ASSIGNED = "assigned",
+
+  // The assigned officer is en route to the pickup location.
+  EN_ROUTE = "en-route",
+
+  // The items have been successfully picked up by the officer.
+  PICKED_UP = "picked-up",
+
+  // The items are awaiting quality inspection or sorting at the facility.
+  AWAITING_INSPECTION = "awaiting-inspection",
+
+  // Order was rejected due to some reason on item given.
   REJECTED = "rejected",
+
+  // Order completed and user already get point based on item given.
   COMPLETED = "completed",
 }
 
