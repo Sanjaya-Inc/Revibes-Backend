@@ -16,11 +16,21 @@ export type TJwtPayload = {
 
 export type TJwtResult = [method: string, exp: Date];
 
+// Helper function to decode the token and get the expiration
+const getExpirationDateFromToken = (token: string): Date => {
+  const decoded = jwt.decode(token) as TJwtPayload & { exp?: number };
+  if (decoded && decoded.exp) {
+    // 'exp' is typically in seconds since epoch, convert to milliseconds
+    return new Date(decoded.exp * 1000);
+  }
+  throw new Error("Could not decode token or find expiration.");
+};
+
 export const generateAccessToken = (payload: TJwtPayload): TJwtResult => {
   const token = jwt.sign(payload, JWT_SECRET, {
     expiresIn: ACCESS_TOKEN_EXPIRES_IN,
   });
-  const exp = new Date(Date.now() + 60 * 60 * 24 * 30 * 1000); // 30 days
+  const exp = getExpirationDateFromToken(token); // Get exp from the signed token
   return [token, exp];
 };
 
@@ -28,6 +38,6 @@ export const generateRefreshToken = (payload: TJwtPayload): TJwtResult => {
   const token = jwt.sign(payload, JWT_SECRET, {
     expiresIn: REFRESH_TOKEN_EXPIRES_IN,
   });
-  const exp = new Date(Date.now() + 60 * 60 * 24 * 90 * 1000); // 90 days
+  const exp = getExpirationDateFromToken(token); // Get exp from the signed token
   return [token, exp];
 };
