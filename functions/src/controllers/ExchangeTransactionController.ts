@@ -382,6 +382,7 @@ export class ExchangeTransactionController {
           (item) => item.data.id === i.exchangeTransactionId,
         );
         await ExchangeItemController.txUpdateStock(
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           exchangeItem!,
           i.qty,
           transaction,
@@ -392,6 +393,7 @@ export class ExchangeTransactionController {
             (item) => item.data.id === i.sourceId,
           );
           await InventoryItemController.txUpdateStock(
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             inventoryItem!,
             i.qty,
             transaction,
