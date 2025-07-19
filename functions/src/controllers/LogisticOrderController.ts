@@ -333,15 +333,18 @@ export class LogisticOrderController {
       throw new AppError(404, "COUNTRY.NOT_FOUND");
     }
 
+    let store: StoreBranch | null = null;
     if (data.type === LogisticOrderType.DROP_OFF) {
       const { storeLocation } = data;
-      const store = await StoreBranchController.getStoreBranch({
+      store = await StoreBranchController.getStoreBranch({
         id: storeLocation,
       });
       if (!store) {
         throw new AppError(404, "STORE.NOT_FOUND");
       }
       order.storeLocation = storeLocation;
+      order.address = store.address;
+      order.country = store.country;
     } else {
       const { address, addressDetail, postalCode } = data;
       order.address = address;
@@ -357,6 +360,13 @@ export class LogisticOrderController {
     order.status = LogisticOrderStatus.SUBMITTED;
 
     const batch = db.batch();
+
+    if (store && !store.inUse) {
+      store.inUse = true;
+      batch.update(db.collection(COLLECTION_MAP.STORE_BRANCH).doc(store?.id), {
+        ...store.toObject()
+      })
+    }
 
     // Update order document
     batch.update(db.collection(COLLECTION_MAP.LOGISTIC_ORDER).doc(data.id), {
