@@ -3,6 +3,12 @@ import { TMedia } from "./LogisticItem";
 
 export type TInventoryItemData = Partial<InventoryItem>;
 
+export const metadataFields: (keyof InventoryItem)[] = [
+  "id",
+  "name",
+  "description",
+];
+
 export const publicFields: (keyof InventoryItem)[] = [
   "id",
   "createdAt",
@@ -58,6 +64,26 @@ export class InventoryItem extends BaseModel {
 
   getDetailFields(keys = detailFields) {
     return super.pickFields(keys);
+  }
+
+  getMetadataFields(keys = metadataFields) {
+    return super.pickFields(keys);
+  }
+
+  isUnlimited(): boolean {
+    return this.stock === -1;
+  }
+
+  hasRequestedStock(value: number): boolean {
+    return this.isUnlimited() ? true : this.stock >= value;
+  }
+
+  decrease(value: number): number {
+    if (!this.isUnlimited()) {
+      this.stock -= value;
+    }
+
+    return this.stock;
   }
 }
 

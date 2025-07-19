@@ -98,6 +98,15 @@ export class User extends BaseModel {
     return this.points;
   }
 
+  hasMinimumBalance(amount: number): boolean {
+    return this.points >= amount;
+  }
+
+  decrease(amount: number): number {
+    this.points -= amount;
+    return this.points;
+  }
+
   hasAccess(): boolean {
     return (
       !!this.accessToken &&

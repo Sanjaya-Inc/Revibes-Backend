@@ -32,7 +32,10 @@ export class StoreHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    const response = await StoreBranchController.getStoreBranches(req.user, filters);
+    const response = await StoreBranchController.getStoreBranches(
+      req.user,
+      filters,
+    );
     new AppResponse({
       code: 200,
       message: "STORE.FETCH_SUCCESS",

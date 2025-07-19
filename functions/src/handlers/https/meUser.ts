@@ -16,7 +16,6 @@ import {
 import { UserDeviceController } from "../../controllers/UserDeviceController";
 import { UserDailyRewardController } from "../../controllers/UserDailyRewardController";
 import { UserVoucherController } from "../../controllers/UserVoucherController";
-import UserVoucher from "../../models/UserVoucher";
 
 export const meRoutes = new Routes("me");
 
@@ -96,14 +95,16 @@ export class MeHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
+    console.log("check user data ======", req.user);
+
     const response = await UserVoucherController.getVouchers(
       req.user,
       pagination,
     );
 
-    response.items = response.items.map((i) =>
-      i.getPublicFields(),
-    );
+    console.log("check response ======", response);
+
+    response.items = response.items.map((i) => i.getPublicFields());
 
     new AppResponse({
       code: 200,

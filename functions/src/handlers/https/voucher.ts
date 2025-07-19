@@ -16,7 +16,6 @@ import {
   TGetVoucher,
 } from "../../dto/voucher";
 import { getFileStorageInstance } from "../../utils/firebase";
-import Voucher from "../../models/Voucher";
 
 export const voucherRoutes = new Routes("vouchers");
 
@@ -39,9 +38,7 @@ export class VoucherHandlers {
       pagination,
     );
 
-    response.items = response.items.map((i) =>
-      i.getPublicFields(),
-    );
+    response.items = response.items.map((i) => i.getPublicFields());
 
     await Promise.all(
       response.items.map(async (voucher) => {

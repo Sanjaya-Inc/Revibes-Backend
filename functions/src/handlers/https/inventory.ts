@@ -1,14 +1,18 @@
 import { Request, Response } from "express";
 import AppResponse from "../../utils/formatter/AppResponse";
-import {
-  TDeleteBanner,
-} from "../../dto/banner";
 import Routes from "./route";
 import { registerRoute } from "../../utils/decorator/registerRoute";
 import { adminOnly, authenticate } from "../../middlewares/auth";
 import AppError from "../../utils/formatter/AppError";
 import { parseFormData } from "../../utils/formatter/formData";
-import { AddInventoryItemSchema, DeleteInventoryItemSchema, GetInventoryItemSchema, TAddInventoryItem, TGetInventoryItem } from "../../dto/inventoryItem";
+import {
+  AddInventoryItemSchema,
+  DeleteInventoryItemSchema,
+  GetInventoryItemSchema,
+  TAddInventoryItem,
+  TDeleteInventoryItem,
+  TGetInventoryItem,
+} from "../../dto/inventoryItem";
 import { InventoryItemController } from "../../controllers/InventoryItemController";
 import { PaginationSchema, TPagination } from "../../dto/pagination";
 
@@ -85,14 +89,20 @@ export class IventoryHandlers {
     }).asJsonResponse(res);
   }
 
-  @registerRoute(inventoryRoutes, "delete", "items/:id", authenticate, adminOnly)
+  @registerRoute(
+    inventoryRoutes,
+    "delete",
+    "items/:id",
+    authenticate,
+    adminOnly,
+  )
   static async deleteItem(req: Request, res: Response) {
     if (!req.user) {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
     const id = req.params.id;
-    let data: TDeleteBanner = { id };
+    let data: TDeleteInventoryItem = { id };
 
     try {
       // Validate form data using Zod

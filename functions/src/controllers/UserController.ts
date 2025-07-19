@@ -18,6 +18,7 @@ import {
 import AppError from "../utils/formatter/AppError";
 import { TChangePassword } from "../dto/me";
 import UserDevice from "../models/userDevice";
+import { Transaction } from "firebase-admin/firestore";
 
 export type TCreateUserOpt = {
   skipCheck?: boolean;
@@ -286,5 +287,24 @@ export class UserController {
         return new User({ ...doc.data(), devices });
       }),
     );
+  }
+
+  @wrapError
+  public static async txGetUser(
+    id: string,
+    tx: Transaction,
+  ): Promise<TGetUserRes> {
+    const ref = db.collection(COLLECTION_MAP.USER).doc(id);
+    const snapshot = await tx.get(ref);
+    if (!snapshot.exists) {
+      throw new AppError(404, "USER.NOT_FOUND");
+    }
+    const data = new User({ ...snapshot.data() });
+
+    return {
+      data,
+      ref,
+      snapshot,
+    };
   }
 }

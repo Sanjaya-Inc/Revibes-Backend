@@ -46,8 +46,7 @@ export class StoreBranchController {
     let query: Query<DocumentData> = db.collection(COLLECTION_MAP.STORE_BRANCH);
 
     if (user.data.role === UserRole.USER) {
-      query = query
-        .where("status", "==", BranchStoreStatus.ACTIVE);
+      query = query.where("status", "==", BranchStoreStatus.ACTIVE);
     }
 
     const snapshot = await query.get();
@@ -150,7 +149,10 @@ export class StoreBranchController {
 
     if (store.inUse) {
       store.status = BranchStoreStatus.PERMANENTLY_CLOSED;
-      await db.collection(COLLECTION_MAP.STORE_BRANCH).doc(id).set(store.toObject());
+      await db
+        .collection(COLLECTION_MAP.STORE_BRANCH)
+        .doc(id)
+        .set(store.toObject());
     } else {
       await db.collection(COLLECTION_MAP.STORE_BRANCH).doc(id).delete();
     }

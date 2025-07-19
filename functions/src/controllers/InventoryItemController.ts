@@ -1,5 +1,4 @@
 import COLLECTION_MAP from "../constant/db";
-import { TDeleteBanner } from "../dto/banner";
 import {
   BasePath,
   getFileStorageInstance,
@@ -10,6 +9,7 @@ import AppError from "../utils/formatter/AppError";
 import InventoryItem, { TInventoryItemData } from "../models/InventoryItem";
 import {
   TAddInventoryItem,
+  TDeleteInventoryItem,
   TGetInventoryItem,
   TGetInventoryItemRes,
 } from "../dto/inventoryItem";
@@ -20,13 +20,15 @@ import {
 } from "../utils/pagination";
 import { UserRole } from "../models/User";
 import { TGetUserRes } from "../dto/user";
+import { getDocsByIds } from "../utils/firestoreCommonQuery";
+import { Transaction } from "firebase-admin/firestore";
 
 export class InventoryItemController {
   @wrapError
-  public static async getItem(user: TGetUserRes, {
-    id,
-  }: TGetInventoryItem): Promise<TGetInventoryItemRes | null> {
-    
+  public static async getItem(
+    user: TGetUserRes,
+    { id }: TGetInventoryItem,
+  ): Promise<TGetInventoryItemRes | null> {
     const ref = db.collection(COLLECTION_MAP.INVENTORY_ITEM).doc(id);
     const snapshot = await ref.get();
     const doc = snapshot.data();
@@ -53,7 +55,7 @@ export class InventoryItemController {
   ): Promise<TPaginatedPage<InventoryItem>> {
     filters.construct = InventoryItem;
     if (user.data.role === UserRole.USER) {
-      filters.addQuery = (q) => q.where("isActive", "==", true);
+      filters.addQuery = (q) => q.where("isAvailable", "==", true);
     }
 
     return await createPage<InventoryItem>(
@@ -95,11 +97,14 @@ export class InventoryItemController {
   }
 
   @wrapError
-  public static async deleteItem(user: TGetUserRes, { id }: TDeleteBanner): Promise<void> {
+  public static async deleteItem(
+    user: TGetUserRes,
+    { id }: TDeleteInventoryItem,
+  ): Promise<void> {
     const item = await this.getItem(user, { id });
 
     if (!item) {
-      throw new AppError(404, "INVENTORY_ITEM.NOT_FOUND");
+      throw new AppError(404, "INVENTORY.ITEM_NOT_FOUND");
     }
 
     if (item.data.featuredimageUri) {
@@ -107,5 +112,46 @@ export class InventoryItemController {
     }
 
     await db.collection(COLLECTION_MAP.INVENTORY_ITEM).doc(id).delete();
+  }
+
+  @wrapError
+  public static async getAvailableItemByIds(
+    ids: string[],
+  ): Promise<InventoryItem[]> {
+    return getDocsByIds<InventoryItem>(COLLECTION_MAP.INVENTORY_ITEM, ids, {
+      addQuery: (q) => q.where("isAvailable", "==", true),
+      construct: InventoryItem,
+    });
+  }
+
+  @wrapError
+  public static async txGetItem(
+    id: string,
+    tx: Transaction,
+  ): Promise<TGetInventoryItemRes> {
+    const ref = db.collection(COLLECTION_MAP.INVENTORY_ITEM).doc(id);
+    const snapshot = await tx.get(ref);
+    if (!snapshot.exists) {
+      throw new AppError(404, "INVENTORY.ITEM_NOT_FOUND");
+    }
+    const data = new InventoryItem({ ...snapshot.data() });
+
+    return {
+      data,
+      ref,
+      snapshot,
+    };
+  }
+
+  @wrapError
+  public static async txUpdateStock(
+    item: TGetInventoryItemRes,
+    qty: number,
+    tx: Transaction,
+  ): Promise<void> {
+    if (!item.data.hasRequestedStock(qty)) {
+      throw new AppError(400, "INVENTORY.ITEM_OUT_OF_STOCK");
+    }
+    tx.update(item.ref, { stock: item.data.decrease(qty) });
   }
 }

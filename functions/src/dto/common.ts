@@ -4,7 +4,7 @@ export type TFirestoreData<T> = {
     FirebaseFirestore.DocumentData,
     FirebaseFirestore.DocumentData
   >;
-  snapshot: FirebaseFirestore.DocumentSnapshot<
+  snapshot?: FirebaseFirestore.DocumentSnapshot<
     FirebaseFirestore.DocumentData,
     FirebaseFirestore.DocumentData
   >;

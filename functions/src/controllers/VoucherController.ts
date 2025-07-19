@@ -21,6 +21,7 @@ import {
 import User, { UserRole } from "../models/User";
 import { and, where } from "firebase/firestore";
 import { Filter } from "firebase-admin/firestore";
+import { getDocsByIds } from "../utils/firestoreCommonQuery";
 
 export class VoucherController {
   @wrapError
@@ -48,7 +49,7 @@ export class VoucherController {
     user: User,
     filters: TPaginateConstruct<Voucher>,
   ): Promise<TPaginatedPage<Voucher>> {
-    filters.construct = Voucher
+    filters.construct = Voucher;
     // user will only be able to view list of voucher that claimable
     if (user.role == UserRole.USER) {
       const now = new Date();
@@ -80,21 +81,21 @@ export class VoucherController {
     claimPeriodEnd = null,
     image,
   }: TCreateVoucher): Promise<Voucher> {
+    const filters = [
+      Filter.where("code", "==", code),
+      Filter.where("claimPeriodStart", ">=", claimPeriodStart),
+    ];
+
+    if (claimPeriodEnd !== null) {
+      filters.push(Filter.where("claimPeriodEnd", "<=", claimPeriodEnd));
+    } else {
+      // Only use '==' operator for null in Firestore
+      filters.push(Filter.where("claimPeriodEnd", "==", null));
+    }
+
     const result = await db
       .collection(COLLECTION_MAP.VOUCHER)
-      .where("code", "==", code) // This top-level where is fine
-      .where(
-        // The outer where here accepts a Filter object
-        Filter.and(
-          // Use Filter.and() from Admin SDK
-          Filter.where("claimPeriodStart", ">=", claimPeriodStart), // Use Filter.where()
-          Filter.or(
-            // Use Filter.or()
-            Filter.where("claimPeriodEnd", "<=", claimPeriodEnd), // Use Filter.where()
-            Filter.where("claimPeriodEnd", "==", null), // Use Filter.where()
-          ),
-        ),
-      )
+      .where(Filter.and(...filters))
       .get();
 
     if (result.docs?.length > 0) {
@@ -167,5 +168,15 @@ export class VoucherController {
     }
 
     await db.collection(COLLECTION_MAP.VOUCHER).doc(id).delete();
+  }
+
+  @wrapError
+  public static async getAvailableVoucherByIds(
+    ids: string[],
+  ): Promise<Voucher[]> {
+    return getDocsByIds<Voucher>(COLLECTION_MAP.VOUCHER, ids, {
+      addQuery: (q) => q.where("isAvailable", "==", true),
+      construct: Voucher,
+    });
   }
 }

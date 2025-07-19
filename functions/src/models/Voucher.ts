@@ -22,6 +22,15 @@ export type TVoucherCondition = {
   maxDiscountAmount: number; // max discount amount in a single transaction that can apply when use this voucher
 };
 
+export const metadataFields: (keyof Voucher)[] = [
+  "id",
+  "code",
+  "name",
+  "description",
+  "value",
+  "conditions",
+];
+
 export const publicFields: (keyof Voucher)[] = [
   "id",
   "code",
@@ -65,6 +74,8 @@ export const defaultVoucherData: TVoucherData = {
 
   createdAt: new Date(),
   updatedAt: new Date(),
+
+  isAvailable: true,
 };
 
 export class Voucher extends BaseModel {
@@ -78,7 +89,7 @@ export class Voucher extends BaseModel {
 
   claimPeriodStart!: Date;
   claimPeriodEnd?: Date | null;
-
+  isAvailable!: boolean;
   createdAt!: Date;
   updatedAt!: Date;
 
@@ -92,6 +103,44 @@ export class Voucher extends BaseModel {
 
   getDetailFields(keys = detailFields) {
     return super.pickFields(keys);
+  }
+
+  getMetadataFields(keys = metadataFields) {
+    return super.pickFields(keys);
+  }
+
+  isClaimBetweenPeriod(startDate: Date, endDate?: Date | null): boolean {
+    if (startDate < this.claimPeriodStart) {
+      return false;
+    }
+
+    if (this.claimPeriodEnd && endDate) {
+      if (endDate > this.claimPeriodEnd) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  calculateDiscount(trxAmount: number) {
+    const { amount, type } = this.value;
+    let discount = 0;
+    if (type === VoucherValueType.PERCENT_OFF) {
+      const percentage = amount / 100;
+      discount = trxAmount * percentage;
+    } else if (type === VoucherValueType.FIXED_AMOUNT) {
+      discount = amount;
+    }
+
+    if (
+      this.conditions?.maxDiscountAmount &&
+      discount > this.conditions?.maxDiscountAmount
+    ) {
+      discount = this.conditions.maxDiscountAmount;
+    }
+
+    return discount;
   }
 }
 

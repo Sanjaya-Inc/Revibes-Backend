@@ -11,8 +11,8 @@ export const AddInventoryItemSchema = z.object({
     })
     .min(3, "INVENTORY.ITEM_NAME_REQUIRED"),
   description: z.string().optional(),
-  stock: z.preprocess(
-    (arg) => {
+  stock: z
+    .preprocess((arg) => {
       // If arg is a string, attempt to parse it to a float.
       // If parsing fails (results in NaN), return undefined to allow default or optional behavior.
       if (typeof arg === "string") {
@@ -21,23 +21,25 @@ export const AddInventoryItemSchema = z.object({
       }
       // For non-string arguments, return them directly for Zod to handle.
       return arg;
-    },
-    z.number().min(-1, "INVENTORY.ITEM_STOCK_INVALID").default(0),
-  ).optional(),
-  isAvailable: z.preprocess(
-        // Preprocess function for 'amount'
-        (arg) => {
-          if (typeof arg === "string") {
-            if (arg === "true") {
-              return true;
-            } else if (arg === "false") {
-              return false;
-            }
+    }, z.number().min(-1, "INVENTORY.ITEM_STOCK_INVALID").default(0))
+    .optional(),
+  isAvailable: z
+    .preprocess(
+      // Preprocess function for 'amount'
+      (arg) => {
+        if (typeof arg === "string") {
+          if (arg === "true") {
+            return true;
+          } else if (arg === "false") {
+            return false;
           }
-          return arg;
-        },
-        z.boolean(),
-      ).default(true).optional(),
+        }
+        return arg;
+      },
+      z.boolean(),
+    )
+    .default(true)
+    .optional(),
   image: ImageSchema.refine(
     (val) =>
       val !== undefined &&

@@ -16,7 +16,7 @@ import { adminOnly, authenticate } from "../../middlewares/auth";
 import AppError from "../../utils/formatter/AppError";
 import { UserController } from "../../controllers/UserController";
 import { PaginationSchema, TPagination } from "../../dto/pagination";
-import User from "../../models/User";
+import { UserPointController } from "../../controllers/UserPointController";
 
 export const userRoutes = new Routes("users");
 
@@ -35,9 +35,7 @@ export class UserHandlers {
     }
 
     const response = await UserController.getUsers(pagination);
-    response.items = response.items.map((i) =>
-      i.getPublicFields(),
-    );
+    response.items = response.items.map((i) => i.getPublicFields());
 
     new AppResponse({
       code: 200,
@@ -131,7 +129,7 @@ export class UserHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    await UserController.addUserPoint(data);
+    await UserPointController.addUserPoint(data);
 
     new AppResponse({
       code: 200,

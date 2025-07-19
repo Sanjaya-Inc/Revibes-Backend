@@ -9,6 +9,7 @@ import { storeRoutes } from "./store";
 import { logisticOrderRoutes } from "./logisticOrder";
 import { voucherRoutes } from "./voucher";
 import { inventoryRoutes } from "./inventory";
+import { exchangeRoutes } from "./exchange";
 
 import { errorHandler } from "../../middlewares/error";
 import { bodyParser } from "../../middlewares/parser";
@@ -24,6 +25,7 @@ const ROUTES = [
   ...logisticOrderRoutes.getApis(),
   ...voucherRoutes.getApis(),
   ...inventoryRoutes.getApis(),
+  ...exchangeRoutes.getApis(),
 ];
 
 export const app = express();
