@@ -73,7 +73,7 @@ export class UserController {
 
   @wrapError
   public static async getUsers(
-    filters: TPaginateConstruct<User>,
+    filters: TPaginateConstruct<User> = {},
   ): Promise<TPaginatedPage<User>> {
     filters.construct = User;
     return await createPage<User>(COLLECTION_MAP.USER, filters);

@@ -1,5 +1,7 @@
 import { Currency } from "../constant/currency";
 import BaseModel from "./BaseModel";
+import InventoryItem from "./InventoryItem";
+import Voucher from "./Voucher";
 
 export type TExchangeItemData = Partial<ExchangeItem>;
 
@@ -24,6 +26,7 @@ export const publicFields: (keyof ExchangeItem)[] = [
   "isAvailable",
   "createdAt",
   "updatedAt",
+  "metadata",
 ];
 
 export const detailFields: (keyof ExchangeItem)[] = [
@@ -38,6 +41,7 @@ export const detailFields: (keyof ExchangeItem)[] = [
   "isAvailable",
   "createdAt",
   "updatedAt",
+  "metadata",
 ];
 
 export const defaultExchangeItemData: TExchangeItemData = {
@@ -72,6 +76,9 @@ export class ExchangeItem extends BaseModel {
   createdAt!: Date;
   updatedAt!: Date;
 
+  // relations
+  metadata?: Voucher | InventoryItem | null;
+
   constructor(data: TExchangeItemData) {
     super(data, defaultExchangeItemData);
   }
@@ -89,6 +96,7 @@ export class ExchangeItem extends BaseModel {
   }
 
   hasRequestedStock(value: number): boolean {
+    if (!this.isUnlimited() && value === -1) return false;
     return this.isUnlimited() ? true : this.quota >= value;
   }
 

@@ -73,7 +73,7 @@ export class VoucherHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    const response = await VoucherController.getVoucher(data);
+    const response = await VoucherController.getVoucher(req.user, data);
     if (!response) {
       throw new AppError(404, "VOUCHER.NOT_FOUND");
     }
@@ -112,6 +112,10 @@ export class VoucherHandlers {
 
   @registerRoute(voucherRoutes, "delete", ":id", authenticate, adminOnly)
   static async deleteVoucher(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
     const id = req.params.id;
     let data: TDeleteVoucher = { id };
 
@@ -122,7 +126,7 @@ export class VoucherHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    const response = await VoucherController.deleteVoucher(data);
+    const response = await VoucherController.deleteVoucher(req.user, data);
     new AppResponse({
       code: 200,
       message: "VOUCHER.DELETE_SUCCESS",

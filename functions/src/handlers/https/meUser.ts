@@ -95,14 +95,10 @@ export class MeHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    console.log("check user data ======", req.user);
-
     const response = await UserVoucherController.getVouchers(
       req.user,
       pagination,
     );
-
-    console.log("check response ======", response);
 
     response.items = response.items.map((i) => i.getPublicFields());
 

@@ -75,6 +75,7 @@ export class InventoryItem extends BaseModel {
   }
 
   hasRequestedStock(value: number): boolean {
+    if (!this.isUnlimited() && value === -1) return false;
     return this.isUnlimited() ? true : this.stock >= value;
   }
 

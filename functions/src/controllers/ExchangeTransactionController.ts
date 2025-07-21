@@ -198,7 +198,7 @@ export class ExchangeTransactionController {
         throw new AppError(400, "USER_VOUCHER.ALREADY_EXPIRED");
       }
 
-      const voucherRes = await VoucherController.getVoucher({
+      const voucherRes = await VoucherController.getVoucher(user, {
         id: userVoucher.voucherId,
       });
       if (!voucherRes) {
@@ -402,7 +402,7 @@ export class ExchangeTransactionController {
 
         // if voucher, receive voucher to user
         if (i.type === ExchangeItemType.VOUCHER) {
-          const voucherItem = await VoucherController.getVoucher({
+          const voucherItem = await VoucherController.getVoucher(user, {
             id: i.sourceId,
           });
           if (voucherItem) {

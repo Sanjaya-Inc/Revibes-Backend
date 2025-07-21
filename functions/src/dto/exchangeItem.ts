@@ -2,6 +2,25 @@ import { z } from "zod";
 import { TFirestoreData } from "./common";
 import ExchangeItem, { ExchangeItemType } from "../models/ExchangeItem";
 import { Currency } from "../constant/currency";
+import { PaginationSchema } from "./pagination";
+
+export const GetExchangeItemsSchema = z.object({
+  ...PaginationSchema.shape,
+  types: z
+    .preprocess(
+      // Preprocess function for 'amount'
+      (arg) => {
+        if (typeof arg === "string") {
+          return arg.split(",");
+        }
+        return arg; // Let Zod's .array() handle invalid types
+      },
+      z.array(z.nativeEnum(ExchangeItemType)).optional(),
+    )
+    .optional(),
+});
+
+export type TGetExchangeItems = z.infer<typeof GetExchangeItemsSchema>;
 
 // This schema represents the file object as parsed
 export const AddExchangeItemSchema = z.object({

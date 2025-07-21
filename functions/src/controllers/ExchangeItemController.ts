@@ -15,17 +15,25 @@ import {
   TDeleteExchangeItem,
   TGetExchangeItem,
   TGetExchangeItemRes,
+  TGetExchangeItems,
 } from "../dto/exchangeItem";
 import { VoucherController } from "./VoucherController";
 import { InventoryItemController } from "./InventoryItemController";
 import { getDocsByIds } from "../utils/firestoreCommonQuery";
 import { Transaction } from "firebase-admin/firestore";
+import Voucher from "../models/Voucher";
+import InventoryItem from "../models/InventoryItem";
+
+export type TGetExchangeItemOpt = {
+  withMetadata?: boolean;
+};
 
 export class ExchangeItemController {
   @wrapError
   public static async getPurchaseableItem(
     user: TGetUserRes,
     { id }: TGetExchangeItem,
+    { withMetadata }: TGetExchangeItemOpt = {},
   ): Promise<TGetExchangeItemRes | null> {
     const ref = db.collection(COLLECTION_MAP.EXCHANGE_ITEM).doc(id);
     const snapshot = await ref.get();
@@ -39,6 +47,22 @@ export class ExchangeItemController {
       throw new AppError(404, "EXCHANGE.ITEM_NOT_FOUND");
     }
 
+    if (withMetadata) {
+      if (data.type === ExchangeItemType.VOUCHER) {
+        const metaRes = await VoucherController.getVoucher(user, {id: data.sourceId});
+        if (!metaRes) {
+          throw new AppError(404, "EXCHANGE.SOURCE_NOT_FOUND");
+        }
+        data.metadata = metaRes.data;
+      } else if (data.type === ExchangeItemType.ITEM) {
+        const metaRes = await InventoryItemController.getItem(user, {id: data.sourceId});
+        if (!metaRes) {
+          throw new AppError(404, "EXCHANGE.SOURCE_NOT_FOUND");
+        }
+        data.metadata = metaRes.data;
+      }
+    }
+
     return {
       data,
       ref,
@@ -49,17 +73,61 @@ export class ExchangeItemController {
   @wrapError
   public static async getPurchaseableItems(
     user: TGetUserRes,
-    filters: TPaginateConstruct<ExchangeItem>,
+    filters: TGetExchangeItems & TPaginateConstruct<ExchangeItem>,
+    { withMetadata }: TGetExchangeItemOpt = {},
   ): Promise<TPaginatedPage<ExchangeItem>> {
+    const { types } = filters;
     filters.construct = ExchangeItem;
-    if (user.data.role === UserRole.USER) {
-      filters.addQuery = (q) => q.where("isAvailable", "==", true);
-    }
+    filters.addQuery = (q) => {
+      if (types && types?.length > 0) {
+        q = q.where("type", "in", types);
+      }
 
-    return await createPage<ExchangeItem>(
+      if (user.data.role === UserRole.USER) {
+        q.where("isAvailable", "==", true);
+      }
+
+      return q;
+    };
+
+    const { items, pagination } = await createPage<ExchangeItem>(
       COLLECTION_MAP.EXCHANGE_ITEM,
       filters,
     );
+
+    if (withMetadata && items.length > 0) {
+      const voucherIds = items
+        .filter((item) => item.type === ExchangeItemType.VOUCHER)
+        .map((item) => item.sourceId);
+      const inventoryItemIds = items
+        .filter((item) => item.type === ExchangeItemType.ITEM)
+        .map((item) => item.sourceId);
+
+      const [vouchers, inventoryItems] = await Promise.all([
+        voucherIds.length > 0
+          ? getDocsByIds<Voucher>(COLLECTION_MAP.VOUCHER, voucherIds)
+          : Promise.resolve([]),
+        inventoryItemIds.length > 0
+          ? getDocsByIds<InventoryItem>(COLLECTION_MAP.INVENTORY_ITEM, inventoryItemIds)
+          : Promise.resolve([]),
+      ]);
+
+      const voucherMap = new Map(vouchers.map((v) => [v.id, v]));
+      const inventoryItemMap = new Map(inventoryItems.map((i) => [i.id, i]));
+
+      items.forEach((item) => {
+        if (item.type === ExchangeItemType.VOUCHER) {
+          item.metadata = voucherMap.get(item.sourceId) || null;
+        } else if (item.type === ExchangeItemType.ITEM) {
+          item.metadata = inventoryItemMap.get(item.sourceId) || null;
+        }
+      });
+    }
+
+    return {
+      items,
+      pagination,
+    };
   }
 
   @wrapError
@@ -70,16 +138,13 @@ export class ExchangeItemController {
     const docRef = db.collection(COLLECTION_MAP.EXCHANGE_ITEM).doc();
 
     if (data.type === ExchangeItemType.VOUCHER) {
-      const voucher = await VoucherController.getVoucher({ id: data.sourceId });
+      const voucher = await VoucherController.getVoucher(user, { id: data.sourceId });
       if (!voucher) {
         throw new AppError(404, "VOUCHER.NOT_FOUND");
       }
 
-      if (!voucher.data.isClaimBetweenPeriod(data.availableAt, data.endedAt)) {
-        throw new AppError(
-          400,
-          "VOUCHER.ITEM_AVAILABILITY_OUTSIDE_CLAIM_PERIOD",
-        );
+      if (!voucher.data.isAvailable) {
+        throw new AppError(400,"VOUCHER.NOT_AVAILABLE");
       }
     } else if (data.type === ExchangeItemType.ITEM) {
       const item = await InventoryItemController.getItem(user, {

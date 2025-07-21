@@ -22,25 +22,31 @@ import User, { UserRole } from "../models/User";
 import { and, where } from "firebase/firestore";
 import { Filter } from "firebase-admin/firestore";
 import { getDocsByIds } from "../utils/firestoreCommonQuery";
+import { TGetUserRes } from "../dto/user";
 
 export class VoucherController {
   @wrapError
-  public static async getVoucher({
-    id,
-  }: TGetVoucher): Promise<TGetVoucherRes | null> {
-    const voucherRef = db.collection(COLLECTION_MAP.VOUCHER).doc(id);
+  public static async getVoucher(
+    user: TGetUserRes,
+    { id }: TGetVoucher
+  ): Promise<TGetVoucherRes | null> {
+    const ref = db.collection(COLLECTION_MAP.VOUCHER).doc(id);
 
-    const voucherSnapshot = await voucherRef.get();
-    const voucherDoc = voucherSnapshot.data();
+    const snapshot = await ref.get();
+    const voucherDoc = snapshot.data();
     if (!voucherDoc) {
       return null;
     }
-    const voucher = new Voucher(voucherDoc);
+    const data = new Voucher(voucherDoc);
+
+    if (user.data.role === UserRole.USER && !data.isAvailable) {
+      throw new AppError(404, "INVENTORY.ITEM_NOT_FOUND");
+    }
 
     return {
-      data: voucher,
-      ref: voucherRef,
-      snapshot: voucherSnapshot,
+      data,
+      ref,
+      snapshot,
     };
   }
 
@@ -56,7 +62,7 @@ export class VoucherController {
       filters.addQuery = (q) =>
         q.where(
           and(where("availableAt", "<=", now), where("expiredAt", ">=", now)),
-        );
+        ).where("isAvailable", "==", true);
     }
 
     const { items, pagination } = await createPage<Voucher>(
@@ -79,6 +85,7 @@ export class VoucherController {
     conditions,
     claimPeriodStart = new Date(),
     claimPeriodEnd = null,
+    termConditions,
     image,
   }: TCreateVoucher): Promise<Voucher> {
     const filters = [
@@ -137,6 +144,7 @@ export class VoucherController {
       imageUri,
       claimPeriodStart,
       claimPeriodEnd,
+      termConditions,
     };
 
     const voucher = new Voucher(data);
@@ -147,9 +155,9 @@ export class VoucherController {
   }
 
   @wrapError
-  public static async deleteVoucher({ id }: TDeleteVoucher): Promise<void> {
+  public static async deleteVoucher(user: TGetUserRes, { id }: TDeleteVoucher): Promise<void> {
     // Remove file from Firebase Storage
-    const voucherRes = await this.getVoucher({ id });
+    const voucherRes = await this.getVoucher(user, { id });
 
     if (!voucherRes) {
       throw new AppError(404, "VOUCHER.NOT_FOUND");

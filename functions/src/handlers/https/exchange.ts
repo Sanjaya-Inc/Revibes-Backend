@@ -16,9 +16,11 @@ import {
   AddExchangeItemSchema,
   DeleteExchangeItemSchema,
   GetExchangeItemSchema,
+  GetExchangeItemsSchema,
   TAddExchangeItem,
   TDeleteExchangeItem,
   TGetExchangeItem,
+  TGetExchangeItems,
 } from "../../dto/exchangeItem";
 import { ExchangeItemController } from "../../controllers/ExchangeItemController";
 import { ExchangeTransactionController } from "../../controllers/ExchangeTransactionController";
@@ -147,9 +149,9 @@ export class ExchangeHandlers {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    let filters: TPagination;
+    let filters: TGetExchangeItems;
     try {
-      filters = PaginationSchema.parse(req.query);
+      filters = GetExchangeItemsSchema.parse(req.query);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
@@ -157,6 +159,7 @@ export class ExchangeHandlers {
     const response = await ExchangeItemController.getPurchaseableItems(
       req.user,
       filters,
+      {withMetadata: true},
     );
     response.items = response.items.map((i) => i.getPublicFields());
 
@@ -185,6 +188,7 @@ export class ExchangeHandlers {
     const response = await ExchangeItemController.getPurchaseableItem(
       req.user,
       data,
+      {withMetadata: true},
     );
     if (!response) {
       throw new AppError(404, "EXCHANGE.ITEM_NOT_FOUND");
