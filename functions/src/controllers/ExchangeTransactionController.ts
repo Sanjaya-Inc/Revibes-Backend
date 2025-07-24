@@ -412,6 +412,7 @@ export class ExchangeTransactionController {
               i.qty,
               transaction,
             );
+            VoucherController.txUpdateUseState(voucherItem, transaction);
           }
         }
       }

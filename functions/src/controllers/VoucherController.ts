@@ -20,7 +20,7 @@ import {
 } from "../utils/pagination";
 import User, { UserRole } from "../models/User";
 import { and, where } from "firebase/firestore";
-import { Filter } from "firebase-admin/firestore";
+import { Filter, Transaction } from "firebase-admin/firestore";
 import { getDocsByIds } from "../utils/firestoreCommonQuery";
 import { TGetUserRes } from "../dto/user";
 
@@ -28,7 +28,7 @@ export class VoucherController {
   @wrapError
   public static async getVoucher(
     user: TGetUserRes,
-    { id }: TGetVoucher
+    { id }: TGetVoucher,
   ): Promise<TGetVoucherRes | null> {
     const ref = db.collection(COLLECTION_MAP.VOUCHER).doc(id);
 
@@ -60,9 +60,11 @@ export class VoucherController {
     if (user.role == UserRole.USER) {
       const now = new Date();
       filters.addQuery = (q) =>
-        q.where(
-          and(where("availableAt", "<=", now), where("expiredAt", ">=", now)),
-        ).where("isAvailable", "==", true);
+        q
+          .where(
+            and(where("availableAt", "<=", now), where("expiredAt", ">=", now)),
+          )
+          .where("isAvailable", "==", true);
     }
 
     const { items, pagination } = await createPage<Voucher>(
@@ -155,12 +157,19 @@ export class VoucherController {
   }
 
   @wrapError
-  public static async deleteVoucher(user: TGetUserRes, { id }: TDeleteVoucher): Promise<void> {
+  public static async deleteVoucher(
+    user: TGetUserRes,
+    { id }: TDeleteVoucher,
+  ): Promise<void> {
     // Remove file from Firebase Storage
     const voucherRes = await this.getVoucher(user, { id });
 
     if (!voucherRes) {
       throw new AppError(404, "VOUCHER.NOT_FOUND");
+    }
+
+    if (voucherRes.data.inUse) {
+      throw new AppError(404, "VOUCHER.ALREADY_CLAIMED");
     }
 
     const { data: voucher, ref: voucherRef } = voucherRes;
@@ -186,5 +195,16 @@ export class VoucherController {
       addQuery: (q) => q.where("isAvailable", "==", true),
       construct: Voucher,
     });
+  }
+
+  @wrapError
+  public static async txUpdateUseState(
+    voucher: TGetVoucherRes,
+    tx: Transaction,
+  ) {
+    if (!voucher.data.inUse) {
+      voucher.data.inUse = true;
+      tx.update(voucher.ref, { inUse: voucher.data.inUse });
+    }
   }
 }

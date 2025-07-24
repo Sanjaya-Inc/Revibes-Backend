@@ -29,6 +29,7 @@ export const metadataFields: (keyof Voucher)[] = [
   "description",
   "value",
   "conditions",
+  "imageUri",
 ];
 
 export const publicFields: (keyof Voucher)[] = [
@@ -76,6 +77,7 @@ export const defaultVoucherData: TVoucherData = {
   isAvailable: true,
   createdAt: new Date(),
   updatedAt: new Date(),
+  inUse: false,
 };
 
 export class Voucher extends BaseModel {
@@ -93,6 +95,7 @@ export class Voucher extends BaseModel {
   isAvailable!: boolean;
   createdAt!: Date;
   updatedAt!: Date;
+  inUse!: boolean;
 
   constructor(data: TVoucherData) {
     super(data, defaultVoucherData);
