@@ -15,6 +15,7 @@ import {
 } from "../../dto/inventoryItem";
 import { InventoryItemController } from "../../controllers/InventoryItemController";
 import { PaginationSchema, TPagination } from "../../dto/pagination";
+import { getFileStorageInstance } from "../../utils/firebase";
 
 export const inventoryRoutes = new Routes("inventories");
 
@@ -34,7 +35,18 @@ export class IventoryHandlers {
 
     const response = await InventoryItemController.getItems(req.user, filters);
 
-    response.items = response.items.map((i) => i.getPublicFields());
+    await Promise.all(
+      response.items.map(async (i) => {
+        if (i.featuredImageUri) {
+          i.featuredImageUri = await getFileStorageInstance().getFullUrl(
+            i.featuredImageUri,
+          );
+        }
+
+        i.getPublicFields();
+        return i;
+      }),
+    );
 
     new AppResponse({
       code: 200,
@@ -63,6 +75,13 @@ export class IventoryHandlers {
       throw new AppError(404, "INVENTORY.ITEM_NOT_FOUND");
     }
 
+    if (response.data.featuredImageUri) {
+      response.data.featuredImageUri =
+        await getFileStorageInstance().getFullUrl(
+          response.data.featuredImageUri,
+        );
+    }
+
     new AppResponse({
       code: 200,
       message: "INVENTORY.FETCH_ITEM_SUCCESS",
@@ -82,6 +101,12 @@ export class IventoryHandlers {
     }
 
     const response = await InventoryItemController.addItem(data);
+    if (response.featuredImageUri) {
+      response.featuredImageUri = await getFileStorageInstance().getFullUrl(
+        response.featuredImageUri,
+      );
+    }
+
     new AppResponse({
       code: 201,
       message: "INVENTORY.ADD_ITEM_SUCCESS",

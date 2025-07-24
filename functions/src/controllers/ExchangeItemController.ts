@@ -49,13 +49,17 @@ export class ExchangeItemController {
 
     if (withMetadata) {
       if (data.type === ExchangeItemType.VOUCHER) {
-        const metaRes = await VoucherController.getVoucher(user, {id: data.sourceId});
+        const metaRes = await VoucherController.getVoucher(user, {
+          id: data.sourceId,
+        });
         if (!metaRes) {
           throw new AppError(404, "EXCHANGE.SOURCE_NOT_FOUND");
         }
         data.metadata = metaRes.data;
       } else if (data.type === ExchangeItemType.ITEM) {
-        const metaRes = await InventoryItemController.getItem(user, {id: data.sourceId});
+        const metaRes = await InventoryItemController.getItem(user, {
+          id: data.sourceId,
+        });
         if (!metaRes) {
           throw new AppError(404, "EXCHANGE.SOURCE_NOT_FOUND");
         }
@@ -108,7 +112,10 @@ export class ExchangeItemController {
           ? getDocsByIds<Voucher>(COLLECTION_MAP.VOUCHER, voucherIds)
           : Promise.resolve([]),
         inventoryItemIds.length > 0
-          ? getDocsByIds<InventoryItem>(COLLECTION_MAP.INVENTORY_ITEM, inventoryItemIds)
+          ? getDocsByIds<InventoryItem>(
+              COLLECTION_MAP.INVENTORY_ITEM,
+              inventoryItemIds,
+            )
           : Promise.resolve([]),
       ]);
 
@@ -138,13 +145,15 @@ export class ExchangeItemController {
     const docRef = db.collection(COLLECTION_MAP.EXCHANGE_ITEM).doc();
 
     if (data.type === ExchangeItemType.VOUCHER) {
-      const voucher = await VoucherController.getVoucher(user, { id: data.sourceId });
+      const voucher = await VoucherController.getVoucher(user, {
+        id: data.sourceId,
+      });
       if (!voucher) {
         throw new AppError(404, "VOUCHER.NOT_FOUND");
       }
 
       if (!voucher.data.isAvailable) {
-        throw new AppError(400,"VOUCHER.NOT_AVAILABLE");
+        throw new AppError(400, "VOUCHER.NOT_AVAILABLE");
       }
     } else if (data.type === ExchangeItemType.ITEM) {
       const item = await InventoryItemController.getItem(user, {

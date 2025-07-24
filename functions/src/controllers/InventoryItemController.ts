@@ -86,7 +86,7 @@ export class InventoryItemController {
       id: docRef.id,
       name: name,
       description: description,
-      featuredimageUri: uri,
+      featuredImageUri: uri,
       stock: stock,
     };
 
@@ -107,8 +107,8 @@ export class InventoryItemController {
       throw new AppError(404, "INVENTORY.ITEM_NOT_FOUND");
     }
 
-    if (item.data.featuredimageUri) {
-      await getFileStorageInstance().removeFile(item.data.featuredimageUri);
+    if (item.data.featuredImageUri) {
+      await getFileStorageInstance().removeFile(item.data.featuredImageUri);
     }
 
     await db.collection(COLLECTION_MAP.INVENTORY_ITEM).doc(id).delete();

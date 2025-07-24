@@ -38,7 +38,16 @@ export class VoucherHandlers {
       pagination,
     );
 
-    response.items = response.items.map((i) => i.getPublicFields());
+    await Promise.all(
+      response.items.map(async (i) => {
+        if (i.imageUri) {
+          i.imageUri = await getFileStorageInstance().getFullUrl(i.imageUri);
+        }
+
+        i.getPublicFields();
+        return i;
+      }),
+    );
 
     await Promise.all(
       response.items.map(async (voucher) => {
@@ -103,6 +112,13 @@ export class VoucherHandlers {
     }
 
     const response = await VoucherController.createVoucher(data);
+
+    if (response.imageUri) {
+      response.imageUri = await getFileStorageInstance().getFullUrl(
+        response.imageUri,
+      );
+    }
+
     new AppResponse({
       code: 201,
       message: "VOUCHER.CREATE_SUCCESS",

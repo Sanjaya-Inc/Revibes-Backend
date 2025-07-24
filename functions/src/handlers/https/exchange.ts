@@ -24,6 +24,10 @@ import {
 } from "../../dto/exchangeItem";
 import { ExchangeItemController } from "../../controllers/ExchangeItemController";
 import { ExchangeTransactionController } from "../../controllers/ExchangeTransactionController";
+import { ExchangeItemType } from "../../models/ExchangeItem";
+import InventoryItem from "../../models/InventoryItem";
+import { getFileStorageInstance } from "../../utils/firebase";
+import Voucher from "../../models/Voucher";
 
 export const exchangeRoutes = new Routes("exchanges");
 
@@ -48,6 +52,32 @@ export class ExchangeHandlers {
       filters,
       { withItems: true },
     );
+
+    await Promise.all(
+      response.items.map(async (e) => {
+        await Promise.all(
+          e.items.map(async (i) => {
+            if (i.type === ExchangeItemType.ITEM) {
+              const item = i.metadata as InventoryItem;
+              if (item.featuredImageUri) {
+                item.featuredImageUri =
+                  await getFileStorageInstance().getFullUrl(
+                    item.featuredImageUri,
+                  );
+              }
+            } else {
+              const voucher = i.metadata as Voucher;
+              if (voucher.imageUri) {
+                voucher.imageUri = await getFileStorageInstance().getFullUrl(
+                  voucher.imageUri,
+                );
+              }
+            }
+          }),
+        );
+      }),
+    );
+
     new AppResponse({
       code: 200,
       message: "EXCHANGE.TRANSACTION_FETCH_SUCCESS",
@@ -80,6 +110,26 @@ export class ExchangeHandlers {
       throw new AppError(404, "EXCHANGE.ITEM_NOT_FOUND");
     }
 
+    await Promise.all(
+      response.data.items.map(async (i) => {
+        if (i.type === ExchangeItemType.ITEM) {
+          const item = i.metadata as InventoryItem;
+          if (item.featuredImageUri) {
+            item.featuredImageUri = await getFileStorageInstance().getFullUrl(
+              item.featuredImageUri,
+            );
+          }
+        } else {
+          const voucher = i.metadata as Voucher;
+          if (voucher.imageUri) {
+            voucher.imageUri = await getFileStorageInstance().getFullUrl(
+              voucher.imageUri,
+            );
+          }
+        }
+      }),
+    );
+
     new AppResponse({
       code: 200,
       message: "EXCHANGE.TRANSACTION_FETCH_SUCCESS",
@@ -106,6 +156,34 @@ export class ExchangeHandlers {
       req.user,
       data,
     );
+
+    await Promise.all(
+      response.items.map(async (i) => {
+        if (i.type === ExchangeItemType.ITEM) {
+          const item = i.metadata as InventoryItem;
+          if (item.featuredImageUri) {
+            item.featuredImageUri = await getFileStorageInstance().getFullUrl(
+              item.featuredImageUri,
+            );
+          }
+        } else {
+          const voucher = i.metadata as Voucher;
+          if (voucher.imageUri) {
+            voucher.imageUri = await getFileStorageInstance().getFullUrl(
+              voucher.imageUri,
+            );
+          }
+        }
+      }),
+    );
+
+    if (response.voucherMetadata?.imageUri) {
+      response.voucherMetadata.imageUri =
+        await getFileStorageInstance().getFullUrl(
+          response.voucherMetadata.imageUri,
+        );
+    }
+
     new AppResponse({
       code: 201,
       message: "EXCHANGE.TRANSACTION_CREATE_SUCCESS",
@@ -159,9 +237,31 @@ export class ExchangeHandlers {
     const response = await ExchangeItemController.getPurchaseableItems(
       req.user,
       filters,
-      {withMetadata: true},
+      { withMetadata: true },
     );
-    response.items = response.items.map((i) => i.getPublicFields());
+
+    await Promise.all(
+      response.items.map(async (i) => {
+        if (i.type === ExchangeItemType.ITEM) {
+          const meta = i.metadata as InventoryItem;
+          if (meta.featuredImageUri) {
+            meta.featuredImageUri = await getFileStorageInstance().getFullUrl(
+              meta.featuredImageUri,
+            );
+          }
+        } else {
+          const meta = i.metadata as Voucher;
+          if (meta.imageUri) {
+            meta.imageUri = await getFileStorageInstance().getFullUrl(
+              meta.imageUri,
+            );
+          }
+        }
+
+        i.getPublicFields();
+        return i;
+      }),
+    );
 
     new AppResponse({
       code: 200,
@@ -188,10 +288,26 @@ export class ExchangeHandlers {
     const response = await ExchangeItemController.getPurchaseableItem(
       req.user,
       data,
-      {withMetadata: true},
+      { withMetadata: true },
     );
     if (!response) {
       throw new AppError(404, "EXCHANGE.ITEM_NOT_FOUND");
+    }
+
+    if (response.data.type === ExchangeItemType.ITEM) {
+      const meta = response.data.metadata as InventoryItem;
+      if (meta.featuredImageUri) {
+        meta.featuredImageUri = await getFileStorageInstance().getFullUrl(
+          meta.featuredImageUri,
+        );
+      }
+    } else {
+      const meta = response.data.metadata as Voucher;
+      if (meta.imageUri) {
+        meta.imageUri = await getFileStorageInstance().getFullUrl(
+          meta.imageUri,
+        );
+      }
     }
 
     new AppResponse({
