@@ -45,6 +45,11 @@ import { CountryController } from "./CountryController";
 import { NotificationController } from "./NotificationController";
 import { StoreBranchController } from "./StoreBranchController";
 import StoreBranch from "../models/StoreBranch";
+import { UserMissionController } from "./UserMissionController";
+import { UserController } from "./UserController";
+import { UserPointController } from "./UserPointController";
+import { UserPointHistorySourceType } from "../models/UserPointHistory";
+import { MissionType } from "../models/MissionAssignment";
 
 export type TGetLogisticOrderOpt = {
   withStore?: boolean;
@@ -556,46 +561,58 @@ export class LogisticOrderController {
     order.totalPoint = orderPoint;
     order.updatedAt = new Date();
 
-    const batch = db.batch();
+    const maker = await UserController.getUser({ id: order.maker });
+    if (!maker) {
+      throw new AppError(404, "USER.NOT_FOUND");
+    }
 
-    // Update order document
-    batch.update(orderRef, {
-      status: order.status,
-      totalPoint: order.totalPoint,
-      updatedAt: order.updatedAt,
-    });
-
-    order.items.forEach((item) => {
-      const itemRef = orderRef
-        .collection(COLLECTION_MAP.LOGISTIC_ITEM)
-        .doc(item.id);
-      batch.update(itemRef, {
-        point: item.point,
+    await db.runTransaction(async (transaction) => {
+      // Update order document
+      transaction.update(orderRef, {
+        status: order.status,
+        totalPoint: order.totalPoint,
+        updatedAt: order.updatedAt,
       });
+
+      order.items.forEach((item) => {
+        const itemRef = orderRef
+          .collection(COLLECTION_MAP.LOGISTIC_ITEM)
+          .doc(item.id);
+        transaction.update(itemRef, {
+          point: item.point,
+        });
+      });
+
+      // Update user points
+      await UserPointController.txAddPoint(
+        maker,
+        {
+          amount: orderPoint,
+          sourceType: UserPointHistorySourceType.LOGISTIC_ORDER,
+          sourceId: order.id,
+        },
+        transaction,
+      );
+
+      const meta = null;
+
+      // add history
+      const historyDoc = orderRef
+        .collection(COLLECTION_MAP.LOGISTIC_ORDER_HISTORY)
+        .doc();
+      const newHistory = new LogisticOrderHistory({
+        id: historyDoc.id,
+        status: order.status,
+        timestamp: new Date(),
+        meta,
+      });
+      transaction.create(historyDoc, newHistory.toObject());
     });
 
-    // Update user points
-    const userRef = db.collection(COLLECTION_MAP.USER).doc(order.maker);
-    batch.update(userRef, {
-      points: user.addPoint(orderPoint),
+    // async task
+    UserMissionController.updateProgressByType(maker, {
+      type: MissionType.LOGISTIC_ORDER_COMPLETE,
     });
-
-    const meta = null;
-
-    // add history
-    const historyDoc = orderRef
-      .collection(COLLECTION_MAP.LOGISTIC_ORDER_HISTORY)
-      .doc();
-    const newHistory = new LogisticOrderHistory({
-      id: historyDoc.id,
-      status: order.status,
-      timestamp: new Date(),
-      meta,
-    });
-    batch.create(historyDoc, newHistory.toObject());
-
-    await batch.commit();
-
     NotificationController.Dropoff(order);
   }
 

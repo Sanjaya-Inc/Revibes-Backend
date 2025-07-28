@@ -19,6 +19,7 @@ import AppError from "../utils/formatter/AppError";
 import { TChangePassword } from "../dto/me";
 import UserDevice from "../models/userDevice";
 import { Transaction } from "firebase-admin/firestore";
+import { UserPointController } from "./UserPointController";
 
 export type TCreateUserOpt = {
   skipCheck?: boolean;
@@ -197,28 +198,6 @@ export class UserController {
   }
 
   @wrapError
-  public static async addUserPoint({
-    id,
-    amount,
-  }: TAddUserPoint): Promise<void> {
-    const user = await UserController.getUser({ id });
-    if (!user) {
-      throw new AppError(404, "USER.NOT_FOUND");
-    }
-
-    if (user.data.email === process.env.ADMIN_ROOT_MAIL) {
-      throw new AppError(403, "COMMON.FORBIDDEN");
-    }
-
-    await db
-      .collection(COLLECTION_MAP.USER)
-      .doc(id)
-      .update({
-        points: user.data.points + amount,
-      });
-  }
-
-  @wrapError
   public static async initAdminRoot(): Promise<User | null> {
     const adminMail = process.env.ADMIN_ROOT_MAIL || "";
     const user = await UserController.getUserByEmail(adminMail);
@@ -306,5 +285,20 @@ export class UserController {
       ref,
       snapshot,
     };
+  }
+
+  @wrapError
+  public static async addUserPoint({
+    id,
+    ...data
+  }: TAddUserPoint): Promise<void> {
+    const user = await this.getUser({ id });
+    if (!user) {
+      throw new AppError(404, "USER.NOT_FOUND");
+    }
+
+    db.runTransaction(async (transaction) => {
+      await UserPointController.txAddPoint(user, data, transaction);
+    });
   }
 }

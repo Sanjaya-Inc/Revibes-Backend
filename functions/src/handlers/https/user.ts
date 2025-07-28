@@ -1,12 +1,12 @@
 import {
-  AddUserPointSchema,
   ChangeUserStatusSchema,
   CreateUserSchema,
   GetUserSchema,
-  TAddUserPoint,
   TChangeUserStatus,
   TCreateUser,
   TGetUser,
+  TAddUserPoint,
+  AddUserPointSchema,
 } from "../../dto/user";
 import { Request, Response } from "express";
 import AppResponse from "../../utils/formatter/AppResponse";
@@ -16,7 +16,6 @@ import { adminOnly, authenticate } from "../../middlewares/auth";
 import AppError from "../../utils/formatter/AppError";
 import { UserController } from "../../controllers/UserController";
 import { PaginationSchema, TPagination } from "../../dto/pagination";
-import { UserPointController } from "../../controllers/UserPointController";
 
 export const userRoutes = new Routes("users");
 
@@ -129,11 +128,11 @@ export class UserHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    await UserPointController.addUserPoint(data);
+    await UserController.addUserPoint(data);
 
     new AppResponse({
       code: 200,
-      message: "USER.PATCH_STATUS_SUCCESS",
+      message: "USER.ADD_POINT_SUCCESS",
     }).asJsonResponse(res);
   }
 }

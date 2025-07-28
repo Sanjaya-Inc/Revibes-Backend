@@ -16,6 +16,10 @@ import {
 import { UserDeviceController } from "../../controllers/UserDeviceController";
 import { UserDailyRewardController } from "../../controllers/UserDailyRewardController";
 import { UserVoucherController } from "../../controllers/UserVoucherController";
+import { UserPointController } from "../../controllers/UserPointController";
+import { UserMissionController } from "../../controllers/UserMissionController";
+import { ClaimMissionSchema, TClaimMission } from "../../dto/userMission";
+import { getFileStorageInstance } from "../../utils/firebase";
 
 export const meRoutes = new Routes("me");
 
@@ -168,6 +172,94 @@ export class MeHandlers {
     new AppResponse({
       code: 200,
       message: "ME.DELETE_DEVICE_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(meRoutes, "get", "missions", authenticate)
+  static async getMissions(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    let pagination: TPagination;
+    try {
+      pagination = PaginationSchema.parse(req.query);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await UserMissionController.getMissions(
+      req.user,
+      pagination,
+      { withMission: true },
+    );
+    await Promise.all(
+      response.items.map(async (i) => {
+        if (i.mission) {
+          i.mission.imageUri = await getFileStorageInstance().getFullUrl(
+            i.mission.imageUri,
+          );
+        }
+
+        return i;
+      }),
+    );
+
+    new AppResponse({
+      code: 200,
+      message: "ME.FETCH_MISSIONS_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(meRoutes, "patch", "missions/:id", authenticate)
+  static async claimMissionReward(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const id = req.params.id;
+    let data: TClaimMission = { id };
+
+    try {
+      // Validate form data using Zod
+      data = ClaimMissionSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await UserMissionController.claimMissions(req.user, data);
+    new AppResponse({
+      code: 200,
+      message: "ME.CLAIM_MISSION_REWARD_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(meRoutes, "get", "points/histories", authenticate)
+  static async getPointHistories(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    let pagination: TPagination;
+    try {
+      pagination = PaginationSchema.parse(req.query);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await UserPointController.getHistories(
+      req.user,
+      pagination,
+    );
+
+    response.items = response.items.map((i) => i.getPublicFields());
+
+    new AppResponse({
+      code: 200,
+      message: "ME.FETCH_POINT_HISTORIES_SUCCESS",
       data: response,
     }).asJsonResponse(res);
   }

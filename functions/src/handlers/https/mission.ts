@@ -5,23 +5,25 @@ import { registerRoute } from "../../utils/decorator/registerRoute";
 import { adminOnly, authenticate } from "../../middlewares/auth";
 import AppError from "../../utils/formatter/AppError";
 import { parseFormData } from "../../utils/formatter/formData";
-import { VoucherController } from "../../controllers/VoucherController";
 import { PaginationSchema, TPagination } from "../../dto/pagination";
-import {
-  CreateVoucherSchema,
-  DeleteVoucherSchema,
-  GetVoucherSchema,
-  TCreateVoucher,
-  TDeleteVoucher,
-  TGetVoucher,
-} from "../../dto/voucher";
 import { getFileStorageInstance } from "../../utils/firebase";
+import { MissionController } from "../../controllers/MissionController";
+import {
+  AddMissionSchema,
+  AssignMissionSchema,
+  DeleteMissionSchema,
+  GetMissionSchema,
+  TAddMission,
+  TAssignMission,
+  TDeleteMission,
+  TGetMission,
+} from "../../dto/mission";
 
-export const voucherRoutes = new Routes("vouchers");
+export const missionRoutes = new Routes("missions");
 
-export class VoucherHandlers {
-  @registerRoute(voucherRoutes, "get", "", authenticate, adminOnly)
-  static async getVouchers(req: Request, res: Response) {
+export class MissionHandlers {
+  @registerRoute(missionRoutes, "get", "", authenticate, adminOnly)
+  static async getMissions(req: Request, res: Response) {
     if (!req.user) {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
@@ -33,10 +35,7 @@ export class VoucherHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    const response = await VoucherController.getVouchers(
-      req.user.data,
-      pagination,
-    );
+    const response = await MissionController.getMissions(pagination);
 
     await Promise.all(
       response.items.map(async (i) => {
@@ -51,29 +50,29 @@ export class VoucherHandlers {
 
     new AppResponse({
       code: 200,
-      message: "VOUCHER.FETCH_SUCCESS",
+      message: "MISSION.FETCH_SUCCESS",
       data: response,
     }).asJsonResponse(res);
   }
 
-  @registerRoute(voucherRoutes, "get", ":id", authenticate, adminOnly)
-  static async getVoucher(req: Request, res: Response) {
+  @registerRoute(missionRoutes, "get", ":id", authenticate, adminOnly)
+  static async getMission(req: Request, res: Response) {
     if (!req.user) {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
     const id = req.params.id;
-    let data: TGetVoucher = { id };
+    let data: TGetMission = { id };
     try {
       // Validate form data using Zod
-      data = GetVoucherSchema.parse(data);
+      data = GetMissionSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    const response = await VoucherController.getVoucher(req.user, data);
+    const response = await MissionController.getMission(data);
     if (!response) {
-      throw new AppError(404, "VOUCHER.NOT_FOUND");
+      throw new AppError(404, "MISSION.NOT_FOUND");
     }
 
     if (response.data.imageUri) {
@@ -84,23 +83,23 @@ export class VoucherHandlers {
 
     new AppResponse({
       code: 200,
-      message: "VOUCHER.FETCH_SUCCESS",
+      message: "MISSION.FETCH_SUCCESS",
       data: response.data.pickFields(),
     }).asJsonResponse(res);
   }
 
-  @registerRoute(voucherRoutes, "post", "", authenticate, adminOnly)
-  static async createVoucher(req: Request, res: Response) {
-    let data = parseFormData<TCreateVoucher>(req);
+  @registerRoute(missionRoutes, "post", "", authenticate, adminOnly)
+  static async createMission(req: Request, res: Response) {
+    let data = parseFormData<TAddMission>(req);
 
     try {
       // Validate form data using Zod
-      data = CreateVoucherSchema.parse(data);
+      data = AddMissionSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    const response = await VoucherController.createVoucher(data);
+    const response = await MissionController.addMission(data);
 
     if (response.imageUri) {
       response.imageUri = await getFileStorageInstance().getFullUrl(
@@ -110,31 +109,51 @@ export class VoucherHandlers {
 
     new AppResponse({
       code: 201,
-      message: "VOUCHER.CREATE_SUCCESS",
+      message: "MISSION.CREATE_SUCCESS",
       data: response.pickFields(),
     }).asJsonResponse(res);
   }
 
-  @registerRoute(voucherRoutes, "delete", ":id", authenticate, adminOnly)
-  static async deleteVoucher(req: Request, res: Response) {
+  @registerRoute(missionRoutes, "post", ":id/assign", authenticate, adminOnly)
+  static async assignMission(req: Request, res: Response) {
+    const id = req.params.id;
+    let data: TAssignMission = req.body;
+
+    try {
+      // Validate form data using Zod
+      data = AssignMissionSchema.parse({ ...req.body, id });
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    await MissionController.assignMissions(data);
+
+    new AppResponse({
+      code: 200,
+      message: "MISSION.ASSIGNMENT_SUCCESS",
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(missionRoutes, "delete", ":id", authenticate, adminOnly)
+  static async deleteMission(req: Request, res: Response) {
     if (!req.user) {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
     const id = req.params.id;
-    let data: TDeleteVoucher = { id };
+    let data: TDeleteMission = { id };
 
     try {
       // Validate form data using Zod
-      data = DeleteVoucherSchema.parse(data);
+      data = DeleteMissionSchema.parse(data);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    const response = await VoucherController.deleteVoucher(req.user, data);
+    const response = await MissionController.deleteMission(data);
     new AppResponse({
       code: 200,
-      message: "VOUCHER.DELETE_SUCCESS",
+      message: "MISSION.DELETE_SUCCESS",
       data: response,
     }).asJsonResponse(res);
   }

@@ -15,6 +15,7 @@ import AppError from "../utils/formatter/AppError";
 import User, { UserRole } from "../models/User";
 import { wrapError } from "../utils/decorator/wrapError";
 import { UserRecord } from "firebase-admin/auth";
+import { UserMissionController } from "./UserMissionController";
 
 export class AuthController {
   @wrapError
@@ -73,6 +74,9 @@ export class AuthController {
       refreshTokenExpiredAt: tokens.refreshTokenExpiredAt,
     });
 
+    // Async task
+    UserMissionController.assignAutomaticMissions(user.id);
+
     return { user: user.getPublicFields(), tokens };
   }
 
@@ -99,6 +103,9 @@ export class AuthController {
       refreshToken: tokens.refreshToken,
       refreshTokenExpiredAt: tokens.refreshTokenExpiredAt,
     });
+
+    // Async task
+    UserMissionController.assignAutomaticMissions(user.id);
 
     return tokens;
   }

@@ -33,6 +33,7 @@ import { TGetExchangeItemRes } from "../dto/exchangeItem";
 import { TGetInventoryItemRes } from "../dto/inventoryItem";
 import { UserController } from "./UserController";
 import { UserPointController } from "./UserPointController";
+import { UserPointHistorySourceType } from "../models/UserPointHistory";
 
 export type TGetTransactionOpt = {
   withItems?: boolean;
@@ -412,7 +413,7 @@ export class ExchangeTransactionController {
               i.qty,
               transaction,
             );
-            VoucherController.txUpdateUseState(voucherItem, transaction);
+            await VoucherController.txUpdateUseState(voucherItem, transaction);
           }
         }
       }
@@ -423,7 +424,15 @@ export class ExchangeTransactionController {
       }
 
       // 4. Deduct user balance
-      UserPointController.txDeductPoint(dbUser, total, transaction);
+      await UserPointController.txDeductPoint(
+        dbUser,
+        {
+          amount: total,
+          sourceType: UserPointHistorySourceType.EXCHANGE,
+          sourceId: newTrx.id,
+        },
+        transaction,
+      );
     });
 
     newTrx.items = requestItems;

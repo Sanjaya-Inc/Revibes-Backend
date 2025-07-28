@@ -1,6 +1,7 @@
 import { z } from "zod";
 import User, { UserRole, UserStatus } from "../models/User";
 import { TFirestoreData } from "./common";
+import { NewUserPointSchema } from "./userPoint";
 
 export type TGetUserRes = TFirestoreData<User>;
 
@@ -86,9 +87,7 @@ export const AddUserPointSchema = z.object({
       required_error: "USER.ID_REQUIRED",
     })
     .min(1, "USER.ID_REQUIRED"),
-  amount: z.number({
-    required_error: "USER.AMOUNT_REQUIRED",
-  }),
+  ...NewUserPointSchema.shape,
 });
 
 export type TAddUserPoint = z.infer<typeof AddUserPointSchema>;

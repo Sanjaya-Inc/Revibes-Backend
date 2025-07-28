@@ -5,6 +5,7 @@ export enum COLLECTION_MAP {
   USER_VOUCHER = "user_vouchers",
   USER_DEVICE = "user_devices",
   USER_POINT_HISTORY = "user_point_histories",
+  USER_MISSION = "user_missions",
   BANNER = "banners",
   COUNTRY = "countries",
   LOGISTIC_ORDER = "logistic_orders",
@@ -16,6 +17,8 @@ export enum COLLECTION_MAP {
   EXCHANGE_ITEM = "exchange_items",
   EXCHANGE_TRANSACTION = "exchange_transactions",
   EXCHANGE_TRANSACTION_ITEM = "exchange_transaction_items",
+  MISSION = "missions",
+  MISSION_ASSIGNMENT = "missions-assignment",
 }
 
 export default COLLECTION_MAP;
