@@ -40,6 +40,10 @@ functions/
 
 ## Getting Started
 
+Api documentation:
+
+https://www.postman.com/blue-sunset-9254/revibes/collection/zum1xp2/revibes?action=share&creator=7070614
+
 ### Prerequisites
 
 - Node.js (v18+ recommended)
