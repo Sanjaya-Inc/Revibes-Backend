@@ -204,7 +204,7 @@ export class LogisticOrderHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    await LogisticOrderController.submitOrder(req.user.data, data);
+    await LogisticOrderController.submitOrder(req.user, data);
 
     new AppResponse({
       code: 200,

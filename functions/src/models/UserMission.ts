@@ -1,11 +1,11 @@
 import BaseModel from "./BaseModel";
 import Mission from "./Mission";
-import { MissionType } from "./MissionAssignment";
+import { MissionType } from "./Mission";
 
 export type TUserMissionData = Partial<UserMission>;
 
 export enum UserMissionStatus {
-  IN_PROGRESS = "in_progress",
+  IN_PROGRESS = "in-progress",
   AVAILABLE = "available",
   CLAIMED = "claimed",
   EXPIRED = "expired",

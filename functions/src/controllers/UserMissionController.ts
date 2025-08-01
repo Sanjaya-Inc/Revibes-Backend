@@ -9,6 +9,7 @@ import {
 import UserMission, { UserMissionStatus } from "../models/UserMission";
 import {
   TClaimMission,
+  TGetMissions,
   TGetUserMissionRes,
   TUpdateMissionProgressByType,
 } from "../dto/userMission";
@@ -29,16 +30,14 @@ export class UserMissionController {
   @wrapError
   public static async getMissions(
     user: TGetUserRes,
-    filters: TPaginateConstruct<UserMission>,
+    filters: TGetMissions & TPaginateConstruct<UserMission>,
     { withMission }: TGetUserMissionOpt = {},
   ): Promise<TPaginatedPage<UserMission>> {
+    const { statuses } = filters;
     filters.construct = UserMission;
     filters.ref = user.ref;
     filters.addQuery = (q) =>
-      q.where("status", "in", [
-        UserMissionStatus.AVAILABLE,
-        UserMissionStatus.IN_PROGRESS,
-      ]);
+      q.where("status", "in", statuses);
 
     const { items, pagination } = await createPage<UserMission>(
       COLLECTION_MAP.USER_MISSION,

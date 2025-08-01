@@ -1,10 +1,5 @@
 import BaseModel from "./BaseModel";
 
-export enum MissionType {
-  USER_PROFILE_FULLFILL = "user-profile-fullfill",
-  LOGISTIC_ORDER_COMPLETE = "logistic-order-complete",
-}
-
 export enum MissionAssignmentType {
   // Original description: "user who is already signup and signup in the future will assigned to this mission"
   // New Name: AUTOMATIC_ENROLLMENT (or AUTO_ASSIGN, IMMEDIATE_ASSIGN depending on specific nuance)

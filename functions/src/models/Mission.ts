@@ -3,6 +3,7 @@ import MissionAssignment from "./MissionAssignment";
 
 export enum MissionType {
   USER_PROFILE_FULLFILL = "user-profile-fullfill",
+  LOGISTIC_ORDER_SUBMIT = "logistic-order-submit",
   LOGISTIC_ORDER_COMPLETE = "logistic-order-complete",
 }
 

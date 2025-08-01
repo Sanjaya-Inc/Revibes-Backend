@@ -1,7 +1,27 @@
 import { z } from "zod";
 import { TFirestoreData } from "./common";
 import UserMission from "../models/UserMission";
-import { MissionType } from "../models/MissionAssignment";
+import { MissionType } from "../models/Mission";
+import { PaginationSchema } from "./pagination";
+import { UserMissionStatus } from "../models/UserMission";
+
+export const GetMissionsSchema = z.object({
+  ...PaginationSchema.shape,
+  statuses: z
+    .preprocess(
+      // Preprocess function for 'amount'
+      (arg) => {
+        if (typeof arg === "string") {
+          return arg.split(",");
+        }
+        return arg; // Let Zod's .array() handle invalid types
+      },
+      z.array(z.nativeEnum(UserMissionStatus)).optional(),
+    )
+    .optional(),
+});
+
+export type TGetMissions = z.infer<typeof GetMissionsSchema>;
 
 export const GetMissionSchema = z.object({
   id: z

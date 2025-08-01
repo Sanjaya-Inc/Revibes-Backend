@@ -18,7 +18,7 @@ import { UserDailyRewardController } from "../../controllers/UserDailyRewardCont
 import { UserVoucherController } from "../../controllers/UserVoucherController";
 import { UserPointController } from "../../controllers/UserPointController";
 import { UserMissionController } from "../../controllers/UserMissionController";
-import { ClaimMissionSchema, TClaimMission } from "../../dto/userMission";
+import { ClaimMissionSchema, GetMissionsSchema, TClaimMission, TGetMissions } from "../../dto/userMission";
 import { getFileStorageInstance } from "../../utils/firebase";
 
 export const meRoutes = new Routes("me");
@@ -182,16 +182,16 @@ export class MeHandlers {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    let pagination: TPagination;
+    let filters: TGetMissions;
     try {
-      pagination = PaginationSchema.parse(req.query);
+      filters = GetMissionsSchema.parse(req.query);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
     const response = await UserMissionController.getMissions(
       req.user,
-      pagination,
+      filters,
       { withMission: true },
     );
     await Promise.all(

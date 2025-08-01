@@ -49,7 +49,8 @@ import { UserMissionController } from "./UserMissionController";
 import { UserController } from "./UserController";
 import { UserPointController } from "./UserPointController";
 import { UserPointHistorySourceType } from "../models/UserPointHistory";
-import { MissionType } from "../models/MissionAssignment";
+import { MissionType } from "../models/Mission";
+import { TGetUserRes } from "../dto/user";
 
 export type TGetLogisticOrderOpt = {
   withStore?: boolean;
@@ -311,11 +312,11 @@ export class LogisticOrderController {
 
   @wrapError
   public static async submitOrder(
-    user: User,
+    user: TGetUserRes,
     data: TSubmitLogisticOrder,
   ): Promise<void> {
     const orderRes = await this.getOrder(
-      user,
+      user.data,
       { id: data.id },
       { withItems: true },
     );
@@ -325,7 +326,7 @@ export class LogisticOrderController {
 
     const { data: order, ref: orderRef } = orderRes;
 
-    if (order.maker !== user.id) {
+    if (order.maker !== user.data.id) {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
@@ -461,6 +462,10 @@ export class LogisticOrderController {
 
     await batch.commit();
 
+    // async task
+    UserMissionController.updateProgressByType(user, {
+      type: MissionType.LOGISTIC_ORDER_SUBMIT,
+    });
     NotificationController.Dropoff(order);
   }
 
