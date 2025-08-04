@@ -18,7 +18,12 @@ import { UserDailyRewardController } from "../../controllers/UserDailyRewardCont
 import { UserVoucherController } from "../../controllers/UserVoucherController";
 import { UserPointController } from "../../controllers/UserPointController";
 import { UserMissionController } from "../../controllers/UserMissionController";
-import { ClaimMissionSchema, GetMissionsSchema, TClaimMission, TGetMissions } from "../../dto/userMission";
+import {
+  ClaimMissionSchema,
+  GetMissionsSchema,
+  TClaimMission,
+  TGetMissions,
+} from "../../dto/userMission";
 import { getFileStorageInstance } from "../../utils/firebase";
 
 export const meRoutes = new Routes("me");

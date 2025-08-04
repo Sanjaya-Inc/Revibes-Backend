@@ -1,6 +1,5 @@
 import BaseModel from "./BaseModel";
-import Mission from "./Mission";
-import { MissionType } from "./Mission";
+import Mission, { MissionType } from "./Mission";
 
 export type TUserMissionData = Partial<UserMission>;
 

@@ -1,9 +1,8 @@
 import { z } from "zod";
 import { TFirestoreData } from "./common";
-import UserMission from "../models/UserMission";
+import UserMission, { UserMissionStatus } from "../models/UserMission";
 import { MissionType } from "../models/Mission";
 import { PaginationSchema } from "./pagination";
-import { UserMissionStatus } from "../models/UserMission";
 
 export const GetMissionsSchema = z.object({
   ...PaginationSchema.shape,

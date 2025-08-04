@@ -36,8 +36,7 @@ export class UserMissionController {
     const { statuses } = filters;
     filters.construct = UserMission;
     filters.ref = user.ref;
-    filters.addQuery = (q) =>
-      q.where("status", "in", statuses);
+    filters.addQuery = (q) => q.where("status", "in", statuses);
 
     const { items, pagination } = await createPage<UserMission>(
       COLLECTION_MAP.USER_MISSION,
