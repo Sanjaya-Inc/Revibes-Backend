@@ -245,7 +245,7 @@ export const CreateVoucherSchema = z.object({
     {
       message: "VOUCHER.IMAGE_REQUIRED",
     },
-  ).optional(),
+  ),
 });
 
 export type TCreateVoucher = z.infer<typeof CreateVoucherSchema>;
