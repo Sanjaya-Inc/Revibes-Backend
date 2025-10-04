@@ -219,6 +219,23 @@ export const CreateVoucherSchema = z.object({
         .nullable(), // Ensure the final type is Date | null
     )
     .optional(),
+  guides: z.preprocess((arg) => {
+    if (typeof arg === "string") {
+      try {
+        const parsed = JSON.parse(arg);
+        // Make sure it's actually an array of strings
+        if (
+          Array.isArray(parsed) &&
+          parsed.every((item) => typeof item === "string")
+        ) {
+          return parsed;
+        }
+      } catch (err) {
+        return arg; // fallback to let Zod throw validation error
+      }
+    }
+    return arg; // If it's already an array or something else, pass it through
+  }, z.array(z.string()).optional()),
   termConditions: z.preprocess((arg) => {
     if (typeof arg === "string") {
       try {

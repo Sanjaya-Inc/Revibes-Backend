@@ -52,6 +52,7 @@ export const detailFields: (keyof Voucher)[] = [
   "value",
   "conditions",
   "imageUri",
+  "guides",
   "termConditions",
   "claimPeriodStart",
   "claimPeriodEnd",
@@ -70,6 +71,7 @@ export const defaultVoucherData: TVoucherData = {
   },
   conditions: null,
   imageUri: "",
+  guides: [],
   termConditions: [],
 
   claimPeriodStart: new Date(),
@@ -88,6 +90,7 @@ export class Voucher extends BaseModel {
   value!: TVoucherValue;
   conditions?: Partial<TVoucherCondition> | null;
   imageUri?: string;
+  guides?: string[];
   termConditions?: string[];
 
   claimPeriodStart!: Date;

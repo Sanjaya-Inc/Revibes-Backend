@@ -87,6 +87,7 @@ export class VoucherController {
     conditions,
     claimPeriodStart = new Date(),
     claimPeriodEnd = null,
+    guides,
     termConditions,
     image,
   }: TCreateVoucher): Promise<Voucher> {
@@ -146,6 +147,7 @@ export class VoucherController {
       imageUri,
       claimPeriodStart,
       claimPeriodEnd,
+      guides,
       termConditions,
     };
 
