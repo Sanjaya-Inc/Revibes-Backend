@@ -6,8 +6,15 @@ export const PointSchema = z.object({
   b3: z.number().optional(),
 });
 
+export const DailyRewardSchema = z.object({
+  days: z.number().optional(),
+  initialPoint: z.number().optional(),
+  multiplier: z.number().optional(),
+});
+
 export const UpdateAppSettingSchema = z.object({
   point: PointSchema,
+  dailyReward: DailyRewardSchema,
 });
 
 export type TUpdateAppSetting = z.infer<typeof UpdateAppSettingSchema>;
