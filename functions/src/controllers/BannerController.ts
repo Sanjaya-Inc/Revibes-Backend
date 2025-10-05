@@ -76,8 +76,8 @@ export class BannerController {
 
     try {
       await getFileStorageInstance().removeFile(banner.uri);
-    } catch(e) {
-      console.error("delete file error", e)
+    } catch (e) {
+      console.error("delete file error", e);
     }
 
     await db.collection(COLLECTION_MAP.BANNER).doc(id).delete();

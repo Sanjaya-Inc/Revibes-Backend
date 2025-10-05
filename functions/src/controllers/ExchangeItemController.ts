@@ -148,7 +148,10 @@ export class ExchangeItemController {
     const docRef = db.collection(COLLECTION_MAP.EXCHANGE_ITEM).doc();
 
     let dataChanged = false;
-    let ref: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData, FirebaseFirestore.DocumentData>;
+    let ref: FirebaseFirestore.DocumentReference<
+      FirebaseFirestore.DocumentData,
+      FirebaseFirestore.DocumentData
+    >;
     if (data.type === ExchangeItemType.VOUCHER) {
       const voucher = await VoucherController.getVoucher(user, {
         id: data.sourceId,
@@ -193,7 +196,7 @@ export class ExchangeItemController {
       if (dataChanged) {
         transaction.update(ref, { inUse: true });
       }
-    })
+    });
 
     return item;
   }
@@ -253,4 +256,3 @@ export class ExchangeItemController {
     tx.update(item.ref, { quota: item.data.decrease(qty) });
   }
 }
-

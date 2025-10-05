@@ -111,8 +111,8 @@ export class InventoryItemController {
     if (item.featuredImageUri) {
       try {
         await getFileStorageInstance().removeFile(item.featuredImageUri);
-      } catch(e) {
-        console.error("delete file error", e)
+      } catch (e) {
+        console.error("delete file error", e);
       }
     }
 
@@ -125,7 +125,7 @@ export class InventoryItemController {
 
         if (!snapshots.empty) {
           snapshots.docs.forEach((doc) => {
-        transaction.update(doc.ref, { isAvailable: false });
+            transaction.update(doc.ref, { isAvailable: false });
           });
         }
 

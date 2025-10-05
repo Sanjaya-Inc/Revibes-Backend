@@ -179,8 +179,8 @@ export class VoucherController {
     if (voucher.imageUri) {
       try {
         await getFileStorageInstance().removeFile(voucher.imageUri);
-      } catch(e) {
-        console.error("delete file error", e)
+      } catch (e) {
+        console.error("delete file error", e);
       }
     }
 
@@ -193,7 +193,7 @@ export class VoucherController {
 
         if (!snapshots.empty) {
           snapshots.docs.forEach((doc) => {
-        transaction.update(doc.ref, { isAvailable: false });
+            transaction.update(doc.ref, { isAvailable: false });
           });
         }
 
