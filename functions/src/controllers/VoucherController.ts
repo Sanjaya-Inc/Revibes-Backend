@@ -40,7 +40,7 @@ export class VoucherController {
     const data = new Voucher(voucherDoc);
 
     if (user.data.role === UserRole.USER && !data.isAvailable) {
-      throw new AppError(404, "INVENTORY.ITEM_NOT_FOUND");
+      throw new AppError(404, "VOUCHER.NOT_FOUND");
     }
 
     return {
