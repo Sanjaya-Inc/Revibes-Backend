@@ -110,7 +110,16 @@ export class MeHandlers {
       { withMetadata: true },
     );
 
-    response.items = response.items.map((i) => i.getPublicFields());
+    await Promise.all(
+      response.items.map(async (i) => {
+        if (i.metadata?.imageUri) {
+          i.metadata.imageUri = await getFileStorageInstance().getFullUrl(i.metadata?.imageUri);
+        }
+
+        i.getPublicFields();
+        return i;
+      }),
+    );
 
     new AppResponse({
       code: 200,
