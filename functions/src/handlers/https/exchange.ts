@@ -58,16 +58,16 @@ export class ExchangeHandlers {
         await Promise.all(
           e.items.map(async (i) => {
             if (i.type === ExchangeItemType.ITEM) {
-              const item = i.metadata as InventoryItem;
-              if (item.featuredImageUri) {
+              const item = i.metadata as InventoryItem | null;
+              if (item && item.featuredImageUri) {
                 item.featuredImageUri =
                   await getFileStorageInstance().getFullUrl(
                     item.featuredImageUri,
                   );
               }
             } else {
-              const voucher = i.metadata as Voucher;
-              if (voucher.imageUri) {
+              const voucher = i.metadata as Voucher | null;
+              if (voucher && voucher.imageUri) {
                 voucher.imageUri = await getFileStorageInstance().getFullUrl(
                   voucher.imageUri,
                 );
@@ -113,15 +113,15 @@ export class ExchangeHandlers {
     await Promise.all(
       response.data.items.map(async (i) => {
         if (i.type === ExchangeItemType.ITEM) {
-          const item = i.metadata as InventoryItem;
-          if (item.featuredImageUri) {
+          const item = i.metadata as InventoryItem | null;
+          if (item && item.featuredImageUri) {
             item.featuredImageUri = await getFileStorageInstance().getFullUrl(
               item.featuredImageUri,
             );
           }
         } else {
-          const voucher = i.metadata as Voucher;
-          if (voucher.imageUri) {
+          const voucher = i.metadata as Voucher | null;
+          if (voucher && voucher.imageUri) {
             voucher.imageUri = await getFileStorageInstance().getFullUrl(
               voucher.imageUri,
             );
@@ -160,15 +160,15 @@ export class ExchangeHandlers {
     await Promise.all(
       response.items.map(async (i) => {
         if (i.type === ExchangeItemType.ITEM) {
-          const item = i.metadata as InventoryItem;
-          if (item.featuredImageUri) {
+          const item = i.metadata as InventoryItem | null;
+          if (item && item.featuredImageUri) {
             item.featuredImageUri = await getFileStorageInstance().getFullUrl(
               item.featuredImageUri,
             );
           }
         } else {
-          const voucher = i.metadata as Voucher;
-          if (voucher.imageUri) {
+          const voucher = i.metadata as Voucher | null;
+          if (voucher && voucher.imageUri) {
             voucher.imageUri = await getFileStorageInstance().getFullUrl(
               voucher.imageUri,
             );
@@ -243,15 +243,15 @@ export class ExchangeHandlers {
     await Promise.all(
       response.items.map(async (i) => {
         if (i.type === ExchangeItemType.ITEM) {
-          const meta = i.metadata as InventoryItem;
-          if (meta.featuredImageUri) {
+          const meta = i.metadata as InventoryItem | null;
+          if (meta && meta.featuredImageUri) {
             meta.featuredImageUri = await getFileStorageInstance().getFullUrl(
               meta.featuredImageUri,
             );
           }
         } else {
-          const meta = i.metadata as Voucher;
-          if (meta.imageUri) {
+          const meta = i.metadata as Voucher | null;
+          if (meta && meta.imageUri) {
             meta.imageUri = await getFileStorageInstance().getFullUrl(
               meta.imageUri,
             );
@@ -295,15 +295,15 @@ export class ExchangeHandlers {
     }
 
     if (response.data.type === ExchangeItemType.ITEM) {
-      const meta = response.data.metadata as InventoryItem;
-      if (meta.featuredImageUri) {
+      const meta = response.data.metadata as InventoryItem | null;
+      if (meta && meta.featuredImageUri) {
         meta.featuredImageUri = await getFileStorageInstance().getFullUrl(
           meta.featuredImageUri,
         );
       }
     } else {
-      const meta = response.data.metadata as Voucher;
-      if (meta.imageUri) {
+      const meta = response.data.metadata as Voucher | null;
+      if (meta && meta.imageUri) {
         meta.imageUri = await getFileStorageInstance().getFullUrl(
           meta.imageUri,
         );

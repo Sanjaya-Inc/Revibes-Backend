@@ -88,7 +88,7 @@ export class ExchangeItemController {
       }
 
       if (user.data.role === UserRole.USER) {
-        q.where("isAvailable", "==", true);
+        q = q.where("isAvailable", "==", true);
       }
 
       return q;
@@ -147,6 +147,8 @@ export class ExchangeItemController {
   ): Promise<ExchangeItem> {
     const docRef = db.collection(COLLECTION_MAP.EXCHANGE_ITEM).doc();
 
+    let dataChanged = false;
+    let ref: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData, FirebaseFirestore.DocumentData>;
     if (data.type === ExchangeItemType.VOUCHER) {
       const voucher = await VoucherController.getVoucher(user, {
         id: data.sourceId,
@@ -157,6 +159,11 @@ export class ExchangeItemController {
 
       if (!voucher.data.isAvailable) {
         throw new AppError(400, "VOUCHER.NOT_AVAILABLE");
+      }
+
+      if (!voucher.data.inUse) {
+        ref = voucher.ref;
+        dataChanged = true;
       }
     } else if (data.type === ExchangeItemType.ITEM) {
       const item = await InventoryItemController.getItem(user, {
@@ -173,10 +180,20 @@ export class ExchangeItemController {
       if (!item.data.hasRequestedStock(data.quota ?? 0)) {
         throw new AppError(400, "INVENTORY.ITEM_EXCEEDED_STOCK");
       }
+
+      if (!item.data.inUse) {
+        ref = item.ref;
+        dataChanged = true;
+      }
     }
 
     const item = new ExchangeItem({ ...data, id: docRef.id });
-    await docRef.set(item.toObject());
+    await db.runTransaction(async (transaction) => {
+      transaction.set(docRef, item.toObject());
+      if (dataChanged) {
+        transaction.update(ref, { inUse: true });
+      }
+    })
 
     return item;
   }
@@ -236,3 +253,4 @@ export class ExchangeItemController {
     tx.update(item.ref, { quota: item.data.decrease(qty) });
   }
 }
+

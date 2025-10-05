@@ -101,17 +101,42 @@ export class InventoryItemController {
     user: TGetUserRes,
     { id }: TDeleteInventoryItem,
   ): Promise<void> {
-    const item = await this.getItem(user, { id });
+    const itemRes = await this.getItem(user, { id });
 
-    if (!item) {
+    if (!itemRes) {
       throw new AppError(404, "INVENTORY.ITEM_NOT_FOUND");
     }
 
-    if (item.data.featuredImageUri) {
-      await getFileStorageInstance().removeFile(item.data.featuredImageUri);
+    const { data: item, ref: itemRef } = itemRes;
+    if (item.featuredImageUri) {
+      try {
+        await getFileStorageInstance().removeFile(item.featuredImageUri);
+      } catch(e) {
+        console.error("delete file error", e)
+      }
     }
 
-    await db.collection(COLLECTION_MAP.INVENTORY_ITEM).doc(id).delete();
+    if (item.inUse) {
+      await db.runTransaction(async (transaction) => {
+        const snapshots = await db
+          .collection(COLLECTION_MAP.EXCHANGE_ITEM)
+          .where("sourceId", "==", item.id)
+          .get();
+
+        if (!snapshots.empty) {
+          snapshots.docs.forEach((doc) => {
+        transaction.update(doc.ref, { isAvailable: false });
+          });
+        }
+
+        transaction.update(itemRef, {
+          isAvailable: false,
+          deletedAt: new Date(),
+        });
+      });
+    } else {
+      await itemRef.delete();
+    }
   }
 
   @wrapError

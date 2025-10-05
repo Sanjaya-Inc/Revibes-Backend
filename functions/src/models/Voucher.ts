@@ -58,6 +58,7 @@ export const detailFields: (keyof Voucher)[] = [
   "claimPeriodEnd",
   "createdAt",
   "updatedAt",
+  "deletedAt",
 ];
 
 export const defaultVoucherData: TVoucherData = {
@@ -79,6 +80,7 @@ export const defaultVoucherData: TVoucherData = {
   isAvailable: true,
   createdAt: new Date(),
   updatedAt: new Date(),
+  deletedAt: null,
   inUse: false,
 };
 
@@ -98,6 +100,7 @@ export class Voucher extends BaseModel {
   isAvailable!: boolean;
   createdAt!: Date;
   updatedAt!: Date;
+  deletedAt?: Date | null;
   inUse!: boolean;
 
   constructor(data: TVoucherData) {

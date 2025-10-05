@@ -74,7 +74,12 @@ export class BannerController {
       throw new AppError(404, "BANNER.NOT_FOUND");
     }
 
-    await getFileStorageInstance().removeFile(banner.uri);
+    try {
+      await getFileStorageInstance().removeFile(banner.uri);
+    } catch(e) {
+      console.error("delete file error", e)
+    }
+
     await db.collection(COLLECTION_MAP.BANNER).doc(id).delete();
   }
 }

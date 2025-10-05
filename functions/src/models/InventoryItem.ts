@@ -43,6 +43,7 @@ export const defaultInventoryItemData: TInventoryItemData = {
   isAvailable: true,
   createdAt: new Date(),
   updatedAt: new Date(),
+  inUse: false,
 };
 
 export class InventoryItem extends BaseModel {
@@ -55,6 +56,7 @@ export class InventoryItem extends BaseModel {
   isAvailable!: boolean;
   createdAt!: Date;
   updatedAt!: Date;
+  inUse!: boolean;
 
   constructor(data: TInventoryItemData) {
     super(data, defaultInventoryItemData);

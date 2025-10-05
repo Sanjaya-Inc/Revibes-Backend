@@ -170,23 +170,42 @@ export class VoucherController {
       throw new AppError(404, "VOUCHER.NOT_FOUND");
     }
 
-    if (voucherRes.data.inUse) {
-      throw new AppError(404, "VOUCHER.ALREADY_CLAIMED");
-    }
-
     const { data: voucher, ref: voucherRef } = voucherRes;
+    let claimPeriodEnd = voucher.claimPeriodEnd;
     if (new Date() > voucher.claimPeriodStart) {
-      await voucherRef.update({
-        claimPeriodEnd: new Date(),
-      });
-      return;
+      claimPeriodEnd = new Date();
     }
 
     if (voucher.imageUri) {
-      await getFileStorageInstance().removeFile(voucher.imageUri);
+      try {
+        await getFileStorageInstance().removeFile(voucher.imageUri);
+      } catch(e) {
+        console.error("delete file error", e)
+      }
     }
 
-    await db.collection(COLLECTION_MAP.VOUCHER).doc(id).delete();
+    if (voucher.inUse) {
+      await db.runTransaction(async (transaction) => {
+        const snapshots = await db
+          .collection(COLLECTION_MAP.EXCHANGE_ITEM)
+          .where("sourceId", "==", voucher.id)
+          .get();
+
+        if (!snapshots.empty) {
+          snapshots.docs.forEach((doc) => {
+        transaction.update(doc.ref, { isAvailable: false });
+          });
+        }
+
+        transaction.update(voucherRef, {
+          claimPeriodEnd,
+          isAvailable: false,
+          deletedAt: new Date(),
+        });
+      });
+    } else {
+      await voucherRef.delete();
+    }
   }
 
   @wrapError
