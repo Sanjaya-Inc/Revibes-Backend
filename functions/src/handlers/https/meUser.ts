@@ -107,6 +107,7 @@ export class MeHandlers {
     const response = await UserVoucherController.getVouchers(
       req.user,
       pagination,
+      { withMetadata: true },
     );
 
     response.items = response.items.map((i) => i.getPublicFields());

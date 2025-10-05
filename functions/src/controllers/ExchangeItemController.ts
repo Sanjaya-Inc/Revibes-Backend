@@ -109,12 +109,15 @@ export class ExchangeItemController {
 
       const [vouchers, inventoryItems] = await Promise.all([
         voucherIds.length > 0
-          ? getDocsByIds<Voucher>(COLLECTION_MAP.VOUCHER, voucherIds)
+          ? getDocsByIds<Voucher>(COLLECTION_MAP.VOUCHER, voucherIds, {
+              construct: Voucher,
+            })
           : Promise.resolve([]),
         inventoryItemIds.length > 0
           ? getDocsByIds<InventoryItem>(
               COLLECTION_MAP.INVENTORY_ITEM,
               inventoryItemIds,
+              { construct: InventoryItem },
             )
           : Promise.resolve([]),
       ]);

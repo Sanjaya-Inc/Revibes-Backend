@@ -10,25 +10,52 @@ import UserVoucher, { UserVoucherStatus } from "../models/UserVoucher";
 import { TGetUserVoucher, TGetUserVoucherRes } from "../dto/userVoucher";
 import { Transaction } from "firebase-admin/firestore";
 import Voucher from "../models/Voucher";
+import { getDocsByIds } from "../utils/firestoreCommonQuery";
+import { VoucherController } from "./VoucherController";
+
+export type TGetUserVoucherOpt = {
+  withMetadata?: boolean;
+};
 
 export class UserVoucherController {
   @wrapError
   public static async getVouchers(
     user: TGetUserRes,
     filters: TPaginateConstruct<UserVoucher>,
+    { withMetadata }: TGetUserVoucherOpt = {},
   ): Promise<TPaginatedPage<UserVoucher>> {
     filters.construct = UserVoucher;
     filters.ref = user.ref;
     filters.addQuery = (q) =>
       q.where("status", "==", UserVoucherStatus.AVAILABLE);
 
-    return createPage<UserVoucher>(COLLECTION_MAP.USER_VOUCHER, filters);
+    const { items, pagination } = await createPage<UserVoucher>(
+      COLLECTION_MAP.USER_VOUCHER,
+      filters,
+    );
+    if (withMetadata) {
+      const voucherIds = items.map((item) => item.voucherId);
+      if (voucherIds.length > 0) {
+        const vouchers = await getDocsByIds<Voucher>(
+          COLLECTION_MAP.VOUCHER,
+          voucherIds,
+          { construct: Voucher },
+        );
+        const voucherMap = new Map(vouchers.map((v) => [v.id, v]));
+        items.forEach((item) => {
+          item.metadata = voucherMap.get(item.voucherId) || null;
+        });
+      }
+    }
+
+    return { items, pagination };
   }
 
   @wrapError
   public static async getVoucher(
     user: TGetUserRes,
     { code, status }: TGetUserVoucher,
+    { withMetadata }: TGetUserVoucherOpt = {},
   ): Promise<TGetUserVoucherRes | null> {
     let query = user.ref
       .collection(COLLECTION_MAP.USER_VOUCHER)
@@ -43,6 +70,13 @@ export class UserVoucherController {
       const doc = snapshot.docs[0];
       const ref = doc.ref;
       const data = new UserVoucher(doc.data());
+
+      if (withMetadata) {
+        const voucher = await VoucherController.getVoucher(user, {
+          id: data.voucherId,
+        });
+        data.metadata = voucher?.data;
+      }
 
       return {
         data,

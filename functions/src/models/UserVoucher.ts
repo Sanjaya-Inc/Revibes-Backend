@@ -1,4 +1,5 @@
 import BaseModel from "./BaseModel";
+import Voucher from "./Voucher";
 
 export type TUserVoucherData = Partial<UserVoucher>;
 
@@ -17,6 +18,7 @@ export const publicFields: (keyof UserVoucher)[] = [
   "expiredAt",
   "createdAt",
   "updatedAt",
+  "metadata",
 ];
 
 export const defaultUserVoucherData: TUserVoucherData = {
@@ -39,6 +41,9 @@ export class UserVoucher extends BaseModel {
   expiredAt?: Date | null;
   createdAt!: Date;
   updatedAt!: Date;
+
+  // relations
+  metadata?: Voucher | null;
 
   constructor(data: TUserVoucherData) {
     super(data, defaultUserVoucherData);
