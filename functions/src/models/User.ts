@@ -127,6 +127,7 @@ export class User extends BaseModel {
     const jwtPayload: TJwtPayload = {
       id: this.id ?? "",
       email: this.email ?? "",
+      phoneNumber: this.phoneNumber ?? undefined,
       displayName: this.displayName ?? "",
     };
     [this.accessToken, this.accessTokenExpiredAt] =

@@ -11,7 +11,8 @@ const REFRESH_TOKEN_EXPIRES_IN = "90d"; // Example: 90 days
 export type TJwtPayload = {
   id: string;
   email: string;
-  [key: string]: unknown; // Allow other custom claims
+  phoneNumber?: string;
+  [key: string]: unknown;
 };
 
 export type TJwtResult = [method: string, exp: Date];

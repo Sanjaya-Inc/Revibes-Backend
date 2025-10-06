@@ -1,12 +1,18 @@
 import AuthController from "../../controllers/AuthController";
 import {
   SignupSchema,
+  SignupPhoneSchema,
   SignupWithGoogleSchema,
   LoginSchema,
+  LoginEmailSchema,
+  LoginPhoneSchema,
   LoginWithGoogleSchema,
   TSignup,
+  TSignupPhone,
   TSignupWithGoogle,
   TLogin,
+  TLoginEmail,
+  TLoginPhone,
   TLoginWithGoogle,
   RefreshSchema,
   TRefresh,
@@ -39,6 +45,24 @@ export class AuthHandlers {
     }).asJsonResponse(res);
   }
 
+  @registerRoute(authRoutes, "post", "signup/phone")
+  static async signupWithPhone(req: Request, res: Response) {
+    let data: TSignupPhone = req.body;
+
+    try {
+      data = SignupPhoneSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await AuthController.signupWithPhone(data);
+    new AppResponse({
+      code: 201,
+      message: "AUTH.SIGNUP_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
   @registerRoute(authRoutes, "post", "signup/google")
   static async signupWithGoogle(req: Request, res: Response) {
     let data: TSignupWithGoogle = req.body;
@@ -57,7 +81,7 @@ export class AuthHandlers {
     }).asJsonResponse(res);
   }
 
-  @registerRoute(authRoutes, "post", "login/email")
+  @registerRoute(authRoutes, "post", "login")
   static async login(req: Request, res: Response) {
     let data: TLogin = req.body;
 
@@ -68,6 +92,52 @@ export class AuthHandlers {
     }
 
     const response = await AuthController.login(data);
+    new AppResponse({
+      code: 200,
+      message: "AUTH.LOGIN_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(authRoutes, "post", "login/email")
+  static async loginWithEmail(req: Request, res: Response) {
+    let data: TLoginEmail = req.body;
+
+    try {
+      data = LoginEmailSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const loginData: TLogin = {
+      identifier: data.email,
+      password: data.password,
+    };
+
+    const response = await AuthController.login(loginData);
+    new AppResponse({
+      code: 200,
+      message: "AUTH.LOGIN_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(authRoutes, "post", "login/phone")
+  static async loginWithPhone(req: Request, res: Response) {
+    let data: TLoginPhone = req.body;
+
+    try {
+      data = LoginPhoneSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const loginData: TLogin = {
+      identifier: data.phoneNumber,
+      password: data.password,
+    };
+
+    const response = await AuthController.login(loginData);
     new AppResponse({
       code: 200,
       message: "AUTH.LOGIN_SUCCESS",
