@@ -113,7 +113,9 @@ export class MeHandlers {
     await Promise.all(
       response.items.map(async (i) => {
         if (i.metadata?.imageUri) {
-          i.metadata.imageUri = await getFileStorageInstance().getFullUrl(i.metadata?.imageUri);
+          i.metadata.imageUri = await getFileStorageInstance().getFullUrl(
+            i.metadata?.imageUri,
+          );
         }
 
         i.getPublicFields();
