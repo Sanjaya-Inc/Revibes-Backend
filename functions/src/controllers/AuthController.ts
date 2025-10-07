@@ -1,5 +1,3 @@
-import admin from "firebase-admin";
-import { UserController } from "./UserController";
 import {
   TLogin,
   TTokenPairRes,
@@ -8,14 +6,19 @@ import {
   TSignupRes,
   TLoginRes,
   TLoginWithGoogleRes,
+  TSignupPhone,
 } from "../dto/auth";
-import { db } from "../utils/firebase";
-import COLLECTION_MAP from "../constant/db";
 import AppError from "../utils/formatter/AppError";
 import User, { UserRole } from "../models/User";
 import { wrapError } from "../utils/decorator/wrapError";
-import { UserRecord } from "firebase-admin/auth";
 import { UserMissionController } from "./UserMissionController";
+import PhoneNumberUtil from "../utils/phoneNumber";
+
+import COLLECTION_MAP from "../constant/db";
+import { db } from "../utils/firebase";
+import { UserController } from "./UserController";
+import { UserRecord } from "firebase-admin/auth";
+import admin from "firebase-admin";
 
 export class AuthController {
   @wrapError
@@ -25,17 +28,22 @@ export class AuthController {
     phoneNumber,
     password,
   }: TSignup): Promise<TSignupRes> {
-    if (phoneNumber?.startsWith("0")) {
-      phoneNumber = "+62" + phoneNumber.slice(1);
-    } else if (phoneNumber?.startsWith("62")) {
-      phoneNumber = "+" + phoneNumber.slice(1);
-    } else if (phoneNumber?.startsWith("8")) {
-      phoneNumber = "+62" + phoneNumber.slice(1);
+    const normalizedPhoneNumber = phoneNumber
+      ? PhoneNumberUtil.normalizePhoneNumber(phoneNumber)
+      : undefined;
+
+    const existingUserByEmail = await UserController.getUserByEmail(email);
+    if (existingUserByEmail) {
+      throw new AppError(400, "AUTH.EMAIL_USED");
     }
 
-    const userRecord = await UserController.getUserByEmail(email);
-    if (userRecord) {
-      throw new AppError(400, "AUTH.EMAIL_USED");
+    if (normalizedPhoneNumber) {
+      const existingUserByPhone = await UserController.getUserByPhoneNumber(
+        normalizedPhoneNumber
+      );
+      if (existingUserByPhone) {
+        throw new AppError(400, "AUTH.PHONE_USED");
+      }
     }
 
     let userAuth: UserRecord;
@@ -43,12 +51,14 @@ export class AuthController {
       userAuth = await admin.auth().createUser({
         displayName,
         email,
-        phoneNumber,
+        phoneNumber: normalizedPhoneNumber,
         password,
       });
     } catch (e: any) {
       if (e.errorInfo?.code === "auth/phone-number-already-exists") {
         throw new AppError(400, "AUTH.PHONE_USED");
+      } else if (e.errorInfo?.code === "auth/email-already-exists") {
+        throw new AppError(400, "AUTH.EMAIL_USED");
       } else {
         throw new AppError(500, "AUTH.INTERNAL_SERVER_ERROR");
       }
@@ -59,11 +69,11 @@ export class AuthController {
         id: userAuth.uid,
         email,
         displayName,
-        phoneNumber,
+        phoneNumber: normalizedPhoneNumber,
         password,
         role: UserRole.USER,
       },
-      { skipCheck: true },
+      { skipCheck: true }
     );
 
     const tokens = user.generateTokens();
@@ -74,7 +84,73 @@ export class AuthController {
       refreshTokenExpiredAt: tokens.refreshTokenExpiredAt,
     });
 
-    // Async task
+    UserMissionController.assignAutomaticMissions(user.id);
+
+    return { user: user.getPublicFields(), tokens };
+  }
+
+  @wrapError
+  public static async signupWithPhone({
+    displayName,
+    phoneNumber,
+    email,
+    password,
+  }: TSignupPhone): Promise<TSignupRes> {
+    const normalizedPhoneNumber =
+      PhoneNumberUtil.normalizePhoneNumber(phoneNumber);
+
+    const existingUserByPhone = await UserController.getUserByPhoneNumber(
+      normalizedPhoneNumber
+    );
+    if (existingUserByPhone) {
+      throw new AppError(400, "AUTH.PHONE_USED");
+    }
+
+    if (email) {
+      const existingUserByEmail = await UserController.getUserByEmail(email);
+      if (existingUserByEmail) {
+        throw new AppError(400, "AUTH.EMAIL_USED");
+      }
+    }
+
+    let userAuth: UserRecord;
+    try {
+      userAuth = await admin.auth().createUser({
+        displayName,
+        email,
+        phoneNumber: normalizedPhoneNumber,
+        password,
+      });
+    } catch (e: any) {
+      if (e.errorInfo?.code === "auth/phone-number-already-exists") {
+        throw new AppError(400, "AUTH.PHONE_USED");
+      } else if (e.errorInfo?.code === "auth/email-already-exists") {
+        throw new AppError(400, "AUTH.EMAIL_USED");
+      } else {
+        throw new AppError(500, "AUTH.INTERNAL_SERVER_ERROR");
+      }
+    }
+
+    const user = await UserController.createUser(
+      {
+        id: userAuth.uid,
+        email: email || "",
+        displayName,
+        phoneNumber: normalizedPhoneNumber,
+        password,
+        role: UserRole.USER,
+      },
+      { skipCheck: true }
+    );
+
+    const tokens = user.generateTokens();
+    await db.collection(COLLECTION_MAP.USER).doc(user.id).update({
+      accessToken: tokens.accessToken,
+      accessTokenExpiredAt: tokens.accessTokenExpiredAt,
+      refreshToken: tokens.refreshToken,
+      refreshTokenExpiredAt: tokens.refreshTokenExpiredAt,
+    });
+
     UserMissionController.assignAutomaticMissions(user.id);
 
     return { user: user.getPublicFields(), tokens };
@@ -111,10 +187,17 @@ export class AuthController {
   }
 
   @wrapError
-  public static async login({ email, password }: TLogin): Promise<TLoginRes> {
-    let user = await UserController.getUserByEmail(email);
+  public static async login({
+    identifier,
+    password,
+  }: TLogin): Promise<TLoginRes> {
+    let user = await UserController.getUserByIdentifier(identifier);
 
-    if (email === process.env.ADMIN_ROOT_MAIL && !user) {
+    if (
+      PhoneNumberUtil.isEmail(identifier) &&
+      identifier === process.env.ADMIN_ROOT_MAIL &&
+      !user
+    ) {
       user = await UserController.initAdminRoot();
     }
 

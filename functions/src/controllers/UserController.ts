@@ -20,6 +20,7 @@ import { TChangePassword } from "../dto/me";
 import UserDevice from "../models/userDevice";
 import { Transaction } from "firebase-admin/firestore";
 import { UserPointController } from "./UserPointController";
+import PhoneNumberUtil from "../utils/phoneNumber";
 
 export type TCreateUserOpt = {
   skipCheck?: boolean;
@@ -121,6 +122,31 @@ export class UserController {
 
     const userDoc = userSnapshot.docs[0].data();
     return new User(userDoc);
+  }
+
+  @wrapError
+  public static async getUserByPhoneNumber(phoneNumber: string): Promise<User | null> {
+    const normalizedPhone = PhoneNumberUtil.normalizePhoneNumber(phoneNumber);
+    const userSnapshot = await db
+      .collection(COLLECTION_MAP.USER)
+      .where("phoneNumber", "==", normalizedPhone)
+      .get();
+    if (userSnapshot.empty) {
+      return null;
+    }
+
+    const userDoc = userSnapshot.docs[0].data();
+    return new User(userDoc);
+  }
+
+  @wrapError
+  public static async getUserByIdentifier(identifier: string): Promise<User | null> {
+    if (PhoneNumberUtil.isEmail(identifier)) {
+      return this.getUserByEmail(identifier);
+    } else if (PhoneNumberUtil.isPhoneNumber(identifier)) {
+      return this.getUserByPhoneNumber(identifier);
+    }
+    return null;
   }
 
   @wrapError

@@ -25,7 +25,7 @@ export const authenticate = async (
 
     req.user = user;
 
-    next(); // Proceed to the next handler
+    next();
   } catch (error) {
     throw new AppError(401, "AUTH.INVALID_TOKEN");
   }
@@ -34,7 +34,7 @@ export const authenticate = async (
 export const adminOnly = async (
   req: Request,
   res: Response,
-  next: () => void,
+  next: () => void
 ) => {
   if (req?.user?.data.role !== UserRole.ADMIN) {
     throw new AppError(403, "COMMON.FORBIDDEN");
