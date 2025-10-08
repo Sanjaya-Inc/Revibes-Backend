@@ -267,6 +267,236 @@ export const CreateVoucherSchema = z.object({
 
 export type TCreateVoucher = z.infer<typeof CreateVoucherSchema>;
 
+export const EditVoucherSchema = z.object({
+  id: z.string({
+    required_error: "VOUCHER.ID_REQUIRED",
+  }),
+  code: z.string().min(3, "VOUCHER.CODE_REQUIRED").optional(),
+  name: z.string().min(3, "VOUCHER.NAME_REQUIRED").optional(),
+  description: z.string().optional(),
+  type: z.nativeEnum(VoucherValueType).optional(),
+  amount: z.number().min(0, "VOUCHER.AMOUNT_MIN_INVALID").optional(),
+  currency: z
+    .nativeEnum(Currency, {
+      errorMap: () => ({ message: "VOUCHER.CURRENCY_INVALID" }),
+    })
+    .optional(),
+  conditions: z
+    .preprocess(
+      (arg) => {
+        if (
+          arg === undefined ||
+          arg === null ||
+          (typeof arg === "string" && arg.trim() === "")
+        ) {
+          return undefined;
+        }
+        if (
+          typeof arg === "string" &&
+          arg.startsWith("{") &&
+          arg.endsWith("}")
+        ) {
+          try {
+            return JSON.parse(arg);
+          } catch (e) {
+            return undefined;
+          }
+        }
+        return arg;
+      },
+      z.object(
+        {
+          maxClaim: z.preprocess(
+            (arg) => {
+              if (
+                arg === null ||
+                (typeof arg === "string" && arg.trim().toLowerCase() === "null")
+              ) {
+                return undefined;
+              }
+              if (typeof arg === "string" && !isNaN(parseFloat(arg))) {
+                return parseFloat(arg);
+              }
+              return arg;
+            },
+            z
+              .number({
+                invalid_type_error: "VOUCHER.CONDITIONS.MAX_CLAIM_INVALID",
+              })
+              .min(1, "VOUCHER.CONDITIONS.MAX_CLAIM_MIN")
+              .optional(),
+          ),
+          maxUsage: z.preprocess(
+            (arg) => {
+              if (
+                arg === null ||
+                (typeof arg === "string" && arg.trim().toLowerCase() === "null")
+              ) {
+                return undefined;
+              }
+              if (typeof arg === "string" && !isNaN(parseFloat(arg))) {
+                return parseFloat(arg);
+              }
+              return arg;
+            },
+            z
+              .number({
+                invalid_type_error: "VOUCHER.CONDITIONS.MAX_USAGE_INVALID",
+              })
+              .min(1, "VOUCHER.CONDITIONS.MAX_USAGE_MIN")
+              .optional(),
+          ),
+          minOrderItem: z.preprocess(
+            (arg) => {
+              if (
+                arg === null ||
+                (typeof arg === "string" && arg.trim().toLowerCase() === "null")
+              ) {
+                return undefined;
+              }
+              if (typeof arg === "string" && !isNaN(parseFloat(arg))) {
+                return parseFloat(arg);
+              }
+              return arg;
+            },
+            z
+              .number({
+                invalid_type_error: "VOUCHER.CONDITIONS.MIN_ORDER_ITEM_INVALID",
+              })
+              .min(1, "VOUCHER.CONDITIONS.MIN_ORDER_ITEM_MIN")
+              .optional(),
+          ),
+          minOrderAmount: z.preprocess(
+            (arg) => {
+              if (
+                arg === null ||
+                (typeof arg === "string" && arg.trim().toLowerCase() === "null")
+              ) {
+                return undefined;
+              }
+              if (typeof arg === "string" && !isNaN(parseFloat(arg))) {
+                return parseFloat(arg);
+              }
+              return arg;
+            },
+            z
+              .number({
+                invalid_type_error:
+                  "VOUCHER.CONDITIONS.MIN_ORDER_AMOUNT_INVALID",
+              })
+              .min(1, "VOUCHER.CONDITIONS.MIN_ORDER_AMOUNT_MIN")
+              .optional(),
+          ),
+          maxDiscountAmount: z.preprocess(
+            (arg) => {
+              if (
+                arg === null ||
+                (typeof arg === "string" && arg.trim().toLowerCase() === "null")
+              ) {
+                return undefined;
+              }
+              if (typeof arg === "string" && !isNaN(parseFloat(arg))) {
+                return parseFloat(arg);
+              }
+              return arg;
+            },
+            z
+              .number({
+                invalid_type_error:
+                  "VOUCHER.CONDITIONS.MAX_DISCOUNT_AMOUNT_INVALID",
+              })
+              .min(1, "VOUCHER.CONDITIONS.MAX_DISCOUNT_AMOUNT_MIN")
+              .optional(),
+          ),
+        },
+        { required_error: "VOUCHER.INVALID_CONDITIONS_OBJECT" },
+      ),
+    )
+    .nullable()
+    .optional()
+    .transform((arg) => {
+      // Only return object if not null/undefined and has at least one key
+      if (
+        arg === undefined ||
+        arg === null ||
+        (typeof arg === "object" && Object.keys(arg ?? {}).length === 0)
+      ) {
+        return undefined;
+      }
+      return dropUndefinedFromObject(arg);
+    }),
+  claimPeriodStart: z
+    .preprocess(
+      (arg) => {
+        if (typeof arg === "string" && arg.trim() === "") {
+          return null;
+        }
+        if (typeof arg === "string" || arg instanceof Date) {
+          const date = new Date(arg);
+          return isNaN(date.getTime()) ? null : date;
+        }
+        return null;
+      },
+      z.date({
+        invalid_type_error: "VOUCHER.CLAIM_PERIOD_START_INVALID",
+      }),
+    )
+    .optional(),
+  claimPeriodEnd: z
+    .preprocess(
+      (arg) => {
+        if (typeof arg === "string" && arg.trim() === "") {
+          return null;
+        }
+        if (typeof arg === "string" || arg instanceof Date) {
+          const date = new Date(arg);
+          return isNaN(date.getTime()) ? null : date;
+        }
+        return null;
+      },
+      z
+        .date({
+          invalid_type_error: "VOUCHER.CLAIM_PERIOD_END_INVALID",
+        })
+        .nullable(),
+    )
+    .optional(),
+  guides: z.preprocess((arg) => {
+    if (typeof arg === "string") {
+      try {
+        const parsed = JSON.parse(arg);
+        if (
+          Array.isArray(parsed) &&
+          parsed.every((item) => typeof item === "string")
+        ) {
+          return parsed;
+        }
+      } catch (err) {
+        return arg;
+      }
+    }
+    return arg;
+  }, z.array(z.string()).optional()),
+  termConditions: z.preprocess((arg) => {
+    if (typeof arg === "string") {
+      try {
+        const parsed = JSON.parse(arg);
+        if (
+          Array.isArray(parsed) &&
+          parsed.every((item) => typeof item === "string")
+        ) {
+          return parsed;
+        }
+      } catch (err) {
+        return arg;
+      }
+    }
+    return arg;
+  }, z.array(z.string()).optional()),
+});
+
+export type TEditVoucher = z.infer<typeof EditVoucherSchema>;
+
 export const GetVoucherSchema = z.object({
   id: z
     .string({
@@ -288,3 +518,14 @@ export const DeleteVoucherSchema = z.object({
 });
 
 export type TDeleteVoucher = z.infer<typeof DeleteVoucherSchema>;
+
+export const SwitchVoucherStatusSchema = z.object({
+  id: z
+    .string({
+      required_error: "VOUCHER.ID_REQUIRED",
+    })
+    .min(1, "VOUCHER.ID_REQUIRED"),
+  isAvailable: z.boolean().optional(),
+});
+
+export type TSwitchVoucherStatus = z.infer<typeof SwitchVoucherStatusSchema>;

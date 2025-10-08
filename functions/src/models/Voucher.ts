@@ -61,6 +61,11 @@ export const detailFields: (keyof Voucher)[] = [
   "deletedAt",
 ];
 
+export const editableInClaimPeriodFields: (keyof Voucher)[] = [
+  "name",
+  "description",
+];
+
 export const defaultVoucherData: TVoucherData = {
   id: "",
   code: "",
@@ -151,6 +156,18 @@ export class Voucher extends BaseModel {
     }
 
     return discount;
+  }
+
+  isNewDataAcceptable(newData: TVoucherData): boolean {
+    if (new Date() >= this.claimPeriodStart) {
+      for (const key in newData) {
+        if (!editableInClaimPeriodFields.includes(key as keyof Voucher)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 }
 

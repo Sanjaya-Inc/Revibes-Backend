@@ -39,7 +39,7 @@ export class AuthController {
 
     if (normalizedPhoneNumber) {
       const existingUserByPhone = await UserController.getUserByPhoneNumber(
-        normalizedPhoneNumber
+        normalizedPhoneNumber,
       );
       if (existingUserByPhone) {
         throw new AppError(400, "AUTH.PHONE_USED");
@@ -73,7 +73,7 @@ export class AuthController {
         password,
         role: UserRole.USER,
       },
-      { skipCheck: true }
+      { skipCheck: true },
     );
 
     const tokens = user.generateTokens();
@@ -100,7 +100,7 @@ export class AuthController {
       PhoneNumberUtil.normalizePhoneNumber(phoneNumber);
 
     const existingUserByPhone = await UserController.getUserByPhoneNumber(
-      normalizedPhoneNumber
+      normalizedPhoneNumber,
     );
     if (existingUserByPhone) {
       throw new AppError(400, "AUTH.PHONE_USED");
@@ -140,7 +140,7 @@ export class AuthController {
         password,
         role: UserRole.USER,
       },
-      { skipCheck: true }
+      { skipCheck: true },
     );
 
     const tokens = user.generateTokens();

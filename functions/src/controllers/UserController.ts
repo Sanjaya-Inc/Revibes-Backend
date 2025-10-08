@@ -4,8 +4,11 @@ import {
   TAddUserPoint,
   TChangeUserStatus,
   TCreateUser,
+  TEditUser,
   TGetUser,
   TGetUserRes,
+  TGetUserVouchers,
+  TUseUserVoucher,
 } from "../dto/user";
 import { db, generateId } from "../utils/firebase";
 import User, { TUserData, UserRole, UserStatus } from "../models/User";
@@ -21,6 +24,11 @@ import UserDevice from "../models/userDevice";
 import { Transaction } from "firebase-admin/firestore";
 import { UserPointController } from "./UserPointController";
 import PhoneNumberUtil from "../utils/phoneNumber";
+import {
+  TGetUserVoucherOpt,
+  UserVoucherController,
+} from "./UserVoucherController";
+import UserVoucher from "../models/UserVoucher";
 
 export type TCreateUserOpt = {
   skipCheck?: boolean;
@@ -71,6 +79,17 @@ export class UserController {
     await db.collection(COLLECTION_MAP.USER).doc(id).set(user.toObject());
 
     return user;
+  }
+
+  @wrapError
+  public static async editUser({ id, ...data }: TEditUser) {
+    const userRes = await this.getUser({ id });
+    if (!userRes) {
+      throw new AppError(404, "USER.NOT_FOUND");
+    }
+    const { data: user, ref } = userRes;
+    user.update(data);
+    await ref.update(user.toObject());
   }
 
   @wrapError
@@ -125,7 +144,9 @@ export class UserController {
   }
 
   @wrapError
-  public static async getUserByPhoneNumber(phoneNumber: string): Promise<User | null> {
+  public static async getUserByPhoneNumber(
+    phoneNumber: string,
+  ): Promise<User | null> {
     const normalizedPhone = PhoneNumberUtil.normalizePhoneNumber(phoneNumber);
     const userSnapshot = await db
       .collection(COLLECTION_MAP.USER)
@@ -140,7 +161,9 @@ export class UserController {
   }
 
   @wrapError
-  public static async getUserByIdentifier(identifier: string): Promise<User | null> {
+  public static async getUserByIdentifier(
+    identifier: string,
+  ): Promise<User | null> {
     if (PhoneNumberUtil.isEmail(identifier)) {
       return this.getUserByEmail(identifier);
     } else if (PhoneNumberUtil.isPhoneNumber(identifier)) {
@@ -323,8 +346,44 @@ export class UserController {
       throw new AppError(404, "USER.NOT_FOUND");
     }
 
-    db.runTransaction(async (transaction) => {
+    await db.runTransaction(async (transaction) => {
       await UserPointController.txAddPoint(user, data, transaction);
+    });
+  }
+
+  @wrapError
+  public static async getUserVouchers(
+    { id, ...filters }: TGetUserVouchers,
+    opt: TGetUserVoucherOpt = {},
+  ): Promise<TPaginatedPage<UserVoucher>> {
+    const user = await this.getUser({ id });
+    if (!user) {
+      throw new AppError(404, "USER.NOT_FOUND");
+    }
+
+    return UserVoucherController.getVouchers(user, filters, opt);
+  }
+
+  @wrapError
+  public static async useUserVoucher({
+    id,
+    voucherId,
+  }: TUseUserVoucher): Promise<void> {
+    const user = await this.getUser({ id });
+    if (!user) {
+      throw new AppError(404, "USER.NOT_FOUND");
+    }
+
+    const voucher = await UserVoucherController.getVoucher(user, {
+      id: voucherId,
+      code: "",
+    });
+    if (!voucher) {
+      throw new AppError(404, "VOUCHER.NOT_FOUND");
+    }
+
+    await db.runTransaction(async (transaction) => {
+      return UserVoucherController.txUseVoucher(user, voucherId, transaction);
     });
   }
 }

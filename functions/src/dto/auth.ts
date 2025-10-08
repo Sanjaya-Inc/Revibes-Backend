@@ -63,10 +63,7 @@ export const SignupPhoneSchema = z.object({
       required_error: "AUTH.DISPLAY_NAME_REQUIRED",
     })
     .min(3, "AUTH.DISPLAY_NAME_REQUIRED"),
-  email: z
-    .string()
-    .email("AUTH.EMAIL_INVALID")
-    .optional(),
+  email: z.string().email("AUTH.EMAIL_INVALID").optional(),
   password: passwordValidation,
 });
 
@@ -95,10 +92,11 @@ export const LoginSchema = z.object({
     })
     .min(1, "AUTH.IDENTIFIER_REQUIRED")
     .refine(
-      (val) => PhoneNumberUtil.isEmail(val) || PhoneNumberUtil.isPhoneNumber(val),
+      (val) =>
+        PhoneNumberUtil.isEmail(val) || PhoneNumberUtil.isPhoneNumber(val),
       {
         message: "AUTH.IDENTIFIER_INVALID",
-      }
+      },
     ),
   password: z
     .string({
@@ -117,11 +115,9 @@ export const LoginEmailSchema = z.object({
 });
 
 export const LoginPhoneSchema = z.object({
-  phoneNumber: z
-    .string()
-    .regex(/^(\+62|0|62)?8[1-9][0-9]{7,10}$/, {
-      message: "AUTH.PHONE_NUMBER_FORMAT",
-    }),
+  phoneNumber: z.string().regex(/^(\+62|0|62)?8[1-9][0-9]{7,10}$/, {
+    message: "AUTH.PHONE_NUMBER_FORMAT",
+  }),
   password: z
     .string({
       required_error: "AUTH.PASS_REQUIRED",

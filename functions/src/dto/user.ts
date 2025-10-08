@@ -2,6 +2,7 @@ import { z } from "zod";
 import User, { UserRole, UserStatus } from "../models/User";
 import { TFirestoreData } from "./common";
 import { NewUserPointSchema } from "./userPoint";
+import { PaginationSchema } from "./pagination";
 
 export type TGetUserRes = TFirestoreData<User>;
 
@@ -47,6 +48,28 @@ export const CreateUserSchema = z.object({
 
 export type TCreateUser = z.infer<typeof CreateUserSchema>;
 
+export const EditUserSchema = z.object({
+  id: z.string({
+    required_error: "USER.ID_REQUIRED",
+  }),
+  email: z.string().email("USER.EMAIL_INVALID").optional(),
+  displayName: z.string().min(3, "USER.DISPLAY_NAME_REQUIRED").optional(),
+  phoneNumber: z
+    .string()
+    .regex(/^(\+62|0)8[1-9][0-9]{7,10}$/, {
+      message: "USER.PHONE_NUMBER_FORMAT",
+    })
+    .optional(),
+  points: z.number().optional(),
+  role: z
+    .nativeEnum(UserRole, {
+      errorMap: () => ({ message: "USER.ROLE_INVALID" }),
+    })
+    .optional(),
+});
+
+export type TEditUser = z.infer<typeof EditUserSchema>;
+
 export const GetUserSchema = z.object({
   id: z
     .string({
@@ -91,3 +114,29 @@ export const AddUserPointSchema = z.object({
 });
 
 export type TAddUserPoint = z.infer<typeof AddUserPointSchema>;
+
+export const GetUserVouchersSchema = z.object({
+  id: z
+    .string({
+      required_error: "USER.ID_REQUIRED",
+    })
+    .min(1, "USER.ID_REQUIRED"),
+  ...PaginationSchema.shape,
+});
+
+export type TGetUserVouchers = z.infer<typeof GetUserVouchersSchema>;
+
+export const UseUserVoucherSchema = z.object({
+  id: z
+    .string({
+      required_error: "USER.ID_REQUIRED",
+    })
+    .min(1, "USER.ID_REQUIRED"),
+  voucherId: z
+    .string({
+      required_error: "USER.VOUCHER_ID_REQUIRED",
+    })
+    .min(1, "USER.VOUCHER_ID_REQUIRED"),
+});
+
+export type TUseUserVoucher = z.infer<typeof UseUserVoucherSchema>;

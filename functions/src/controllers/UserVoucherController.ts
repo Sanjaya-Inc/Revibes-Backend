@@ -8,7 +8,7 @@ import {
 } from "../utils/pagination";
 import UserVoucher, { UserVoucherStatus } from "../models/UserVoucher";
 import { TGetUserVoucher, TGetUserVoucherRes } from "../dto/userVoucher";
-import { Transaction } from "firebase-admin/firestore";
+import { Query, Transaction } from "firebase-admin/firestore";
 import Voucher from "../models/Voucher";
 import { getDocsByIds } from "../utils/firestoreCommonQuery";
 import { VoucherController } from "./VoucherController";
@@ -54,12 +54,16 @@ export class UserVoucherController {
   @wrapError
   public static async getVoucher(
     user: TGetUserRes,
-    { code, status }: TGetUserVoucher,
+    { id, code, status }: TGetUserVoucher,
     { withMetadata }: TGetUserVoucherOpt = {},
   ): Promise<TGetUserVoucherRes | null> {
-    let query = user.ref
-      .collection(COLLECTION_MAP.USER_VOUCHER)
-      .where("code", "==", code);
+    let query: Query = user.ref.collection(COLLECTION_MAP.USER_VOUCHER);
+
+    if (id) {
+      query = query.where("id", "==", id);
+    } else {
+      query = query.where("code", "==", code);
+    }
 
     if (status) {
       query = query.where("status", "==", status);
@@ -153,6 +157,7 @@ export class UserVoucherController {
     const userVoucherRef = user.ref
       .collection(COLLECTION_MAP.USER_VOUCHER)
       .doc(id);
+
     tx.update(userVoucherRef, {
       updatedAt: timestamp,
       claimedAt: timestamp,

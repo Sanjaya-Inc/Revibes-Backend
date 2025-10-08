@@ -10,10 +10,14 @@ import { PaginationSchema, TPagination } from "../../dto/pagination";
 import {
   CreateVoucherSchema,
   DeleteVoucherSchema,
+  EditVoucherSchema,
   GetVoucherSchema,
+  SwitchVoucherStatusSchema,
   TCreateVoucher,
   TDeleteVoucher,
+  TEditVoucher,
   TGetVoucher,
+  TSwitchVoucherStatus,
 } from "../../dto/voucher";
 import { getFileStorageInstance } from "../../utils/firebase";
 
@@ -115,6 +119,30 @@ export class VoucherHandlers {
     }).asJsonResponse(res);
   }
 
+  @registerRoute(voucherRoutes, "put", ":id", authenticate, adminOnly)
+  static async editVoucher(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const id = req.params.id;
+    let data: TEditVoucher = { id, ...req.body };
+
+    try {
+      // Validate form data using Zod
+      data = EditVoucherSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await VoucherController.editVoucher(req.user, data);
+    new AppResponse({
+      code: 200,
+      message: "VOUCHER.UPDATE_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
   @registerRoute(voucherRoutes, "delete", ":id", authenticate, adminOnly)
   static async deleteVoucher(req: Request, res: Response) {
     if (!req.user) {
@@ -135,6 +163,33 @@ export class VoucherHandlers {
     new AppResponse({
       code: 200,
       message: "VOUCHER.DELETE_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(voucherRoutes, "patch", ":id/status", authenticate, adminOnly)
+  static async switchVoucherStatus(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const id = req.params.id;
+    let data: TSwitchVoucherStatus = { id, ...req.body };
+
+    try {
+      // Validate form data using Zod
+      data = SwitchVoucherStatusSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await VoucherController.switchVoucherStatus(
+      req.user,
+      data,
+    );
+    new AppResponse({
+      code: 200,
+      message: "VOUCHER.SWITCH_SUCCESS",
       data: response,
     }).asJsonResponse(res);
   }

@@ -3,6 +3,7 @@ import { TFirestoreData } from "./common";
 import UserVoucher, { UserVoucherStatus } from "../models/UserVoucher";
 
 export const GetUserVoucherSchema = z.object({
+  id: z.string().optional(),
   code: z
     .string({
       required_error: "USER_VOUCHER.CODE_REQUIRED",

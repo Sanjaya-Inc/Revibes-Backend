@@ -16,6 +16,7 @@ import {
   TGetExchangeItem,
   TGetExchangeItemRes,
   TGetExchangeItems,
+  TSwitchExchangeItemStatus,
 } from "../dto/exchangeItem";
 import { VoucherController } from "./VoucherController";
 import { InventoryItemController } from "./InventoryItemController";
@@ -254,5 +255,20 @@ export class ExchangeItemController {
       throw new AppError(400, "EXCHANGE.TRANSACTION_ITEM_OUT_OF_STOCK");
     }
     tx.update(item.ref, { quota: item.data.decrease(qty) });
+  }
+
+  @wrapError
+  public static async switchExchangeItemStatus(
+    user: TGetUserRes,
+    { id, isAvailable }: TSwitchExchangeItemStatus,
+  ) {
+    const item = await this.getPurchaseableItem(user, { id });
+    if (!item) {
+      throw new AppError(404, "VOUCHER.TRANSACTION_ITEM_NOT_FOUND");
+    }
+
+    await item.ref.update({
+      isAvailable: isAvailable ?? !item.data.isAvailable,
+    });
   }
 }

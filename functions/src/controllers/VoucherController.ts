@@ -9,8 +9,10 @@ import AppError from "../utils/formatter/AppError";
 import {
   TCreateVoucher,
   TDeleteVoucher,
+  TEditVoucher,
   TGetVoucher,
   TGetVoucherRes,
+  TSwitchVoucherStatus,
 } from "../dto/voucher";
 import Voucher, { TVoucherData, TVoucherValue } from "../models/Voucher";
 import {
@@ -96,7 +98,7 @@ export class VoucherController {
       Filter.where("claimPeriodStart", ">=", claimPeriodStart),
     ];
 
-    if (claimPeriodEnd !== null) {
+    if (claimPeriodEnd) {
       filters.push(Filter.where("claimPeriodEnd", "<=", claimPeriodEnd));
     } else {
       // Only use '==' operator for null in Firestore
@@ -156,6 +158,56 @@ export class VoucherController {
     await docRef.set(voucher.toObject());
 
     return voucher;
+  }
+
+  @wrapError
+  public static async editVoucher(
+    user: TGetUserRes,
+    { id, ...data }: TEditVoucher,
+  ) {
+    const voucherRes = await this.getVoucher(user, { id });
+    if (!voucherRes) {
+      throw new AppError(404, "VOUCHER.NOT_FOUND");
+    }
+    const { data: voucher, ref: voucherRef } = voucherRes;
+
+    const filters = [Filter.where("id", "!=", id)];
+
+    if (data.code) {
+      filters.push(Filter.where("code", "==", data.code));
+    }
+
+    if (data.claimPeriodEnd) {
+      filters.push(Filter.where("claimPeriodEnd", "<=", data.claimPeriodEnd));
+    } else {
+      // Only use '==' operator for null in Firestore
+      filters.push(Filter.where("claimPeriodEnd", "==", null));
+    }
+
+    const result = await db
+      .collection(COLLECTION_MAP.VOUCHER)
+      .where(Filter.and(...filters))
+      .get();
+
+    if (result.docs?.length > 0) {
+      throw new AppError(400, "VOUCHER_CODE.CODE_USED_FOR_THIS_PERIOD");
+    }
+
+    if (new Date() >= voucher.claimPeriodStart) {
+      const isAcceptableRequest = voucher.isNewDataAcceptable(data);
+      if (!isAcceptableRequest) {
+        throw new AppError(400, "VOUCHER.FORBID_EDIT");
+      }
+    }
+
+    if (data.claimPeriodStart && data.claimPeriodEnd) {
+      if (data.claimPeriodEnd < data.claimPeriodStart) {
+        throw new AppError(400, "VOUCHER_CODE.INVALID_PERIOD_RANGE");
+      }
+    }
+
+    voucher.update(data);
+    await voucherRef.update(voucher.toObject());
   }
 
   @wrapError
@@ -227,5 +279,20 @@ export class VoucherController {
       voucher.data.inUse = true;
       tx.update(voucher.ref, { inUse: voucher.data.inUse });
     }
+  }
+
+  @wrapError
+  public static async switchVoucherStatus(
+    user: TGetUserRes,
+    { id, isAvailable }: TSwitchVoucherStatus,
+  ) {
+    const voucher = await this.getVoucher(user, { id });
+    if (!voucher) {
+      throw new AppError(404, "VOUCHER.NOT_FOUND");
+    }
+
+    await voucher.ref.update({
+      isAvailable: isAvailable ?? !voucher.data.isAvailable,
+    });
   }
 }

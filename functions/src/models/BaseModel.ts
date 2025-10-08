@@ -26,6 +26,13 @@ export class BaseModel {
     }
   }
 
+  // update entity data
+  update(input: Partial<Record<string, any>>): this {
+    this.parseInput(input, this);
+
+    return this;
+  }
+
   toObject(): Record<string, any> {
     // Return all enumerable own properties except those with undefined values
     return Object.fromEntries(

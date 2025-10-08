@@ -135,3 +135,16 @@ export const DeleteExchangeItemSchema = z.object({
 });
 
 export type TDeleteExchangeItem = z.infer<typeof DeleteExchangeItemSchema>;
+
+export const SwitchExchangeItemStatusSchema = z.object({
+  id: z
+    .string({
+      required_error: "VOUCHER.ID_REQUIRED",
+    })
+    .min(1, "VOUCHER.ID_REQUIRED"),
+  isAvailable: z.boolean().optional(),
+});
+
+export type TSwitchExchangeItemStatus = z.infer<
+  typeof SwitchExchangeItemStatusSchema
+>;

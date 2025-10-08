@@ -34,7 +34,7 @@ export const authenticate = async (
 export const adminOnly = async (
   req: Request,
   res: Response,
-  next: () => void
+  next: () => void,
 ) => {
   if (req?.user?.data.role !== UserRole.ADMIN) {
     throw new AppError(403, "COMMON.FORBIDDEN");

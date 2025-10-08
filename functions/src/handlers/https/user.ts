@@ -7,6 +7,12 @@ import {
   TGetUser,
   TAddUserPoint,
   AddUserPointSchema,
+  TGetUserVouchers,
+  GetUserVouchersSchema,
+  TUseUserVoucher,
+  UseUserVoucherSchema,
+  TEditUser,
+  EditUserSchema,
 } from "../../dto/user";
 import { Request, Response } from "express";
 import AppResponse from "../../utils/formatter/AppResponse";
@@ -16,6 +22,7 @@ import { adminOnly, authenticate } from "../../middlewares/auth";
 import AppError from "../../utils/formatter/AppError";
 import { UserController } from "../../controllers/UserController";
 import { PaginationSchema, TPagination } from "../../dto/pagination";
+import { getFileStorageInstance } from "../../utils/firebase";
 
 export const userRoutes = new Routes("users");
 
@@ -92,6 +99,28 @@ export class UserHandlers {
     }).asJsonResponse(res);
   }
 
+  @registerRoute(userRoutes, "put", ":id", authenticate, adminOnly)
+  static async updateUser(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const id = req.params.id;
+    let data: TEditUser = { id, ...req.body };
+    try {
+      data = EditUserSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    await UserController.editUser(data);
+
+    new AppResponse({
+      code: 200,
+      message: "USER.UPDATE_SUCCESS",
+    }).asJsonResponse(res);
+  }
+
   @registerRoute(userRoutes, "patch", ":id/status", authenticate, adminOnly)
   static async changeUserStatus(req: Request, res: Response) {
     if (!req.user) {
@@ -133,6 +162,72 @@ export class UserHandlers {
     new AppResponse({
       code: 200,
       message: "USER.ADD_POINT_SUCCESS",
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(userRoutes, "get", ":id/vouchers", authenticate, adminOnly)
+  static async getsUserVouchers(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const id = req.params.id;
+    let data: TGetUserVouchers = { id, ...req.body };
+    try {
+      data = GetUserVouchersSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await UserController.getUserVouchers(data, {
+      withMetadata: true,
+    });
+    await Promise.all(
+      response.items.map(async (i) => {
+        if (i.metadata?.imageUri) {
+          i.metadata.imageUri = await getFileStorageInstance().getFullUrl(
+            i.metadata?.imageUri,
+          );
+        }
+
+        i.getPublicFields();
+        return i;
+      }),
+    );
+
+    new AppResponse({
+      code: 200,
+      message: "USER.FETCH_VOUCHERS_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(
+    userRoutes,
+    "patch",
+    ":id/vouchers/:voucherId/use",
+    authenticate,
+    adminOnly,
+  )
+  static async useUserVoucher(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const id = req.params.id;
+    const voucherId = req.params.voucherId;
+    let data: TUseUserVoucher = { id, voucherId };
+    try {
+      data = UseUserVoucherSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    await UserController.useUserVoucher(data);
+
+    new AppResponse({
+      code: 200,
+      message: "USER.REDEEM_VOUCHER_SUCCESS",
     }).asJsonResponse(res);
   }
 }

@@ -17,10 +17,12 @@ import {
   DeleteExchangeItemSchema,
   GetExchangeItemSchema,
   GetExchangeItemsSchema,
+  SwitchExchangeItemStatusSchema,
   TAddExchangeItem,
   TDeleteExchangeItem,
   TGetExchangeItem,
   TGetExchangeItems,
+  TSwitchExchangeItemStatus,
 } from "../../dto/exchangeItem";
 import { ExchangeItemController } from "../../controllers/ExchangeItemController";
 import { ExchangeTransactionController } from "../../controllers/ExchangeTransactionController";
@@ -366,6 +368,33 @@ export class ExchangeHandlers {
     new AppResponse({
       code: 200,
       message: "EXCHANGE.DELETE_ITEM_SUCCESS",
+      data: response,
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(exchangeRoutes, "patch", ":id/status", authenticate, adminOnly)
+  static async switchPurchaseableItemStatus(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const id = req.params.id;
+    let data: TSwitchExchangeItemStatus = { id };
+
+    try {
+      // Validate form data using Zod
+      data = SwitchExchangeItemStatusSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await ExchangeItemController.switchExchangeItemStatus(
+      req.user,
+      data,
+    );
+    new AppResponse({
+      code: 200,
+      message: "EXCHANGE.SWITCH_ITEM_STATUS_SUCCESS",
       data: response,
     }).asJsonResponse(res);
   }
