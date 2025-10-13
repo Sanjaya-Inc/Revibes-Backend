@@ -1,6 +1,6 @@
 import { Request } from "express";
 
-export function parseFormData<T>(req: Request): T {
+export function parseFormData<T>(req: Request & { files?: any[] }): T {
   const fields: Record<string, any> = {};
 
   // Process files first, as they are typically the most unique part

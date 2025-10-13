@@ -114,16 +114,41 @@ export const LoginEmailSchema = z.object({
     .min(6, "AUTH.PASS_REQUIRED"),
 });
 
-export const LoginPhoneSchema = z.object({
-  phoneNumber: z.string().regex(/^(\+62|0|62)?8[1-9][0-9]{7,10}$/, {
-    message: "AUTH.PHONE_NUMBER_FORMAT",
+export const LoginPhoneSchema = z.preprocess(
+  (data: any) => {
+    // Handle field name mapping
+    if (data && typeof data === "object") {
+      const processedData = { ...data };
+
+      // If phone exists but phoneNumber doesn't, map phone to phoneNumber
+      if (processedData.phone && !processedData.phoneNumber) {
+        processedData.phoneNumber = processedData.phone;
+        delete processedData.phone;
+      }
+      // If both exist, prioritize phoneNumber and remove phone
+      else if (processedData.phone && processedData.phoneNumber) {
+        delete processedData.phone;
+      }
+
+      return processedData;
+    }
+    return data;
+  },
+  z.object({
+    phoneNumber: z
+      .string({
+        required_error: "AUTH.PHONE_NUMBER_REQUIRED",
+      })
+      .regex(/^(\+62|0|62)?8[1-9][0-9]{7,10}$/, {
+        message: "AUTH.PHONE_NUMBER_FORMAT",
+      }),
+    password: z
+      .string({
+        required_error: "AUTH.PASS_REQUIRED",
+      })
+      .min(6, "AUTH.PASS_REQUIRED"),
   }),
-  password: z
-    .string({
-      required_error: "AUTH.PASS_REQUIRED",
-    })
-    .min(6, "AUTH.PASS_REQUIRED"),
-});
+);
 
 export type TLogin = z.infer<typeof LoginSchema>;
 export type TLoginEmail = z.infer<typeof LoginEmailSchema>;
