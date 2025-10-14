@@ -48,7 +48,7 @@ export const defaultUserData: TUserData = {
   createdAt: new Date(),
   updatedAt: new Date(),
   displayName: "",
-  email: "",
+  email: null,
   phoneNumber: null,
   password: null,
   points: 0,
@@ -72,7 +72,7 @@ export class User extends BaseModel {
   createdAt!: Date;
   updatedAt!: Date;
   displayName!: string;
-  email!: string;
+  email?: string | null;
   phoneNumber?: string | null;
   password?: string | null;
   points!: number;

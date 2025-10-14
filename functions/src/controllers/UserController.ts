@@ -67,10 +67,17 @@ export class UserController {
       refreshTokenExpiredAt: null,
     };
 
-    if (!skipCheck) {
+    if (!skipCheck && email) {
       const userRecord = await this.getUserByEmail(email);
       if (userRecord) {
         throw new AppError(400, "USER.EMAIL_USED");
+      }
+    }
+
+    if (!skipCheck && phoneNumber) {
+      const userRecord = await this.getUserByPhoneNumber(phoneNumber);
+      if (userRecord) {
+        throw new AppError(400, "USER.PHONE_NUMBER_USED");
       }
     }
 

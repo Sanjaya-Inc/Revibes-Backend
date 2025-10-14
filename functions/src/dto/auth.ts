@@ -30,25 +30,26 @@ const passwordValidation = z
     message: "AUTH.PASS_SHOULD_NOT_HAVE_SPACE",
   });
 
-export const SignupSchema = z.object({
-  email: z
-    .string({
-      required_error: "AUTH.EMAIL_INVALID",
-    })
-    .email("AUTH.EMAIL_INVALID"),
-  displayName: z
-    .string({
-      required_error: "AUTH.DISPLAY_NAME_REQUIRED",
-    })
-    .min(3, "AUTH.DISPLAY_NAME_REQUIRED"),
-  phoneNumber: z
-    .string()
-    .regex(/^(\+62|0)8[1-9][0-9]{7,10}$/, {
-      message: "AUTH.PHONE_NUMBER_FORMAT",
-    })
-    .optional(),
-  password: passwordValidation,
-});
+export const SignupSchema = z
+  .object({
+    email: z.string().email("AUTH.EMAIL_INVALID").optional(),
+    displayName: z
+      .string({
+        required_error: "AUTH.DISPLAY_NAME_REQUIRED",
+      })
+      .min(3, "AUTH.DISPLAY_NAME_REQUIRED"),
+    phoneNumber: z
+      .string()
+      .regex(/^(\+62|0)8[1-9][0-9]{7,10}$/, {
+        message: "AUTH.PHONE_NUMBER_FORMAT",
+      })
+      .optional(),
+    password: passwordValidation,
+  })
+  .refine((value) => value.email || value.phoneNumber, {
+    message: "AUTH.EMAIL_OR_PHONE_REQUIRED",
+    path: ["email"], // or ["phoneNumber"]
+  });
 
 export const SignupPhoneSchema = z.object({
   phoneNumber: z

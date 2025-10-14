@@ -32,9 +32,11 @@ export class AuthController {
       ? PhoneNumberUtil.normalizePhoneNumber(phoneNumber)
       : undefined;
 
-    const existingUserByEmail = await UserController.getUserByEmail(email);
-    if (existingUserByEmail) {
-      throw new AppError(400, "AUTH.EMAIL_USED");
+    if (email) {
+      const existingUserByEmail = await UserController.getUserByEmail(email);
+      if (existingUserByEmail) {
+        throw new AppError(400, "AUTH.EMAIL_USED");
+      }
     }
 
     if (normalizedPhoneNumber) {
