@@ -3,17 +3,48 @@ on:
   release:
     types: [prereleased]
 
-# top-level is recommended
 permissions:
-  contents: read
-  id-token: write
+  contents: read    # no id-token required for key auth
 
 jobs:
-  call-workflow:
-    if: ${{ github.event.release.prerelease }}
-    uses: ./.github/workflows/deploy-engine.yml   # same-repo: use relative path
-    permissions:                      # belt & suspenders (ok to keep)
-      contents: read
-      id-token: write
-    with:
-      env_name: staging
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Auth to Google Cloud (JSON key)
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build
+        env:
+          ENV: ${{ secrets.ENV }}
+          REGION: ${{ secrets.REGION }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ADMIN_ROOT_MAIL: ${{ secrets.ADMIN_ROOT_MAIL }}
+          ADMIN_ROOT_PASS: ${{ secrets.ADMIN_ROOT_PASS }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+        run: npm run build
+
+      - run: npm i -g firebase-tools@latest
+
+      - name: Deploy Functions
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: firebase deploy --only functions --project "$FIREBASE_PROJECT_ID"
