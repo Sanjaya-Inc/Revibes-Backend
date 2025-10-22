@@ -11,7 +11,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    # Tip: omit permissions here so it INHERITS from the caller.
+    # Tip: omit permissions here so it INHERITS from the caller. (Already correct)
     # If you keep it, it must not ask for more than the caller grants.
     # permissions:
     #   contents: read
