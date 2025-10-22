@@ -1,10 +1,33 @@
 import * as admin from "firebase-admin";
 
+const firebaseMetadata =
+  process.env.FIREBASE_CONFIG !== undefined
+    ? JSON.parse(process.env.FIREBASE_CONFIG)
+    : {};
+
+const projectId =
+  process.env.APP_PROJECT_ID ||
+  process.env.GCLOUD_PROJECT ||
+  process.env.GCP_PROJECT ||
+  firebaseMetadata.projectId;
+
+const storageBucket =
+  process.env.APP_STORAGE_BUCKET || firebaseMetadata.storageBucket;
+
 if (!admin.apps.length) {
-  admin.initializeApp({
+  const options: admin.AppOptions = {
     credential: admin.credential.applicationDefault(), // Or use a service account
-    storageBucket: "revibes-d77f0.firebasestorage.app",
-  });
+  };
+
+  if (projectId) {
+    options.projectId = projectId;
+  }
+
+  if (storageBucket) {
+    options.storageBucket = storageBucket;
+  }
+
+  admin.initializeApp(options);
 }
 
 export function generateId(): string {

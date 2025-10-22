@@ -20,13 +20,13 @@ export class FileStorage {
   private readonly bucket: Bucket;
   private readonly signedUrlExpTime: number = 15 * 60 * 1000; // 15 minutes
   private static readonly _storageUrl =
-    process.env.ENV === "production"
-      ? "https://storage.googleapis.com"
-      : "http://localhost:9199";
+    process.env.ENV === "local"
+      ? "http://localhost:9199"
+      : "https://storage.googleapis.com";
   private static readonly _firebaseStorageUrl =
-    process.env.ENV === "production"
-      ? "https://firebasestorage.googleapis.com"
-      : "http://localhost:9199";
+    process.env.ENV === "local"
+      ? "http://localhost:9199"
+      : "https://firebasestorage.googleapis.com";
 
   constructor() {
     this.storage = admin.storage();

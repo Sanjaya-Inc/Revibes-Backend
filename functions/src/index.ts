@@ -5,9 +5,11 @@ const result = dotenv.config({ debug: true }); // <--- Add debug: true here
 
 if (result.error) {
   console.error("dotenv error:", result.error);
+} else if (result.parsed) {
+  console.log("dotenv variables loaded from .env file.");
 } else {
   console.log(
-    "dotenv config called, but no parsed variables (perhaps already loaded or file not found).",
+    "dotenv config skipped because variables were already set or .env was missing.",
   );
 }
 

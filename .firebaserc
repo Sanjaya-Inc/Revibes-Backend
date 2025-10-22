@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "revibes-d77f0"
+    "staging": "revibes-staging",
+    "production": "revibes-d77f0"
   }
 }

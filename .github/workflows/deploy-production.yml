@@ -1,0 +1,11 @@
+name: Deploy (production on release)
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  call:
+    uses: ./.github/workflows/deploy-engine.yml
+    with:
+      env_name: production

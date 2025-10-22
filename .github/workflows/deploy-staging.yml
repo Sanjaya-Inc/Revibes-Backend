@@ -1,0 +1,11 @@
+name: Deploy (staging on pre-release)
+
+on:
+  release:
+    types: [prereleased]
+
+jobs:
+  call:
+    uses: ./.github/workflows/deploy-engine.yml
+    with:
+      env_name: staging

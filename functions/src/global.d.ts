@@ -11,7 +11,7 @@ declare global {
   // Add global env definition
   namespace NodeJS {
     interface ProcessEnv {
-      ENV: "production" | "development";
+      ENV: "production" | "staging" | "local";
       REGION: string;
       JWT_SECRET: string;
       ADMIN_ROOT_MAIL: string;
