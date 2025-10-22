@@ -6,12 +6,11 @@ on:
 
 permissions:
   contents: read
-  id-token: write # REQUIRED for OIDC/WIF
+  id-token: write
 
 jobs:
   call:
-    # make sure pre-releases don’t trigger prod
-    if: ${{ !github.event.release.prerelease }}
+    if: ${{ !github.event.release.prerelease }}  # don't run for pre-releases
     uses: ./.github/workflows/deploy-engine.yml
     with:
       env_name: production
