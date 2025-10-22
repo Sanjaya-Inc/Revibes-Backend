@@ -1,5 +1,6 @@
 # .github/workflows/deploy-staging.yml
 name: Deploy (staging on pre-release)
+
 on:
   release:
     types: [prereleased]
@@ -10,7 +11,12 @@ permissions:
 
 jobs:
   call:
-    if: ${{ github.event.release.prerelease }}   # guard
+    # extra guard so prod won’t trigger
+    if: ${{ github.event.release.prerelease }}
+    # Prefer local path; don't use @sha for same-repo reusable workflows
     uses: ./.github/workflows/deploy-engine.yml
     with:
       env_name: staging
+    permissions:
+      contents: read
+      id-token: write
