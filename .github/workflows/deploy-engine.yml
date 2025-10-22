@@ -1,34 +1,66 @@
-name: Deploy Engine
+name: Deploy Engine (Firebase Functions)
+
 on:
   workflow_call:
     inputs:
       env_name:
         required: true
-        type: string
+        type: string        # expected values: "staging" or "production"
 
 jobs:
   deploy:
+    name: Deploy to ${{ inputs.env_name }}
     runs-on: ubuntu-latest
+
+    # IMPORTANT: this makes the environment's secrets available as `secrets.*`
     environment: ${{ inputs.env_name }}
+
+    # The caller must also grant these (add at top-level of the caller):
+    # permissions:
+    #   contents: read
+    #   id-token: write
     permissions:
       contents: read
       id-token: write
+
     defaults:
       run:
         working-directory: functions
+
+    concurrency:
+      group: deploy-${{ inputs.env_name }}
+      cancel-in-progress: false
+
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '22' }
 
-      - uses: google-github-actions/auth@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'functions/package-lock.json'
+
+      # Auth to Google Cloud via OIDC (no JSON key files)
+      - name: Auth to Google Cloud (OIDC)
+        uses: google-github-actions/auth@v2
         with:
           project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
           workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
           service_account: ${{ secrets.GCP_SA_EMAIL }}
 
-      - run: npm ci
-      - run: npm run build
+      # Optional: show which env is being used (sanitized)
+      - name: Debug (which release/env)
+        run: |
+          echo "ENV_NAME=${{ inputs.env_name }}"
+          echo "REGION=${{ secrets.REGION }}"
+          echo "TARGET_FIREBASE_PROJECT=${{ secrets.FIREBASE_PROJECT_ID }}"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Build with env injected so your code (e.g., admin init) sees them at build time
+      # Note: These do NOT automatically become runtime env vars in CF; use Firebase Secrets/Config for that.
+      - name: Build
         env:
           ENV: ${{ secrets.ENV }}
           REGION: ${{ secrets.REGION }}
@@ -37,8 +69,15 @@ jobs:
           ADMIN_ROOT_PASS: ${{ secrets.ADMIN_ROOT_PASS }}
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+        run: npm run build
 
-      - run: npm i -g firebase-tools
-      - run: firebase deploy --only functions --project "$FIREBASE_PROJECT_ID"
+      - name: Install Firebase CLI
+        run: npm i -g firebase-tools@latest
+
+      # Use your .firebaserc aliases if you want, or the env's project id.
+      # Here we deploy by explicit project id from the environment to avoid ambiguity.
+      - name: Deploy Functions
         env:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: |
+          firebase deploy --only functions --project "$FIREBASE_PROJECT_ID"
