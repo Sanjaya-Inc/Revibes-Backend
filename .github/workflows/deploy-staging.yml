@@ -1,25 +1,19 @@
 name: Deploy (staging on pre-release)
-
 on:
   release:
     types: [prereleased]
 
-# This is correct and should be the primary source of permissions.
+# top-level is recommended
 permissions:
   contents: read
   id-token: write
 
 jobs:
-  call:
-    # extra guard so prod won’t trigger
+  call-workflow:
     if: ${{ github.event.release.prerelease }}
-    
-    # Prefer local path; don't use @sha for same-repo reusable workflows
-    uses: ./.github/workflows/deploy-engine.yml
+    uses: ./.github/workflows/deploy-engine.yml   # same-repo: use relative path
+    permissions:                      # belt & suspenders (ok to keep)
+      contents: read
+      id-token: write
     with:
       env_name: staging
-    # REMOVE the nested 'permissions' block here, as it can interfere 
-    # with the correct inheritance from the top-level definition.
-    # permissions:
-    #   contents: read
-    #   id-token: write
