@@ -6,10 +6,11 @@ on:
 
 permissions:
   contents: read
-  id-token: write # REQUIRED for OIDC/WIF
+  id-token: write
 
 jobs:
   call:
+    if: ${{ github.event.release.prerelease }}   # guard
     uses: ./.github/workflows/deploy-engine.yml
     with:
       env_name: staging
