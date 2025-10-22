@@ -1,11 +1,13 @@
+# .github/workflows/deploy-production-on-release.yml
 name: Deploy (production on release)
-
 on:
   release:
-    types: [published]
+    types: [published]  # fires for all published releases (incl. pre-release)
 
 jobs:
   call:
+    # ensure NOT a pre-release
+    if: ${{ !github.event.release.prerelease }}
     uses: ./.github/workflows/deploy-engine.yml
     with:
       env_name: production
