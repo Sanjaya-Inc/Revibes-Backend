@@ -1,12 +1,16 @@
-# .github/workflows/deploy-production-on-release.yml
+# .github/workflows/deploy-production.yml
 name: Deploy (production on release)
 on:
   release:
-    types: [published]  # fires for all published releases (incl. pre-release)
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write # REQUIRED for OIDC/WIF
 
 jobs:
   call:
-    # ensure NOT a pre-release
+    # make sure pre-releases don’t trigger prod
     if: ${{ !github.event.release.prerelease }}
     uses: ./.github/workflows/deploy-engine.yml
     with:
