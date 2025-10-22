@@ -1,8 +1,12 @@
+# .github/workflows/deploy-staging.yml
 name: Deploy (staging on pre-release)
-
 on:
   release:
     types: [prereleased]
+
+permissions:
+  contents: read
+  id-token: write # REQUIRED for OIDC/WIF
 
 jobs:
   call:
