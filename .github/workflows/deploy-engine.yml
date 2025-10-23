@@ -1,3 +1,4 @@
+# .github/workflows/deploy-engine.yml
 name: Deploy Engine (Firebase Functions)
 
 on:
@@ -10,8 +11,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # IMPORTANT: do NOT request id-token here
-    # permissions: (omit so it inherits caller; with JSON key we don't need id-token)
+    # Do not declare permissions here—inherit from caller
     environment: ${{ inputs.env_name }}
 
     defaults:
@@ -27,12 +27,12 @@ jobs:
           cache: npm
           cache-dependency-path: functions/package-lock.json
 
-      # JSON key auth (works when OIDC is disabled)
+      # Auth via JSON key (action requests id-token even if using credentials_json)
       - name: Auth to Google Cloud (JSON key)
         uses: google-github-actions/auth@v2
         with:
           project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
-          credentials_json: ${{ secrets.GCP_SA_KEY }}  # <-- add this secret in each Environment
+          credentials_json: ${{ secrets.GCP_SA_KEY }}  # environment-scoped secret
 
       - name: Install deps
         run: npm ci
