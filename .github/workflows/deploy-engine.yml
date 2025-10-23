@@ -1,4 +1,3 @@
-# .github/workflows/deploy-engine.yml
 name: Deploy Engine (Firebase Functions)
 
 on:
@@ -6,14 +5,12 @@ on:
     inputs:
       env_name:
         required: true
-        type: string  # "staging" or "production"
+        type: string
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Do not declare permissions here—inherit from caller
     environment: ${{ inputs.env_name }}
-
     defaults:
       run:
         working-directory: functions
@@ -27,12 +24,20 @@ jobs:
           cache: npm
           cache-dependency-path: functions/package-lock.json
 
-      # Auth via JSON key (action requests id-token even if using credentials_json)
+      # 🔎 Preflight: fail early with a clear message if secret is missing
+      - name: Verify required secrets
+        shell: bash
+        run: |
+          [ -n "${{ secrets.GCP_SA_KEY }}" ] || { echo "❌ Missing secret: GCP_SA_KEY in environment '${{ inputs.env_name }}'"; exit 1; }
+          [ -n "${{ secrets.FIREBASE_PROJECT_ID }}" ] || { echo "❌ Missing secret: FIREBASE_PROJECT_ID in environment '${{ inputs.env_name }}'"; exit 1; }
+
+      # ✅ JSON-key auth (single method: credentials_json)
       - name: Auth to Google Cloud (JSON key)
         uses: google-github-actions/auth@v2
         with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
           project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
-          credentials_json: ${{ secrets.GCP_SA_KEY }}  # environment-scoped secret
+          # ensure no 'workload_identity_provider' is set anywhere
 
       - name: Install deps
         run: npm ci
