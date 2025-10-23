@@ -3,20 +3,18 @@ name: Deploy (production on release)
 
 on:
   release:
-    # 'published' fires for both normal releases and published prereleases.
-    # We'll filter out prereleases at the job level.
-    types: [published]
+    # 'released' only fires when a prerelease is promoted to a full release
+    # or when you publish a normal release directly.
+    types: [released]
 
 permissions:
-  contents: read  # keep global minimal
+  contents: read
 
 jobs:
   call:
-    # hard block if it's a prerelease
-    if: ${{ !github.event.release.prerelease }}
     permissions:
       contents: read
-      id-token: write   # needed because the called workflow uses google-github-actions/auth
+      id-token: write
     uses: ./.github/workflows/deploy-engine.yml
     with:
       env_name: production
