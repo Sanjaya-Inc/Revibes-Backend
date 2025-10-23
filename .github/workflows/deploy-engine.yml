@@ -31,12 +31,6 @@ jobs:
           workload_identity_provider: projects/${{ secrets.APP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-pool/providers/github
           service_account: firebase-deployer@revibes-staging.iam.gserviceaccount.com
 
-      # Optional: If you need gcloud commands, set this up — otherwise you can remove it
-      - name: Set up gcloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
-
       - name: Install deps
         run: npm ci
 
