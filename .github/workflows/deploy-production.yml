@@ -1,11 +1,8 @@
-# .github/workflows/deploy-production.yml
 name: Deploy (production on release)
 
 on:
   release:
-    # 'released' only fires when a prerelease is promoted to a full release
-    # or when you publish a normal release directly.
-    types: [released]
+    types: [released]  # won't trigger on prerelease
 
 permissions:
   contents: read
