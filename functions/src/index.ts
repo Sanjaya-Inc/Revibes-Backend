@@ -1,15 +1,21 @@
-// src/index.ts (or .js)
+import fs from "node:fs";
+import path from "node:path";
 import * as dotenv from "dotenv";
 
-const result = dotenv.config({ debug: true }); // <--- Add debug: true here
+const envPath = path.resolve(process.cwd(), ".env");
 
-if (result.error) {
-  console.error("dotenv error:", result.error);
-} else if (result.parsed) {
-  console.log("dotenv variables loaded from .env file.");
+// Only attempt to load if the file exists
+if (fs.existsSync(envPath)) {
+  const result = dotenv.config({ path: envPath, debug: true });
+
+  if (result.error) {
+    console.error("dotenv error:", result.error);
+  } else if (result.parsed) {
+    console.log("dotenv variables loaded from .env file.");
+  }
 } else {
   console.log(
-    "dotenv config skipped because variables were already set or .env was missing.",
+    "No .env file found — relying on existing environment variables (CI/Production).",
   );
 }
 
