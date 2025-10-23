@@ -24,25 +24,31 @@ jobs:
           cache: npm
           cache-dependency-path: functions/package-lock.json
 
-      # Authenticate using Workload Identity Federation (OIDC)
+      # 🔐 Authenticate using Workload Identity Federation (OIDC)
       - name: Authenticate to Google Cloud (OIDC)
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: projects/${{ secrets.APP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-pool/providers/github
           service_account: firebase-deployer@revibes-staging.iam.gserviceaccount.com
 
+      # 🧪 Create temporary .env for analyzer
+      - name: Create .env for deploy
+        run: |
+          cat > .env <<EOF
+          ENV=${{ secrets.ENV }}
+          REGION=${{ secrets.REGION }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          ADMIN_ROOT_MAIL=${{ secrets.ADMIN_ROOT_MAIL }}
+          ADMIN_ROOT_PASS=${{ secrets.ADMIN_ROOT_PASS }}
+          APP_PROJECT_ID=${{ secrets.APP_PROJECT_ID }}
+          APP_PROJECT_NUMBER=${{ secrets.APP_PROJECT_NUMBER }}
+          APP_STORAGE_BUCKET=${{ secrets.APP_STORAGE_BUCKET }}
+          EOF
+
       - name: Install deps
         run: npm ci
 
       - name: Build
-        env:
-          ENV: ${{ secrets.ENV }}
-          REGION: ${{ secrets.REGION }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          ADMIN_ROOT_MAIL: ${{ secrets.ADMIN_ROOT_MAIL }}
-          ADMIN_ROOT_PASS: ${{ secrets.ADMIN_ROOT_PASS }}
-          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
         run: npm run build
 
       - name: Install Firebase CLI
