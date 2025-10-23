@@ -1,18 +1,12 @@
 # .github/workflows/deploy-staging.yml
-name: Deploy (staging on pre-release)
-
 on:
   release:
     types: [prereleased]
-
-# Keep global token minimal
 permissions:
   contents: read
-
 jobs:
   call:
     if: ${{ github.event.release.prerelease }}
-    # Grant only this job the OIDC permission required by google-github-actions/auth
     permissions:
       contents: read
       id-token: write
