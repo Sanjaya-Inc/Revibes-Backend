@@ -32,18 +32,18 @@ jobs:
           service_account: firebase-deployer@revibes-staging.iam.gserviceaccount.com
 
       # 🧪 Create temporary .env for analyzer
-      # - name: Create .env for deploy
-      #   run: |
-      #     cat > .env <<EOF
-      #     ENV=${{ secrets.ENV }}
-      #     REGION=${{ secrets.REGION }}
-      #     JWT_SECRET=${{ secrets.JWT_SECRET }}
-      #     ADMIN_ROOT_MAIL=${{ secrets.ADMIN_ROOT_MAIL }}
-      #     ADMIN_ROOT_PASS=${{ secrets.ADMIN_ROOT_PASS }}
-      #     APP_PROJECT_ID=${{ secrets.APP_PROJECT_ID }}
-      #     APP_PROJECT_NUMBER=${{ secrets.APP_PROJECT_NUMBER }}
-      #     APP_STORAGE_BUCKET=${{ secrets.APP_STORAGE_BUCKET }}
-      #     EOF
+      - name: Create .env for deploy
+        run: |
+          cat > .env <<EOF
+          ENV=${{ secrets.ENV }}
+          REGION=${{ secrets.REGION }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          ADMIN_ROOT_MAIL=${{ secrets.ADMIN_ROOT_MAIL }}
+          ADMIN_ROOT_PASS=${{ secrets.ADMIN_ROOT_PASS }}
+          APP_PROJECT_ID=${{ secrets.APP_PROJECT_ID }}
+          APP_PROJECT_NUMBER=${{ secrets.APP_PROJECT_NUMBER }}
+          APP_STORAGE_BUCKET=${{ secrets.APP_STORAGE_BUCKET }}
+          EOF
 
       - name: Install deps
         run: npm ci
