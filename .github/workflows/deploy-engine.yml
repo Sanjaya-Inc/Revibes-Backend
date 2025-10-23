@@ -24,11 +24,18 @@ jobs:
           cache: npm
           cache-dependency-path: functions/package-lock.json
 
+      # ✅ Authenticate using OIDC (no JSON key needed)
       - name: Authenticate to Google Cloud (OIDC)
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/github-pool/providers/<PROVIDER_ID>
-          service_account: <SERVICE_ACCOUNT_NAME>@<PROJECT_ID>.iam.gserviceaccount.com
+          workload_identity_provider: //iam.googleapis.com/projects/${{ secrets.APP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-pool/providers/github
+          service_account: deploy-bot@your-project-id.iam.gserviceaccount.com
+
+      # Optional: configure gcloud SDK (useful for debugging or additional GCP commands)
+      - name: Set up gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
 
       - name: Install deps
         run: npm ci
@@ -44,7 +51,8 @@ jobs:
           FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
         run: npm run build
 
-      - run: npm i -g firebase-tools@latest
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools@latest
 
       - name: Deploy Functions
         env:
