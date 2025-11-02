@@ -1,3 +1,4 @@
+import { TVerifyUser } from './../dto/user';
 import admin from "firebase-admin";
 import COLLECTION_MAP from "../constant/db";
 import {
@@ -48,6 +49,7 @@ export class UserController {
       phoneNumber = "",
       password,
       role,
+      verified = false,
     }: TCreateUser,
     { skipCheck }: TCreateUserOpt = {},
   ): Promise<User> {
@@ -62,6 +64,7 @@ export class UserController {
       password: hashedPassword,
       points: 0,
       role,
+      verified,
       status: UserStatus.ACTIVE,
       accessTokenExpiredAt: null,
       refreshTokenExpiredAt: null,
@@ -267,6 +270,7 @@ export class UserController {
       password: process.env.ADMIN_ROOT_PASS,
       phoneNumber: "",
       role: UserRole.ADMIN,
+      verified: true,
     });
   }
 
@@ -341,6 +345,18 @@ export class UserController {
       ref,
       snapshot,
     };
+  }
+
+  @wrapError
+  public static async verifyUser(user: TGetUserRes, {verified}: TVerifyUser): Promise<void> {
+    verified ??= !user.data.verified;
+
+    if (user.data.verified === verified) {
+      throw new AppError(404, verified ? "USER.ALREADY_VERIFIED" : "USER.ALREADY_NOT_VERIFIED");
+    }
+
+    user.data.update({...user.data, verified});
+    await user.ref.update(user.data.toObject());
   }
 
   @wrapError

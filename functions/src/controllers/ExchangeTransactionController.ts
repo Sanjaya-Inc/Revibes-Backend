@@ -268,6 +268,10 @@ export class ExchangeTransactionController {
     user: TGetUserRes,
     data: TCreateExchangeTransaction,
   ): Promise<ExchangeTransaction> {
+    if (!user.data.verified) {
+      throw new AppError(403, "USER.NOT_VERIFIED");
+    }
+
     const checkResult = await this.checkTransaction(user, data);
 
     // fullfill request items with metadata

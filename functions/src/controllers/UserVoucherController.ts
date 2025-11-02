@@ -12,6 +12,7 @@ import { Query, Transaction } from "firebase-admin/firestore";
 import Voucher from "../models/Voucher";
 import { getDocsByIds } from "../utils/firestoreCommonQuery";
 import { VoucherController } from "./VoucherController";
+import AppError from "../utils/formatter/AppError";
 
 export type TGetUserVoucherOpt = {
   withMetadata?: boolean;
@@ -153,6 +154,10 @@ export class UserVoucherController {
 
   @wrapError
   public static txUseVoucher(user: TGetUserRes, id: string, tx: Transaction) {
+    if (!user.data.verified) {
+      throw new AppError(403, "USER.NOT_VERIFIED");
+    }
+
     const timestamp = new Date();
     const userVoucherRef = user.ref
       .collection(COLLECTION_MAP.USER_VOUCHER)

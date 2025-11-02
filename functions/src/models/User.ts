@@ -19,6 +19,7 @@ export const publicFields: (keyof User)[] = [
   "id",
   "role",
   "displayName",
+  "verified",
   "createdAt",
   "updatedAt",
 ];
@@ -30,6 +31,7 @@ export const detailFields: (keyof User)[] = [
   "email",
   "phoneNumber",
   "points",
+  "verified",
 ];
 
 export type TUserMetadata = {
@@ -59,6 +61,7 @@ export const defaultUserData: TUserData = {
   refreshTokenExpiredAt: null,
 
   verifyToken: "",
+  verified: false,
   status: UserStatus.ACTIVE,
 
   // relation
@@ -83,6 +86,7 @@ export class User extends BaseModel {
   refreshTokenExpiredAt?: Date | null;
 
   verifyToken?: string;
+  verified?: boolean;
   status!: UserStatus;
 
   // relation

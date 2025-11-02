@@ -45,6 +45,7 @@ export const CreateUserSchema = z
         errorMap: () => ({ message: "USER.ROLE_INVALID" }),
       })
       .optional(),
+    verified: z.boolean().optional(),
   })
   .refine((value) => value.email || value.phoneNumber, {
     message: "USER.EMAIL_OR_PHONE_REQUIRED",
@@ -108,6 +109,17 @@ export const ChangeUserStatusSchema = z.object({
 });
 
 export type TChangeUserStatus = z.infer<typeof ChangeUserStatusSchema>;
+
+export const VerifyUserSchema = z.object({
+  id: z
+    .string({
+      required_error: "USER.ID_REQUIRED",
+    })
+    .min(1, "USER.ID_REQUIRED"),
+  verified: z.boolean().optional(),
+});
+
+export type TVerifyUser = z.infer<typeof VerifyUserSchema>;
 
 export const AddUserPointSchema = z.object({
   id: z

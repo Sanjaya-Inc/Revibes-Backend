@@ -13,6 +13,8 @@ import {
   UseUserVoucherSchema,
   TEditUser,
   EditUserSchema,
+  TVerifyUser,
+  VerifyUserSchema,
 } from "../../dto/user";
 import { Request, Response } from "express";
 import AppResponse from "../../utils/formatter/AppResponse";
@@ -140,6 +142,28 @@ export class UserHandlers {
     new AppResponse({
       code: 200,
       message: "USER.PATCH_STATUS_SUCCESS",
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(userRoutes, "patch", ":id/verify", authenticate, adminOnly)
+  static async VerifyUser(req: Request, res: Response) {
+    if (!req.user) {
+      throw new AppError(403, "COMMON.FORBIDDEN");
+    }
+
+    const id = req.params.id;
+    let data: TVerifyUser = { id, ...req.body };
+    try {
+      data = VerifyUserSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    await UserController.verifyUser(req.user, data);
+
+    new AppResponse({
+      code: 200,
+      message: "USER.VERIFY_SUCCESS",
     }).asJsonResponse(res);
   }
 
