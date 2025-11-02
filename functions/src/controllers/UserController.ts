@@ -1,7 +1,5 @@
-import { TVerifyUser } from './../dto/user';
-import admin from "firebase-admin";
-import COLLECTION_MAP from "../constant/db";
 import {
+  TVerifyUser,
   TAddUserPoint,
   TChangeUserStatus,
   TCreateUser,
@@ -10,7 +8,9 @@ import {
   TGetUserRes,
   TGetUserVouchers,
   TUseUserVoucher,
-} from "../dto/user";
+} from "./../dto/user";
+import admin from "firebase-admin";
+import COLLECTION_MAP from "../constant/db";
 import { db, generateId } from "../utils/firebase";
 import User, { TUserData, UserRole, UserStatus } from "../models/User";
 import { wrapError } from "../utils/decorator/wrapError";
@@ -348,14 +348,20 @@ export class UserController {
   }
 
   @wrapError
-  public static async verifyUser(user: TGetUserRes, {verified}: TVerifyUser): Promise<void> {
+  public static async verifyUser(
+    user: TGetUserRes,
+    { verified }: TVerifyUser,
+  ): Promise<void> {
     verified ??= !user.data.verified;
 
     if (user.data.verified === verified) {
-      throw new AppError(404, verified ? "USER.ALREADY_VERIFIED" : "USER.ALREADY_NOT_VERIFIED");
+      throw new AppError(
+        404,
+        verified ? "USER.ALREADY_VERIFIED" : "USER.ALREADY_NOT_VERIFIED",
+      );
     }
 
-    user.data.update({...user.data, verified});
+    user.data.update({ ...user.data, verified });
     await user.ref.update(user.data.toObject());
   }
 
