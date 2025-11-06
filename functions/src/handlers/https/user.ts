@@ -159,7 +159,7 @@ export class UserHandlers {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    await UserController.verifyUser(req.user, data);
+    await UserController.verifyUser(data);
 
     new AppResponse({
       code: 200,

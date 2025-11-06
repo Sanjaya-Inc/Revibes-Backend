@@ -348,15 +348,17 @@ export class UserController {
   }
 
   @wrapError
-  public static async verifyUser(
-    user: TGetUserRes,
-    { verified }: TVerifyUser,
-  ): Promise<void> {
+  public static async verifyUser({ id, verified }: TVerifyUser): Promise<void> {
+    const user = await UserController.getUser({ id });
+    if (!user) {
+      throw new AppError(404, "USER.NOT_FOUND");
+    }
+
     verified ??= !user.data.verified;
 
     if (user.data.verified === verified) {
       throw new AppError(
-        404,
+        400,
         verified ? "USER.ALREADY_VERIFIED" : "USER.ALREADY_NOT_VERIFIED",
       );
     }
