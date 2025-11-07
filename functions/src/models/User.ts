@@ -19,6 +19,7 @@ export const publicFields: (keyof User)[] = [
   "id",
   "role",
   "displayName",
+  "points",
   "verified",
   "createdAt",
   "updatedAt",
