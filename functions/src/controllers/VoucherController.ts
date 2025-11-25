@@ -175,22 +175,22 @@ export class VoucherController {
 
     if (data.code) {
       filters.push(Filter.where("code", "==", data.code));
-    }
 
-    if (data.claimPeriodEnd) {
-      filters.push(Filter.where("claimPeriodEnd", "<=", data.claimPeriodEnd));
-    } else {
-      // Only use '==' operator for null in Firestore
-      filters.push(Filter.where("claimPeriodEnd", "==", null));
-    }
+      if (data.claimPeriodEnd) {
+        filters.push(Filter.where("claimPeriodEnd", "<=", data.claimPeriodEnd));
+      } else {
+        // Only use '==' operator for null in Firestore
+        filters.push(Filter.where("claimPeriodEnd", "==", null));
+      }
 
-    const result = await db
-      .collection(COLLECTION_MAP.VOUCHER)
-      .where(Filter.and(...filters))
-      .get();
+      const result = await db
+        .collection(COLLECTION_MAP.VOUCHER)
+        .where(Filter.and(...filters))
+        .get();
 
-    if (result.docs?.length > 0) {
-      throw new AppError(400, "VOUCHER_CODE.CODE_USED_FOR_THIS_PERIOD");
+      if (result.docs?.length > 0) {
+        throw new AppError(400, "VOUCHER_CODE.CODE_USED_FOR_THIS_PERIOD");
+      }
     }
 
     if (new Date() >= voucher.claimPeriodStart) {
