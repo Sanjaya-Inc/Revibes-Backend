@@ -132,6 +132,13 @@ export const AddUserPointSchema = z.object({
 
 export type TAddUserPoint = z.infer<typeof AddUserPointSchema>;
 
+export const GetUsersSchema = z.object({
+  ...PaginationSchema.shape,
+  sortBy: z.enum(["displayName", "createdAt"]).default("createdAt").optional(),
+});
+
+export type TGetUsers = z.infer<typeof GetUsersSchema>;
+
 export const GetUserVouchersSchema = z.object({
   id: z
     .string({

@@ -15,6 +15,8 @@ import {
   EditUserSchema,
   TVerifyUser,
   VerifyUserSchema,
+  GetUsersSchema,
+  TGetUsers,
 } from "../../dto/user";
 import { Request, Response } from "express";
 import AppResponse from "../../utils/formatter/AppResponse";
@@ -23,7 +25,6 @@ import { registerRoute } from "../../utils/decorator/registerRoute";
 import { adminOnly, authenticate } from "../../middlewares/auth";
 import AppError from "../../utils/formatter/AppError";
 import { UserController } from "../../controllers/UserController";
-import { PaginationSchema, TPagination } from "../../dto/pagination";
 import { getFileStorageInstance } from "../../utils/firebase";
 
 export const userRoutes = new Routes("users");
@@ -35,14 +36,14 @@ export class UserHandlers {
       throw new AppError(403, "COMMON.FORBIDDEN");
     }
 
-    let pagination: TPagination;
+    let filters: TGetUsers;
     try {
-      pagination = PaginationSchema.parse(req.query);
+      filters = GetUsersSchema.parse(req.query);
     } catch (err: any) {
       throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
     }
 
-    const response = await UserController.getUsers(pagination);
+    const response = await UserController.getUsers(filters);
     response.items = response.items.map((i) => i.getPublicFields());
 
     new AppResponse({

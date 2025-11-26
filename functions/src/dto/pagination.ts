@@ -28,6 +28,7 @@ export const PaginationSchema = z.object({
     })
     .default("next")
     .optional(),
+  search: z.string().optional(),
 });
 
 // Infer the TypeScript type from the schema for strong typing

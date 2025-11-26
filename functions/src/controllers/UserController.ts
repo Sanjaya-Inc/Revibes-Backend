@@ -106,8 +106,86 @@ export class UserController {
   public static async getUsers(
     filters: TPaginateConstruct<User> = {},
   ): Promise<TPaginatedPage<User>> {
-    filters.construct = User;
-    return await createPage<User>(COLLECTION_MAP.USER, filters);
+    const { search, ...paginationFilters } = filters;
+
+    // If search is provided, fetch all users and filter in-memory
+    if (search && search.trim()) {
+      const searchLower = search.toLowerCase().trim();
+
+      paginationFilters.addQuery = (query) => {
+        return query;
+      };
+
+      paginationFilters.construct = User;
+
+      // Get all users (we'll need to implement client-side filtering)
+      const allUsersSnapshot = await db.collection(COLLECTION_MAP.USER).get();
+      const allUsers = allUsersSnapshot.docs
+        .map((doc) => new User(doc.data()))
+        .filter((user) => {
+          const displayName = user.displayName?.toLowerCase() || "";
+          const email = user.email?.toLowerCase() || "";
+          const phoneNumber = user.phoneNumber?.toLowerCase() || "";
+
+          return (
+            displayName.includes(searchLower) ||
+            email.includes(searchLower) ||
+            phoneNumber.includes(searchLower)
+          );
+        });
+
+      // Apply sorting
+      const sortBy = filters.sortBy || "createdAt";
+      const sortOrder = filters.sortOrder || "desc";
+
+      allUsers.sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
+
+        if (sortBy === "displayName") {
+          aValue = a.displayName?.toLowerCase() || "";
+          bValue = b.displayName?.toLowerCase() || "";
+        } else {
+          aValue = a.createdAt || 0;
+          bValue = b.createdAt || 0;
+        }
+
+        if (sortOrder === "asc") {
+          return aValue > bValue ? 1 : -1;
+        } else {
+          return aValue < bValue ? 1 : -1;
+        }
+      });
+
+      // Apply pagination manually
+      const limit = filters.limit || 10;
+      const startIndex = 0;
+      const endIndex = Math.min(startIndex + limit, allUsers.length);
+      const paginatedUsers = allUsers.slice(startIndex, endIndex);
+
+      return {
+        items: paginatedUsers,
+        pagination: {
+          limit,
+          sortBy,
+          sortOrder,
+          lastDocId:
+            paginatedUsers.length > 0
+              ? paginatedUsers[paginatedUsers.length - 1].id
+              : undefined,
+          firstDocId:
+            paginatedUsers.length > 0 ? paginatedUsers[0].id : undefined,
+          direction: filters.direction || "next",
+          hasMoreNext: endIndex < allUsers.length,
+          hasMorePrev: false,
+          search,
+        },
+      };
+    }
+
+    // No search - use standard pagination
+    paginationFilters.construct = User;
+    return await createPage<User>(COLLECTION_MAP.USER, paginationFilters);
   }
 
   @wrapError
