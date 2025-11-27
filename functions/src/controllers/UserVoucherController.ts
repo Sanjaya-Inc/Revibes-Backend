@@ -7,7 +7,11 @@ import {
   TPaginatedPage,
 } from "../utils/pagination";
 import UserVoucher, { UserVoucherStatus } from "../models/UserVoucher";
-import { TGetUserVoucher, TGetUserVoucherRes } from "../dto/userVoucher";
+import {
+  TGetUserVoucher,
+  TGetUserVoucherRes,
+  TGetUserVouchers,
+} from "../dto/userVoucher";
 import { Query, Transaction } from "firebase-admin/firestore";
 import Voucher from "../models/Voucher";
 import { getDocsByIds } from "../utils/firestoreCommonQuery";
@@ -100,6 +104,27 @@ export class UserVoucherController {
     let query = user.ref
       .collection(COLLECTION_MAP.USER_VOUCHER)
       .where("code", "==", code);
+
+    if (status) {
+      query = query.where("status", "==", status);
+    }
+
+    const snapshot = await query.get();
+    if (!snapshot.empty) {
+      return snapshot.docs.map((d) => new UserVoucher(d.data()));
+    } else {
+      return [];
+    }
+  }
+
+  @wrapError
+  public static async getVouchersByCodes(
+    user: TGetUserRes,
+    { codes, status }: TGetUserVouchers,
+  ): Promise<UserVoucher[]> {
+    let query = user.ref
+      .collection(COLLECTION_MAP.USER_VOUCHER)
+      .where("code", "in", codes);
 
     if (status) {
       query = query.where("status", "==", status);

@@ -140,6 +140,7 @@ export class ExchangeTransactionController {
 
     const timestamp = new Date();
     let amount = 0;
+    // Validate each item availability
     for (const item of requestItems) {
       const exchangeItem = items.find(
         (i) => i.id === item.exchangeTransactionId,
@@ -166,6 +167,7 @@ export class ExchangeTransactionController {
       amount += price.amount * item.qty;
     }
 
+    // Validate payment method
     if (data.paymentMethod === PaymentMethod.POINT) {
       if (data.currency !== Currency.REVIBE_POINT) {
         throw new AppError(
@@ -182,6 +184,8 @@ export class ExchangeTransactionController {
     let userVoucher: UserVoucher | null = null;
     let voucher: Voucher | null = null;
     let discount = 0;
+
+    // Validate user voucher to use
     if (data.voucherCode) {
       const userVouchers = await UserVoucherController.getVouchersByCode(user, {
         code: data.voucherCode,
@@ -211,10 +215,6 @@ export class ExchangeTransactionController {
         throw new AppError(400, "USER_VOUCHER.ALREADY_EXPIRED");
       }
 
-      const claimedVoucher = userVouchers.filter(
-        (v) => v.status === UserVoucherStatus.REDEEMED,
-      );
-
       const conditions = voucherRes.data.conditions;
       if (conditions?.minOrderAmount && amount < conditions?.minOrderAmount) {
         throw new AppError(
@@ -234,16 +234,6 @@ export class ExchangeTransactionController {
         throw new AppError(
           400,
           "USER_VOUCHER.CONDITIONS_MAX_USAGE_UNFULFILLED",
-        );
-      }
-
-      if (
-        conditions?.maxClaim &&
-        claimedVoucher?.length >= conditions?.maxClaim
-      ) {
-        throw new AppError(
-          400,
-          "USER_VOUCHER.CONDITIONS_MAX_CLAIM_UNFULFILLED",
         );
       }
 
@@ -309,6 +299,43 @@ export class ExchangeTransactionController {
               .find((v) => v.id === item.sourceId)
               ?.getMetadataFields();
     });
+
+    // get list of user claimed voucher
+    const requestVouchers = checkResult.requestItems.filter(
+      (i) => i.type === ExchangeItemType.VOUCHER,
+    );
+    const requestVoucherCodes: string[] = [];
+    for (const voucher of requestVouchers) {
+      const v = voucher.metadata as Partial<Voucher>;
+      if (v.code) {
+        requestVoucherCodes.push(v.code);
+      }
+    }
+
+    // check claimed voucher
+    let userVouchers: UserVoucher[] = [];
+    if (requestVoucherCodes.length > 0) {
+      userVouchers = await UserVoucherController.getVouchersByCodes(user, {
+        codes: requestVoucherCodes,
+      });
+      for (const item of requestVouchers) {
+        if (item.type === ExchangeItemType.VOUCHER) {
+          const v = item.metadata as Voucher;
+          const purchasedVoucher = userVouchers.filter(
+            (i) => i.code === v.code,
+          );
+          if (
+            v.conditions?.maxClaim &&
+            purchasedVoucher.length + item.qty > v.conditions?.maxClaim
+          ) {
+            throw new AppError(
+              400,
+              "USER_VOUCHER.CONDITIONS_MAX_CLAIM_UNFULFILLED",
+            );
+          }
+        }
+      }
+    }
 
     switch (data.paymentMethod) {
       case PaymentMethod.POINT:
