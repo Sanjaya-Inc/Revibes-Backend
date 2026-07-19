@@ -19,6 +19,7 @@ export enum COLLECTION_MAP {
   EXCHANGE_TRANSACTION_ITEM = "exchange_transaction_items",
   MISSION = "missions",
   MISSION_ASSIGNMENT = "missions-assignment",
+  NEWS = "news",
 }
 
 export default COLLECTION_MAP;

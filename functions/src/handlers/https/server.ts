@@ -11,6 +11,7 @@ import { voucherRoutes } from "./voucher";
 import { inventoryRoutes } from "./inventory";
 import { exchangeRoutes } from "./exchange";
 import { missionRoutes } from "./mission";
+import { newsRoutes } from "./news";
 
 import { errorHandler } from "../../middlewares/error";
 import { bodyParser } from "../../middlewares/parser";
@@ -28,6 +29,7 @@ const ROUTES = [
   ...inventoryRoutes.getApis(),
   ...exchangeRoutes.getApis(),
   ...missionRoutes.getApis(),
+  ...newsRoutes.getApis(),
 ];
 
 export const app = express();
