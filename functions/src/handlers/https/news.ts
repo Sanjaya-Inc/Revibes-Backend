@@ -1,7 +1,12 @@
 import { Request, Response } from "express";
 import AppResponse from "../../utils/formatter/AppResponse";
 import { NewsController } from "../../controllers/NewsController";
-import { CreateNewsSchema, TCreateNews } from "../../dto/news";
+import {
+  CreateNewsSchema,
+  TCreateNews,
+  UpdateNewsSchema,
+  TUpdateNews,
+} from "../../dto/news";
 import Routes from "./route";
 import { registerRoute } from "../../utils/decorator/registerRoute";
 import { adminOnly, authenticate } from "../../middlewares/auth";
@@ -35,6 +40,36 @@ export class NewsHandlers {
       code: 201,
       message: "NEWS.CREATE_SUCCESS",
       data: response.pickFields(),
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(newsRoutes, "put", ":id", authenticate, adminOnly)
+  static async updateNews(req: Request, res: Response) {
+    const { id } = req.params;
+    let data: TUpdateNews = req.body;
+
+    try {
+      data = UpdateNewsSchema.parse(data);
+    } catch (err: any) {
+      throw new AppError(400, "COMMON.BAD_REQUEST").errFromZode(err);
+    }
+
+    const response = await NewsController.updateNews(id, data);
+    new AppResponse({
+      code: 200,
+      message: "NEWS.UPDATE_SUCCESS",
+      data: response.pickFields(),
+    }).asJsonResponse(res);
+  }
+
+  @registerRoute(newsRoutes, "delete", ":id", authenticate, adminOnly)
+  static async deleteNews(req: Request, res: Response) {
+    const { id } = req.params;
+    await NewsController.deleteNews(id);
+    new AppResponse({
+      code: 200,
+      message: "NEWS.DELETE_SUCCESS",
+      data: null,
     }).asJsonResponse(res);
   }
 }

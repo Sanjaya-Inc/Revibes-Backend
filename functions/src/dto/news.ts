@@ -14,3 +14,10 @@ export const CreateNewsSchema = z.object({
 });
 
 export type TCreateNews = z.infer<typeof CreateNewsSchema>;
+
+export const UpdateNewsSchema = z.object({
+  title: z.string().min(1, "NEWS.TITLE_REQUIRED").optional(),
+  content: z.string().min(1, "NEWS.CONTENT_REQUIRED").optional(),
+});
+
+export type TUpdateNews = z.infer<typeof UpdateNewsSchema>;

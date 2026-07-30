@@ -1,8 +1,9 @@
 import COLLECTION_MAP from "../constant/db";
-import { TCreateNews } from "../dto/news";
+import { TCreateNews, TUpdateNews } from "../dto/news";
 import News, { TNewsData } from "../models/News";
 import { db } from "../utils/firebase";
 import { wrapError } from "../utils/decorator/wrapError";
+import AppError from "../utils/formatter/AppError";
 
 export class NewsController {
   @wrapError
@@ -61,5 +62,41 @@ export class NewsController {
     await batch.commit();
 
     return news;
+  }
+
+  @wrapError
+  public static async updateNews(
+    id: string,
+    updateData: TUpdateNews,
+  ): Promise<News> {
+    const docRef = db.collection(COLLECTION_MAP.NEWS).doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      throw new AppError(404, "NEWS.NOT_FOUND");
+    }
+
+    const currentData = doc.data() as TNewsData;
+    const updatedFields: Partial<TNewsData> = {};
+    if (updateData.title !== undefined) updatedFields.title = updateData.title;
+    if (updateData.content !== undefined)
+      updatedFields.content = updateData.content;
+
+    await docRef.update(updatedFields);
+
+    return new News({ ...currentData, ...updatedFields });
+  }
+
+  @wrapError
+  public static async deleteNews(id: string): Promise<boolean> {
+    const docRef = db.collection(COLLECTION_MAP.NEWS).doc(id);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      throw new AppError(404, "NEWS.NOT_FOUND");
+    }
+
+    await docRef.delete();
+    return true;
   }
 }
