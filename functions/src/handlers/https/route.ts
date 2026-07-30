@@ -19,7 +19,8 @@ export class Routes {
 
   registerApi(method: method, path = "", ...handlers: RequestHandler[]) {
     path = path.startsWith("/") ? path.slice(1) : path;
-    this.subRoutes.push([method, `/${this.group}/${path}`, ...handlers]);
+    const fullPath = path ? `/${this.group}/${path}` : `/${this.group}`;
+    this.subRoutes.push([method, fullPath, ...handlers]);
   }
 
   getApis(): RouteDefinition[] {
