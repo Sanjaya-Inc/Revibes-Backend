@@ -1,0 +1,10 @@
+{
+  "errors": {
+    "ORDER_NOT_FOUND": "Logistic order not found",
+    "ITEMS_REQUIRED": "At least one waste item must be included in the order",
+    "STORE_BRANCH_REQUIRED": "Store drop-off location is required",
+    "TYPE_INVALID": "Order type must be DROP_OFF or PICK_UP",
+    "STATUS_INVALID": "Invalid order status transition",
+    "CANNOT_CANCEL": "Order cannot be cancelled at its current status"
+  }
+}

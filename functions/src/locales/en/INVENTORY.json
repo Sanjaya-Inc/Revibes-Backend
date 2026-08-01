@@ -1,0 +1,8 @@
+{
+  "errors": {
+    "ITEM_NOT_FOUND": "Inventory item not found",
+    "NAME_REQUIRED": "Inventory item name is required",
+    "CATEGORY_REQUIRED": "Inventory category is required",
+    "POINTS_PER_KG_REQUIRED": "Points per kilogram must be specified"
+  }
+}

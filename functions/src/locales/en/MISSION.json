@@ -1,0 +1,9 @@
+{
+  "errors": {
+    "NOT_FOUND": "Mission not found",
+    "ALREADY_CLAIMED": "You have already claimed reward for this mission",
+    "NOT_COMPLETED": "Mission task has not been completed yet",
+    "TITLE_REQUIRED": "Mission title is required",
+    "POINTS_REQUIRED": "Reward points must be specified"
+  }
+}

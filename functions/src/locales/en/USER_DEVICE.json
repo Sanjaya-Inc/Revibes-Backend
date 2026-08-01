@@ -1,0 +1,9 @@
+{
+  "errors": {
+    "DEVICE_TOKEN_REQUIRED": "Device token is required",
+    "FCM_TOKEN_REQUIRED": "FCM token is required",
+    "USER_AGENT_REQUIRED": "User agent is required",
+    "ID_REQUIRED": "Device ID is required",
+    "NOT_FOUND": "Registered user device not found"
+  }
+}

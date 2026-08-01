@@ -1,0 +1,9 @@
+{
+  "errors": {
+    "ITEM_NOT_FOUND": "Exchange item not found",
+    "INSUFFICIENT_POINTS": "You do not have enough points for this exchange",
+    "OUT_OF_STOCK": "This item is currently out of stock",
+    "TRANSACTION_NOT_FOUND": "Exchange transaction not found",
+    "QUANTITY_INVALID": "Please specify a valid item quantity"
+  }
+}

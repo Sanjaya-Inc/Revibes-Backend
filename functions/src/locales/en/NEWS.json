@@ -1,0 +1,8 @@
+{
+  "errors": {
+    "TITLE_REQUIRED": "Daily news title is required",
+    "CONTENT_REQUIRED": "Daily news content is required",
+    "NOT_FOUND": "Daily news not found",
+    "INVALID_TITLE": "Provided daily news title is invalid"
+  }
+}

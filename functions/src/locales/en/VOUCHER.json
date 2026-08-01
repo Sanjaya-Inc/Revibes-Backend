@@ -1,0 +1,14 @@
+{
+  "errors": {
+    "VOUCHER_ID_REQUIRED": "Voucher ID is required",
+    "NOT_FOUND": "Voucher not found or has expired",
+    "ALREADY_CLAIMED": "You have already claimed this voucher",
+    "EXPIRED": "This voucher has expired",
+    "OUT_OF_STOCK": "This voucher is out of stock",
+    "INSUFFICIENT_POINTS": "You do not have enough points to claim this voucher",
+    "ALREADY_USED": "This voucher has already been used",
+    "CODE_INVALID": "Voucher code is invalid",
+    "TITLE_REQUIRED": "Voucher title is required",
+    "POINTS_REQUIRED": "Voucher point requirement is invalid"
+  }
+}

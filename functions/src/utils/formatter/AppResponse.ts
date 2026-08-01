@@ -11,8 +11,8 @@ export type TAppResponseConstructor<T> = {
   err?: AppError;
   error?: string;
   reasons?: string[];
-  translationKey?: string; // Optional key for top-level message translation
-  translationOptions?: TOptions; // Optional options for top-level message translation
+  translationKey?: string;
+  translationOptions?: TOptions;
 };
 
 class AppResponse<T> {
@@ -33,22 +33,15 @@ class AppResponse<T> {
     let { code } = val;
 
     if (err) {
+      if (res?.req?.query?.locale) {
+        err.translate(res.req.query.locale as string);
+      }
       code = err.httpStatus;
       val.code = code;
-      val.error = err.message;
+      val.error = err.code;
+      val.message = err.message;
       val.reasons = err.reasons;
-      delete val.message;
       delete val.err;
-    } else if (val.message) {
-      // const parts = val.message.split(".");
-      // if (parts.length === 2) {
-      //   const [ns, code] = parts;
-      //   val.message = i18n.t(ns + ".messages." + code, {
-      //     ns,
-      //     ...val.translationOptions,
-      //     lng: (res.req.query.locale as string) || "en",
-      //   });
-      // }
     }
 
     res.status(code ?? 200).json(val);
@@ -71,7 +64,7 @@ class AppResponse<T> {
     if (locale) {
       i18n.changeLanguage(originalLocale);
     }
-    return this; // Allow chaining
+    return this;
   }
 }
 

@@ -3,7 +3,7 @@ import Backend from "i18next-http-backend";
 import path from "path";
 
 i18n.use(Backend).init({
-  lng: "en", // default language
+  lng: "en",
   fallbackLng: "en",
   debug: false,
   ns: [
@@ -11,11 +11,19 @@ i18n.use(Backend).init({
     "BANNER",
     "COMMON",
     "COUNTRY",
+    "EXCHANGE",
     "FILE",
+    "INVENTORY",
     "ITEM",
     "LOGISTIC",
+    "LOGISTIC_ORDER",
+    "MISSION",
+    "NEWS",
+    "POSITION",
     "STORE",
     "USER",
+    "USER_DEVICE",
+    "VOUCHER",
   ],
   defaultNS: "COMMON",
   backend: {
@@ -24,7 +32,7 @@ i18n.use(Backend).init({
   interpolation: {
     escapeValue: false,
   },
-  initImmediate: false, // important for synchronous use in Cloud Functions
+  initImmediate: false,
 });
 
 export default i18n;
