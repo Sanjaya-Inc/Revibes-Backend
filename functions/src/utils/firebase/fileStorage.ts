@@ -19,14 +19,45 @@ export class FileStorage {
   private readonly storage: admin.storage.Storage;
   private readonly bucket: Bucket;
   private readonly signedUrlExpTime: number = 15 * 60 * 1000; // 15 minutes
-  private static readonly _storageUrl =
-    process.env.ENV === "local"
-      ? "http://localhost:9199"
-      : "https://storage.googleapis.com";
-  private static readonly _firebaseStorageUrl =
-    process.env.ENV === "local"
-      ? "http://localhost:9199"
-      : "https://firebasestorage.googleapis.com";
+  private get isEmulator(): boolean {
+    return (
+      Boolean(
+        process.env.STORAGE_EMULATOR_HOST ||
+          process.env.FIREBASE_STORAGE_EMULATOR_HOST,
+      ) ||
+      (process.env.FUNCTIONS_EMULATOR === "true" && process.env.ENV === "local")
+    );
+  }
+
+  private get storageUrl(): string {
+    if (this.isEmulator) {
+      const emulatorHost =
+        process.env.STORAGE_EMULATOR_HOST ||
+        process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+      if (emulatorHost) {
+        return emulatorHost.startsWith("http")
+          ? emulatorHost
+          : `http://${emulatorHost}`;
+      }
+      return "http://localhost:9199";
+    }
+    return "https://storage.googleapis.com";
+  }
+
+  private get firebaseStorageUrl(): string {
+    if (this.isEmulator) {
+      const emulatorHost =
+        process.env.STORAGE_EMULATOR_HOST ||
+        process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+      if (emulatorHost) {
+        return emulatorHost.startsWith("http")
+          ? emulatorHost
+          : `http://${emulatorHost}`;
+      }
+      return "http://localhost:9199";
+    }
+    return "https://firebasestorage.googleapis.com";
+  }
 
   constructor() {
     this.storage = admin.storage();
@@ -52,10 +83,10 @@ export class FileStorage {
 
     const encodedPath = encodeURIComponent(uri);
     if (token) {
-      return `${FileStorage._firebaseStorageUrl}/v0/b/${this.bucket.name}/o/${encodedPath}?alt=media&token=${token}`;
+      return `${this.firebaseStorageUrl}/v0/b/${this.bucket.name}/o/${encodedPath}?alt=media&token=${token}`;
     } else {
       // fallback: maybe it's public via makePublic()
-      return `${FileStorage._storageUrl}/${this.bucket.name}/${encodedPath}?alt=media`;
+      return `${this.storageUrl}/${this.bucket.name}/${encodedPath}?alt=media`;
     }
   }
 
