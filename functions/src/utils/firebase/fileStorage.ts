@@ -165,10 +165,7 @@ export class FileStorage {
   public async fileExists(uri: string): Promise<boolean> {
     try {
       const file = this.bucket.file(uri);
-      const [exists] = await withTimeout(
-        file.exists(),
-        FILE_EXISTS_TIMEOUT_MS,
-      );
+      const [exists] = await withTimeout(file.exists(), FILE_EXISTS_TIMEOUT_MS);
       return exists;
     } catch {
       return false;

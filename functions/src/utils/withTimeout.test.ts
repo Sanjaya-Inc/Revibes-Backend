@@ -10,7 +10,7 @@ describe("withTimeout", () => {
 
   it("rejects when the promise hangs past the timeout", async () => {
     await assert.rejects(
-      () => withTimeout(new Promise(() => {}), 20),
+      () => withTimeout(new Promise(() => undefined), 20),
       (error: Error) => error.message === "FILE_EXISTS_TIMEOUT",
     );
   });
