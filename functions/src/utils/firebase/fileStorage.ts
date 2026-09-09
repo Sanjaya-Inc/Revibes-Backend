@@ -11,6 +11,8 @@ export enum BasePath {
   MISSION = "missions/",
 }
 
+const FILE_EXISTS_TIMEOUT_MS = 5_000;
+
 export type UploadOptions = {
   public?: boolean;
 };
@@ -160,9 +162,21 @@ export class FileStorage {
   }
 
   public async fileExists(uri: string): Promise<boolean> {
-    const file = this.bucket.file(uri);
-    const [exists] = await file.exists();
-    return exists;
+    try {
+      const file = this.bucket.file(uri);
+      const [exists] = await Promise.race([
+        file.exists(),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("FILE_EXISTS_TIMEOUT")),
+            FILE_EXISTS_TIMEOUT_MS,
+          ),
+        ),
+      ]);
+      return exists;
+    } catch {
+      return false;
+    }
   }
 
   public async makeFilePublic(uri: string): Promise<void> {
