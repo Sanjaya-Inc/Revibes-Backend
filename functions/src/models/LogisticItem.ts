@@ -10,6 +10,11 @@ export enum LogisticItemType {
   B3 = "b3",
 }
 
+export enum LogisticItemUnit {
+  KG = "kg",
+  PCS = "pcs",
+}
+
 export type TMedia = {
   uploadUrl: string;
   downloadUri: string;
@@ -20,6 +25,7 @@ export const defaultLogisticItemData: TLogisticItemData = {
   id: "",
   name: "",
   type: LogisticItemType.ORGANIC,
+  unit: LogisticItemUnit.KG,
   weight: 0,
   point: 0,
   media: [],
@@ -29,6 +35,7 @@ export class LogisticItem extends BaseModel {
   id!: string;
   name!: string;
   type!: LogisticItemType;
+  unit!: LogisticItemUnit;
   weight!: number;
   point!: number;
   media!: TMedia[];

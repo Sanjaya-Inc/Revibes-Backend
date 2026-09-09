@@ -1,5 +1,8 @@
 import { z } from "zod";
-import LogisticItem, { LogisticItemType } from "../models/LogisticItem";
+import LogisticItem, {
+  LogisticItemType,
+  LogisticItemUnit,
+} from "../models/LogisticItem";
 import { ALLOWED_IMAGE_TYPES, ALLOWED_VIDEO_TYPES } from "../constant/file";
 import { TGetLogisticOrderRes } from "./logisticOrder";
 import { TFirestoreData } from "./common";
@@ -13,6 +16,7 @@ export const LogisticItemSchema = z.object({
   type: z.nativeEnum(LogisticItemType, {
     required_error: "ITEM.INVALID_TYPE",
   }),
+  unit: z.nativeEnum(LogisticItemUnit).optional().default(LogisticItemUnit.KG),
   weight: z
     .number({
       required_error: "ITEM.WEIGHT_REQUIRED",
