@@ -22,4 +22,15 @@ describe("LogisticItemSchema unit", () => {
     });
     assert.strictEqual(parsed.unit, LogisticItemUnit.PCS);
   });
+
+  it("rejects an unknown unit", () => {
+    assert.throws(() =>
+      LogisticItemSchema.parse({
+        name: "Leaves",
+        type: "organic",
+        weight: 1,
+        unit: "lb",
+      }),
+    );
+  });
 });

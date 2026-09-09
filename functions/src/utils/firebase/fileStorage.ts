@@ -2,6 +2,7 @@ import { Bucket, File } from "@google-cloud/storage";
 import admin from "firebase-admin";
 import { v4 as uuidv4 } from "uuid";
 import { TUploadFile } from "../../dto/file";
+import { withTimeout } from "../withTimeout";
 
 export enum BasePath {
   BANNER = "banners/",
@@ -164,15 +165,10 @@ export class FileStorage {
   public async fileExists(uri: string): Promise<boolean> {
     try {
       const file = this.bucket.file(uri);
-      const [exists] = await Promise.race([
+      const [exists] = await withTimeout(
         file.exists(),
-        new Promise<never>((_, reject) =>
-          setTimeout(
-            () => reject(new Error("FILE_EXISTS_TIMEOUT")),
-            FILE_EXISTS_TIMEOUT_MS,
-          ),
-        ),
-      ]);
+        FILE_EXISTS_TIMEOUT_MS,
+      );
       return exists;
     } catch {
       return false;
