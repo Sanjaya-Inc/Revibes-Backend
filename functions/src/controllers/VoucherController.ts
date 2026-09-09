@@ -291,8 +291,19 @@ export class VoucherController {
       throw new AppError(404, "VOUCHER.NOT_FOUND");
     }
 
-    await voucher.ref.update({
-      isAvailable: isAvailable ?? !voucher.data.isAvailable,
+    const nextAvailable = isAvailable ?? !voucher.data.isAvailable;
+
+    await db.runTransaction(async (transaction) => {
+      const snapshots = await db
+        .collection(COLLECTION_MAP.EXCHANGE_ITEM)
+        .where("sourceId", "==", voucher.data.id)
+        .get();
+
+      snapshots.docs.forEach((doc) => {
+        transaction.update(doc.ref, { isAvailable: nextAvailable });
+      });
+
+      transaction.update(voucher.ref, { isAvailable: nextAvailable });
     });
   }
 }
