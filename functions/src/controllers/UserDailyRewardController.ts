@@ -5,6 +5,8 @@ import AppError from "../utils/formatter/AppError";
 import { TGetUserRes } from "../dto/user";
 import UserDailyReward from "../models/UserDailyReward";
 import { AppSettingController } from "./AppSettingController";
+import { UserPointController } from "./UserPointController";
+import { UserPointHistorySourceType } from "../models/UserPointHistory";
 import { WriteBatch } from "firebase-admin/firestore";
 import { isDateToday } from "../utils/date";
 
@@ -79,10 +81,13 @@ export class UserDailyRewardController {
         }
       }
 
-      const batch = db.batch();
-      batch.update(user.ref, {
-        points: user.data.addPoint(item.amount),
+      await UserPointController.txAddPoint(user, {
+        amount: item.amount,
+        sourceType: UserPointHistorySourceType.DAILY_REWARD,
+        sourceId: item.id,
       });
+
+      const batch = db.batch();
 
       if (i == claimables.length - 1) {
         for (const c of claimables) {

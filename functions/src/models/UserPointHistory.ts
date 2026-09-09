@@ -28,6 +28,7 @@ export enum UserPointHistorySourceType {
   MISSION = "mission",
   EXCHANGE = "exchange",
   LOGISTIC_ORDER = "logistic-order",
+  DAILY_REWARD = "daily-reward",
 }
 
 export enum UserPointHistorySymbol {
