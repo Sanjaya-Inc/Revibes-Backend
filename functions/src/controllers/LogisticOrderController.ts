@@ -20,6 +20,7 @@ import {
   TSubmitLogisticOrder,
 } from "../dto/logisticOrder";
 import LogisticItem, { TLogisticItemData } from "../models/LogisticItem";
+import { resolveOrderPoint } from "../models/logisticOrderPoints";
 import LogisticOrder, {
   LogisticOrderStatus,
   LogisticOrderType,
@@ -546,21 +547,12 @@ export class LogisticOrderController {
 
     let orderPoint = 0;
     const setting = await AppSettingController.getSetting();
-    if (data.customTotalPoint) {
-      orderPoint = data.customTotalPoint;
-    } else if (data.customPoints && data.customPoints?.length > 0) {
-      for (const item of order.items) {
-        const customPoint = data.customPoints.find((i) => i.id === item.id);
-        if (customPoint) {
-          item.point = customPoint?.point;
-          orderPoint += item.point;
-        }
-      }
-    } else {
-      for (const item of order.items) {
-        orderPoint += item.calculatePoint(setting);
-      }
-    }
+    orderPoint = resolveOrderPoint(
+      order.items,
+      setting,
+      data.customTotalPoint,
+      data.customPoints,
+    );
 
     order.status = LogisticOrderStatus.COMPLETED;
     order.totalPoint = orderPoint;
