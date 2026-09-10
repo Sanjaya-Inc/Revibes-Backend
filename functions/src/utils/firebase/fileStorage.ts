@@ -72,25 +72,32 @@ export class FileStorage {
     return [baseName, ...paths].map(clean).join("/");
   }
 
+  public objectMediaUrl(uri: string): string {
+    if (!uri) return "";
+    const encodedPath = encodeURIComponent(uri);
+    return `${this.storageUrl}/${this.bucket.name}/${encodedPath}?alt=media`;
+  }
+
   public async getFullUrl(uri: string): Promise<string> {
     if (!uri) return "";
 
     let token: any = "";
     try {
       const file = this.bucket.file(uri);
-      const [metadata] = await file.getMetadata();
+      const [metadata] = await withTimeout(
+        file.getMetadata(),
+        FILE_EXISTS_TIMEOUT_MS,
+      );
       token = metadata?.metadata?.firebaseStorageDownloadTokens;
-    } catch (err) {
+    } catch {
       console.error("Failed to get file metadata");
     }
 
     const encodedPath = encodeURIComponent(uri);
     if (token) {
       return `${this.firebaseStorageUrl}/v0/b/${this.bucket.name}/o/${encodedPath}?alt=media&token=${token}`;
-    } else {
-      // fallback: maybe it's public via makePublic()
-      return `${this.storageUrl}/${this.bucket.name}/${encodedPath}?alt=media`;
     }
+    return this.objectMediaUrl(uri);
   }
 
   public async uploadFile(
@@ -137,10 +144,6 @@ export class FileStorage {
       action: "write",
       expires: exp,
       contentType,
-      // CRITICAL: Include x-goog-acl in extensionHeaders when generating the URL
-      extensionHeaders: {
-        "x-goog-acl": "public-read", // This header is now "signed" into the URL
-      },
     });
 
     return [uploadUrl, downloadUri, exp];

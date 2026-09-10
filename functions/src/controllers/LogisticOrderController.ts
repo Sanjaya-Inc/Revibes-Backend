@@ -829,11 +829,9 @@ export class LogisticOrderController {
       .doc(logisticOrderItemId)
       .set(logisticItem.toObject(), { merge: true });
 
-    const downloadUrl = await storageInstance.getFullUrl(downloadUri);
-
     return {
       uploadUrl,
-      downloadUrl: downloadUrl,
+      downloadUrl: storageInstance.objectMediaUrl(downloadUri),
       expiredAt,
     };
   }

@@ -24,12 +24,17 @@ describe("FileStorage URL generation", () => {
     process.env = { ...originalEnv };
   });
 
-  it("returns cloud firebase storage URL when not running in emulator even if ENV is local", async () => {
-    // Arrange
+  it("builds an object media URL without calling Storage", () => {
     const storage = new FileStorage();
-    // Act
+    assert.strictEqual(
+      storage.objectMediaUrl("logistics/order-1/items/file-1"),
+      "https://storage.googleapis.com/revibes-d77f0.firebasestorage.app/logistics%2Forder-1%2Fitems%2Ffile-1?alt=media",
+    );
+  });
+
+  it("returns cloud firebase storage URL when not running in emulator even if ENV is local", async () => {
+    const storage = new FileStorage();
     const url = await storage.getFullUrl("banners/test-id");
-    // Assert
     assert.strictEqual(
       url,
       "https://storage.googleapis.com/revibes-d77f0.firebasestorage.app/banners%2Ftest-id?alt=media",
