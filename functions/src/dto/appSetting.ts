@@ -10,6 +10,7 @@ export const DailyRewardSchema = z.object({
   days: z.number().optional(),
   initialPoint: z.number().optional(),
   multiplier: z.number().optional(),
+  bannerText: z.string().optional(),
 });
 
 export const UpdateAppSettingSchema = z.object({

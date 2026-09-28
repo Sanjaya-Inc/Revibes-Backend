@@ -9,6 +9,7 @@ import { UserPointController } from "./UserPointController";
 import { UserPointHistorySourceType } from "../models/UserPointHistory";
 import { WriteBatch } from "firebase-admin/firestore";
 import { isDateToday } from "../utils/date";
+import { dailyRewardAmounts } from "../models/dailyRewardSchedule";
 
 export class UserDailyRewardController {
   @wrapError
@@ -18,19 +19,19 @@ export class UserDailyRewardController {
   ): Promise<UserDailyReward[]> {
     const setting = await AppSettingController.getSetting();
 
-    const { days, initialPoint, multiplier } = setting.dailyReward;
-
     const claimables: UserDailyReward[] = [];
     const dbBatch = batch ?? db.batch();
     const userDailyRewardsRef = user.ref.collection(
       COLLECTION_MAP.USER_DAILY_REWARD,
     );
-    Array.from({ length: days }, (_, i) => i).forEach((i) => {
+    const bannerText = setting.dailyReward?.bannerText ?? "";
+    dailyRewardAmounts(setting.dailyReward).forEach((amount, i) => {
       const docRef = userDailyRewardsRef.doc();
       const newClaimable = new UserDailyReward({
         id: docRef.id,
         index: i + 1,
-        amount: initialPoint + i * multiplier,
+        amount,
+        bannerText,
       });
       claimables.push(newClaimable);
 
@@ -46,13 +47,19 @@ export class UserDailyRewardController {
   public static async getDailyRewards(
     user: TGetUserRes,
   ): Promise<UserDailyReward[]> {
+    const setting = await AppSettingController.getSetting();
+    const bannerText = setting.dailyReward?.bannerText ?? "";
+    const configuredAmount = setting.dailyReward?.initialPoint ?? 1;
     const snapshot = await user.ref
       .collection(COLLECTION_MAP.USER_DAILY_REWARD)
       .orderBy("index", "asc")
       .get();
     let claimables: UserDailyReward[] = [];
     snapshot.forEach((doc) => {
-      claimables.push(new UserDailyReward(doc.data()));
+      const reward = new UserDailyReward(doc.data());
+      reward.bannerText = bannerText;
+      reward.applySettingAmount(configuredAmount);
+      claimables.push(reward);
     });
 
     if (!claimables.length) {

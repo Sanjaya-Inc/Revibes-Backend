@@ -9,8 +9,8 @@ export type TDailyReward = {
   days: number;
   initialPoint: number;
   multiplier: number;
+  bannerText?: string;
 };
-
 export const defaultAppSettingData: TAppSettingData = {
   point: {
     organic: 5,
@@ -19,8 +19,9 @@ export const defaultAppSettingData: TAppSettingData = {
   },
   dailyReward: {
     days: 7,
-    initialPoint: 5,
-    multiplier: 5,
+    initialPoint: 1,
+    multiplier: 0,
+    bannerText: "Check in 30 Days & Get Voucher Rp25k",
   },
 };
 
