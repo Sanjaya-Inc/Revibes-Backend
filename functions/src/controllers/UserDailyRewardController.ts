@@ -110,6 +110,7 @@ export class UserDailyRewardController {
           .doc(item.id);
         batch.update(claimableRef, {
           claimedAt: new Date(),
+          amount: item.amount,
         });
       }
 
