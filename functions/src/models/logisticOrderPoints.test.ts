@@ -1,7 +1,10 @@
 import assert from "node:assert";
 import { describe, it } from "node:test";
 import AppSetting from "./AppSetting";
-import LogisticItem, { LogisticItemType, LogisticItemUnit } from "./LogisticItem";
+import LogisticItem, {
+  LogisticItemType,
+  LogisticItemUnit,
+} from "./LogisticItem";
 import { resolveOrderPoint } from "./logisticOrderPoints";
 
 describe("LogisticItem.calculatePoint", () => {

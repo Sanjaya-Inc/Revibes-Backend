@@ -28,8 +28,5 @@ export function resolveOrderPoint(
     return orderPoint;
   }
 
-  return items.reduce(
-    (total, item) => total + item.calculatePoint(setting),
-    0,
-  );
+  return items.reduce((total, item) => total + item.calculatePoint(setting), 0);
 }

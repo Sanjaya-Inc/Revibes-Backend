@@ -21,7 +21,8 @@ export type UploadOptions = {
 export class FileStorage {
   private readonly storage: admin.storage.Storage;
   private readonly bucket: Bucket;
-  private readonly signedUrlExpTime: number = 15 * 60 * 1000; // 15 minutes
+  private readonly signedUrlExpTime: number = 15 * 60 * 1000;
+  private readonly signedReadUrlExpTime: number = 24 * 60 * 60 * 1000;
   private get isEmulator(): boolean {
     return (
       Boolean(
@@ -79,25 +80,41 @@ export class FileStorage {
   }
 
   public async getFullUrl(uri: string): Promise<string> {
-    if (!uri) return "";
+    if (!uri) {
+      console.warn("[OrderImage] getFullUrl empty uri");
+      return "";
+    }
 
-    let token: any = "";
     try {
       const file = this.bucket.file(uri);
       const [metadata] = await withTimeout(
         file.getMetadata(),
         FILE_EXISTS_TIMEOUT_MS,
       );
-      token = metadata?.metadata?.firebaseStorageDownloadTokens;
-    } catch {
-      console.error("Failed to get file metadata");
-    }
+      const token = metadata?.metadata?.firebaseStorageDownloadTokens;
+      const encodedPath = encodeURIComponent(uri);
+      if (token) {
+        const url = `${this.firebaseStorageUrl}/v0/b/${this.bucket.name}/o/${encodedPath}?alt=media&token=${token}`;
+        console.log("[OrderImage] getFullUrl", { uri, kind: "firebase-token" });
+        return url;
+      }
 
-    const encodedPath = encodeURIComponent(uri);
-    if (token) {
-      return `${this.firebaseStorageUrl}/v0/b/${this.bucket.name}/o/${encodedPath}?alt=media&token=${token}`;
+      const [signed] = await file.getSignedUrl({
+        version: "v4",
+        action: "read",
+        expires: Date.now() + this.signedReadUrlExpTime,
+      });
+      console.log("[OrderImage] getFullUrl", { uri, kind: "signed-read" });
+      return signed;
+    } catch (error) {
+      const fallback = this.objectMediaUrl(uri);
+      console.error("[OrderImage] getFullUrl fallback", {
+        uri,
+        error: String(error),
+        fallback,
+      });
+      return fallback;
     }
-    return this.objectMediaUrl(uri);
   }
 
   public async uploadFile(
